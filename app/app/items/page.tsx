@@ -52,7 +52,7 @@ function ItemsContent() {
           <ul className="grid gap-4 sm:grid-cols-2">
             {items.map((item) => (
               <li key={item.id}>
-                <Link href={`/app/items/${encodeURIComponent(item.id)}`} className="group block h-full rounded-3xl border border-stone-200 bg-white p-6 shadow-sm hover:border-orange-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-700 focus-visible:ring-offset-2">
+                <Link href={`/app/items/${encodeURIComponent(item.id)}${query ? `?q=${encodeURIComponent(query)}` : ""}`} className="group block h-full rounded-3xl border border-stone-200 bg-white p-6 shadow-sm hover:border-orange-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-700 focus-visible:ring-offset-2">
                   <span className="inline-block rounded-full bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-700">{item.kind === "spot" ? "場所" : "やりたいこと"}</span>
                   <h2 className="mt-4 text-xl font-semibold group-hover:text-orange-700">{item.title}</h2>
                   <p className="mt-2 line-clamp-2 min-h-12 text-sm leading-6 text-stone-600">{item.note || "メモはまだありません"}</p>
