@@ -35,6 +35,15 @@ export interface Outing {
   note: string;
 }
 
+export interface Visit {
+  id: Id;
+  groupId: Id;
+  outingId: Id;
+  itemId: Id;
+  note: string;
+  visitedAt: string;
+}
+
 export interface Memory {
   id: Id;
   groupId: Id;
@@ -50,6 +59,7 @@ export interface KokoikoSnapshot {
   group: GroupSummary;
   items: Item[];
   outings: Outing[];
+  visits: Visit[];
   memories: Memory[];
 }
 
@@ -77,5 +87,6 @@ export interface KokoikoRepository {
   setReaction(groupId: Id, itemId: Id, memberId: Id, value: ReactionValue | null): Item;
   createOuting(groupId: Id, input: NewOuting): Outing;
   addItemToOuting(groupId: Id, outingId: Id, itemId: Id): Outing;
+  recordVisit(groupId: Id, outingId: Id, itemId: Id, note?: string): Visit;
   completeOuting(groupId: Id, outingId: Id): Memory;
 }

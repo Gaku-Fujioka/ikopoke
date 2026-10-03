@@ -8,6 +8,7 @@ import type {
   NewOuting,
   Outing,
   ReactionValue,
+  Visit,
 } from "./contracts";
 
 export const MOCK_GROUP_ID = "demo-group";
@@ -42,6 +43,7 @@ const initialSnapshot: KokoikoSnapshot = {
     },
   ],
   outings: [],
+  visits: [],
   memories: [],
 };
 
@@ -84,12 +86,19 @@ function isMemory(value: unknown): value is Memory {
     typeof value.createdAt === "string";
 }
 
+function isVisit(value: unknown): value is Visit {
+  return isRecord(value) && typeof value.id === "string" && value.groupId === MOCK_GROUP_ID &&
+    typeof value.outingId === "string" && typeof value.itemId === "string" &&
+    typeof value.note === "string" && typeof value.visitedAt === "string";
+}
+
 function isSnapshot(value: unknown): value is KokoikoSnapshot {
   return isRecord(value) && isRecord(value.group) &&
     value.group.id === MOCK_GROUP_ID && typeof value.group.name === "string" &&
     isStringArray(value.group.memberNames) &&
     Array.isArray(value.items) && value.items.every(isItem) &&
     Array.isArray(value.outings) && value.outings.every(isOuting) &&
+    Array.isArray(value.visits) && value.visits.every(isVisit) &&
     Array.isArray(value.memories) && value.memories.every(isMemory);
 }
 
@@ -102,6 +111,8 @@ function load(storage: Storage): KokoikoSnapshot {
   } catch {
     throw new Error(corruptDataMessage);
   }
+  // Early P1 snapshots had no visit records. Keep those local drafts readable.
+  if (isRecord(value) && value.visits === undefined) value.visits = [];
   if (!isSnapshot(value)) {
     throw new Error(corruptDataMessage);
   }
@@ -203,6 +214,26 @@ export function createMockRepository(storage: Storage): KokoikoRepository {
         return outing;
       });
     },
+    recordVisit(groupId, outingId, itemId, note = "") {
+      return update(groupId, (snapshot) => {
+        const outing = findOuting(snapshot, groupId, outingId);
+        findItem(snapshot, groupId, itemId);
+        if (outing.status === "completed") throw new Error("終了したおでかけには記録できません。");
+        if (!outing.itemIds.includes(itemId)) throw new Error("計画にない候補は記録できません。");
+        const existing = snapshot.visits.find((entry) => entry.outingId === outingId && entry.itemId === itemId);
+        if (existing) return existing;
+        const visit: Visit = {
+          id: crypto.randomUUID(),
+          groupId,
+          outingId,
+          itemId,
+          note: note.trim(),
+          visitedAt: new Date().toISOString(),
+        };
+        snapshot.visits.push(visit);
+        return visit;
+      });
+    },
     completeOuting(groupId, outingId) {
       return update(groupId, (snapshot) => {
         const outing = findOuting(snapshot, groupId, outingId);
@@ -214,7 +245,9 @@ export function createMockRepository(storage: Storage): KokoikoRepository {
           groupId,
           outingId,
           title: outing.title,
-          itemTitles: outing.itemIds.map((id) => findItem(snapshot, groupId, id).title),
+          itemTitles: snapshot.visits
+            .filter((visit) => visit.outingId === outingId && visit.groupId === groupId)
+            .map((visit) => findItem(snapshot, groupId, visit.itemId).title),
           note: outing.note,
           createdAt: new Date().toISOString(),
         };
