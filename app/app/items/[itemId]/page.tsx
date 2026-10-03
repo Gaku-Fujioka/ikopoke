@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { ScreenState } from "@/components/flow/screen-state";
 import { messageFromError, useMockSnapshot } from "@/components/flow/use-mock-snapshot";
@@ -10,6 +10,8 @@ import { createMockRepository, MOCK_GROUP_ID, MOCK_MEMBER_ID } from "@/lib/kokoi
 
 function ItemDetailContent() {
   const { itemId } = useParams<{ itemId: string }>();
+  const query = useSearchParams().get("q")?.trim() ?? "";
+  const listHref = query ? `/app/items?q=${encodeURIComponent(query)}` : "/app/items";
   const { snapshot, error, loading, reload } = useMockSnapshot();
   const [actionError, setActionError] = useState<string | null>(null);
   const [success, setSuccess] = useState("");
@@ -36,7 +38,7 @@ function ItemDetailContent() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-7">
-      <Link href="/app/items" className="text-sm font-semibold text-stone-600 underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-700">← 行きたい一覧へ</Link>
+      <Link href={listHref} className="text-sm font-semibold text-stone-600 underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-700">← 行きたい一覧へ</Link>
       <ScreenState loading={loading} error={error} onRetry={reload} />
       {!loading && !error && !item && (
         <div className="rounded-3xl border border-stone-200 bg-white p-8">
