@@ -31,7 +31,7 @@ export default function AppHomePage() {
           次の休日、<br />どこ行こう？
         </h1>
         <p className="max-w-xl leading-7 text-stone-600">
-          行きたい場所から、おでかけ、思い出まで。まずは画面の行き来をお試しください。
+          行きたい候補を追加して、おでかけを計画し、訪問を記録して思い出まで。このブラウザで一巡できます。
         </p>
       </div>
 
