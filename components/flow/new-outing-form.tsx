@@ -19,6 +19,8 @@ export function NewOutingForm() {
   const [selectedIds, setSelectedIds] = useState<string[]>(initialItemId ? [initialItemId] : []);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const validSelectedIds = selectedIds.filter((id) => snapshot?.items.some((item) => item.id === id));
+  const hasUnknownSelection = Boolean(snapshot && validSelectedIds.length !== selectedIds.length);
 
   function toggleItem(id: string) {
     setSelectedIds((current) => current.includes(id) ? current.filter((entry) => entry !== id) : [...current, id]);
@@ -39,7 +41,7 @@ export function NewOutingForm() {
         title,
         date: date || null,
         note,
-        itemIds: selectedIds,
+        itemIds: validSelectedIds,
       });
       router.push(`/app/outings/${encodeURIComponent(outing.id)}`);
     } catch (cause) {
@@ -70,11 +72,12 @@ export function NewOutingForm() {
           </div>
           <fieldset className="space-y-3">
             <legend className="text-sm font-semibold">行きたい候補 <span className="font-normal text-stone-500">任意</span></legend>
+            {hasUnknownSelection && <p role="status" className="text-sm text-stone-600">URLで指定された候補が見つからないため、選択から除外します。</p>}
             {snapshot.items.length === 0 ? (
               <p className="text-sm text-stone-600">候補はまだありません。先に作成するか、候補なしで計画できます。</p>
             ) : snapshot.items.map((item) => (
               <label key={item.id} className="flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border border-stone-200 px-4 focus-within:ring-2 focus-within:ring-orange-700">
-                <input type="checkbox" checked={selectedIds.includes(item.id)} onChange={() => toggleItem(item.id)} />
+                <input type="checkbox" checked={validSelectedIds.includes(item.id)} onChange={() => toggleItem(item.id)} />
                 <span>{item.title}</span>
               </label>
             ))}
