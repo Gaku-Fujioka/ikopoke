@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 import { AppNav } from "@/components/layout/app-nav";
 
 export default function MockAppLayout({ children }: { children: ReactNode }) {
@@ -22,12 +22,14 @@ export default function MockAppLayout({ children }: { children: ReactNode }) {
         </div>
       </header>
 
-      <AppNav />
+      <Suspense fallback={<div role="status" className="border-b border-stone-200 bg-white px-5 py-5 text-sm text-stone-600">ナビを読み込んでいます…</div>}>
+        <AppNav />
+      </Suspense>
 
       <main id="main-content" tabIndex={-1} className="mx-auto w-full max-w-5xl px-5 pb-28 pt-9 outline-none sm:px-6 sm:pt-12 md:pb-16">
         {children}
         <p className="mt-12 border-t border-stone-200 pt-5 text-xs leading-6 text-stone-500">
-          P1画面モックです。候補・予定・思い出の業務データAPIには未接続で、保存・共有はできません。
+          P1画面モックです。業務データAPIには未接続です。デモの候補・予定・思い出はこのブラウザにだけ保存され、他の人とは共有されません。
         </p>
       </main>
     </div>
