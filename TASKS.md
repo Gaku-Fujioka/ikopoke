@@ -21,6 +21,7 @@ P0〜P5は段階案。以下も将来作業の提案で、全件実装の指示�
 | FLOW-01 | 候補追加・反応・計画・訪問・終了・思い出のローカル一巡 | core：データ処理、ui：画面、review：検証 | CORE-01/02、UI-02、REV-01 | リロード後も同一ブラウザに残り、他グループ混入と終了の重複を防ぐ。実API未接続を明示 | UI `bf1323b`/`a89a916`、修正`45c5795`、REV-06再確認済み、統合`7f21879`。lint・型・Node5件・build・9ルートHTTP成功。ブラウザ操作未確認 |
 | UI-04 | 候補一覧のタイトル検索、F-05 | ui：`app/app/items/page.tsx`と必要な画面専用部品 | FLOW-01 | URLの`q`、検索0件、条件解除、詳細から戻る時の条件保持 | ui着手中。基準`1ccb82d` |
 | AUTH-01 | 実接続前のAuthコード棚卸し、F-01 | core：`docs/data-model.md`の該当節のみ | FLOW-01、Q-01/02/03/15の判断は後続実装前 | 現在の呼出し・遷移・未確認範囲と次の判断を区別 | コード読み取り・文書化中。実API操作なし |
+| AUTH-02 | メール確認後の遷移先をアプリ内に制限、F-01/N-04 | core：`app/auth/confirm/route.ts`、`lib/auth/`、関連回帰テスト | AUTH-01のコード調査。基準`52ab6f1` | 外部URL・`//`・逆スラッシュを`/`へ戻し、アプリ内パスを保持 | 実装中。実Auth接続は対象外 |
 
 共通型、データ処理、`TASKS.md`、`package.json`、lockfile、DB migrationはcoreが担当する。
 共通UIと画面ルート、`docs/frontend.md`はuiが担当する。reviewは独立レビューを行う。
