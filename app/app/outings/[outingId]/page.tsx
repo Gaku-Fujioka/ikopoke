@@ -12,12 +12,14 @@ function OutingDetailContent() {
   const router = useRouter();
   const { snapshot, error, loading, reload } = useMockSnapshot();
   const [selectedItemId, setSelectedItemId] = useState("");
+  const [visitNotes, setVisitNotes] = useState<Record<string, string>>({});
   const [actionError, setActionError] = useState<string | null>(null);
   const [success, setSuccess] = useState("");
   const [saving, setSaving] = useState(false);
   const outing = snapshot?.outings.find((entry) => entry.id === outingId);
   const availableItems = snapshot?.items.filter((entry) => !outing?.itemIds.includes(entry.id)) ?? [];
   const memory = snapshot?.memories.find((entry) => entry.outingId === outingId);
+  const visits = snapshot?.visits.filter((entry) => entry.outingId === outingId) ?? [];
 
   function addItem() {
     if (!outing || !selectedItemId || saving) return;
@@ -50,6 +52,22 @@ function OutingDetailContent() {
     }
   }
 
+  function recordVisit(itemId: string) {
+    if (!outing || saving) return;
+    setSaving(true);
+    setActionError(null);
+    setSuccess("");
+    try {
+      createMockRepository(window.localStorage).recordVisit(MOCK_GROUP_ID, outing.id, itemId, visitNotes[itemId]);
+      reload();
+      setSuccess("訪問を記録しました。");
+    } catch (cause) {
+      setActionError(messageFromError(cause));
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
     <div className="mx-auto max-w-3xl space-y-7">
       <Link href="/app/outings" className="text-sm font-semibold text-stone-600 underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-700">← おでかけ一覧へ</Link>
@@ -73,10 +91,25 @@ function OutingDetailContent() {
               <ol className="mt-4 space-y-3">
                 {outing.itemIds.map((id, index) => {
                   const item = snapshot?.items.find((entry) => entry.id === id);
+                  const visit = visits.find((entry) => entry.itemId === id);
                   return (
-                    <li key={id} className="flex items-center gap-4 rounded-2xl bg-stone-50 p-4">
-                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-orange-700 text-sm font-semibold text-white">{index + 1}</span>
-                      {item ? <Link href={`/app/items/${encodeURIComponent(id)}`} className="font-semibold text-stone-900 underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-700">{item.title}</Link> : <span className="text-stone-600">見つからない候補</span>}
+                    <li key={id} className="rounded-2xl bg-stone-50 p-4">
+                      <div className="flex items-center gap-4">
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-orange-700 text-sm font-semibold text-white">{index + 1}</span>
+                        {item ? <Link href={`/app/items/${encodeURIComponent(id)}`} className="font-semibold text-stone-900 underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-700">{item.title}</Link> : <span className="text-stone-600">見つからない候補</span>}
+                      </div>
+                      {visit ? (
+                        <div className="mt-3 pl-12 text-sm text-green-800">
+                          <p className="font-semibold">訪問を記録済み</p>
+                          {visit.note && <p className="mt-1 whitespace-pre-wrap text-stone-600">{visit.note}</p>}
+                        </div>
+                      ) : outing.status === "planning" && item ? (
+                        <div className="mt-3 space-y-2 pl-12">
+                          <label htmlFor={`visit-note-${id}`} className="block text-xs font-medium text-stone-600">訪問メモ（任意）</label>
+                          <textarea id={`visit-note-${id}`} value={visitNotes[id] ?? ""} onChange={(event) => setVisitNotes((current) => ({ ...current, [id]: event.target.value }))} rows={2} className="w-full rounded-xl border border-stone-300 px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-700" />
+                          <button type="button" disabled={saving} onClick={() => recordVisit(id)} className="min-h-11 rounded-full border border-orange-700 px-5 text-sm font-semibold text-orange-700 hover:bg-orange-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-700 focus-visible:ring-offset-2 disabled:opacity-60">この候補の訪問を記録</button>
+                        </div>
+                      ) : <p className="mt-2 pl-12 text-sm text-stone-600">訪問記録なし</p>}
                     </li>
                   );
                 })}
@@ -98,7 +131,7 @@ function OutingDetailContent() {
               ) : <p className="text-sm text-stone-600">追加できる候補はありません。行きたい一覧から候補を作成できます。</p>}
               <Link href="/app/items/new" className="inline-block text-sm font-semibold text-orange-700 underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-700">新しい候補を作る</Link>
               <div className="border-t border-stone-200 pt-5">
-                <p className="mb-4 text-sm leading-6 text-stone-600">このデモの終了操作では、写真や訪問評価を記録せず、計画の内容から思い出を作成します。</p>
+                <p className="mb-4 text-sm leading-6 text-stone-600">記録した訪問だけを思い出に残します。未訪問の候補は訪問扱いになりません。写真・評価はこのデモでは記録できません。</p>
                 <button type="button" disabled={saving} onClick={complete} className="min-h-12 w-full rounded-full bg-orange-700 px-6 font-semibold text-white hover:bg-orange-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-700 focus-visible:ring-offset-2 disabled:opacity-60">{saving ? "終了中…" : "おでかけを終了して思い出を見る"}</button>
               </div>
               {actionError && <p role="alert" className="text-sm text-red-700">{actionError}</p>}

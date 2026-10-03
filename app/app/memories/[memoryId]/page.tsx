@@ -11,6 +11,7 @@ function MemoryDetailContent() {
   const { snapshot, error, loading, reload } = useMockSnapshot();
   const memory = snapshot?.memories.find((entry) => entry.id === memoryId);
   const outing = snapshot?.outings.find((entry) => entry.id === memory?.outingId);
+  const visits = snapshot?.visits.filter((entry) => entry.outingId === memory?.outingId) ?? [];
 
   return (
     <div className="mx-auto max-w-3xl space-y-7">
@@ -28,18 +29,23 @@ function MemoryDetailContent() {
           </div>
           <div className="flex aspect-[16/9] items-center justify-center rounded-3xl bg-gradient-to-br from-orange-100 to-stone-200 text-sm text-stone-600" role="img" aria-label="写真はまだありません">写真はまだありません</div>
           <section aria-labelledby="memory-places" className="rounded-3xl border border-stone-200 bg-white p-6 sm:p-8">
-            <h2 id="memory-places" className="text-xl font-semibold">この日の候補</h2>
+            <h2 id="memory-places" className="text-xl font-semibold">訪問を記録した候補</h2>
             {memory.itemTitles.length > 0 ? (
-              <ol className="mt-4 list-inside list-decimal space-y-2 text-stone-700">
-                {memory.itemTitles.map((title, index) => <li key={`${index}-${title}`}>{title}</li>)}
+              <ol className="mt-4 list-inside list-decimal space-y-3 text-stone-700">
+                {memory.itemTitles.map((title, index) => (
+                  <li key={`${index}-${title}`}>
+                    <span className="font-medium">{title}</span>
+                    {visits[index]?.note && <p className="ml-5 mt-1 whitespace-pre-wrap text-sm text-stone-600">{visits[index].note}</p>}
+                  </li>
+                ))}
               </ol>
-            ) : <p className="mt-3 text-stone-600">候補の登録はありません。</p>}
+            ) : <p className="mt-3 text-stone-600">訪問記録はありません。</p>}
           </section>
           <section aria-labelledby="memory-note" className="rounded-3xl border border-stone-200 bg-white p-6 sm:p-8">
             <h2 id="memory-note" className="text-xl font-semibold">メモ</h2>
             <p className="mt-3 whitespace-pre-wrap leading-7 text-stone-700">{memory.note || "メモはまだありません。"}</p>
           </section>
-          <p className="text-sm leading-6 text-stone-600">この思い出は計画の内容をローカル保存したデモです。訪問記録・写真・編集・他の人との共有はできません。</p>
+          <p className="text-sm leading-6 text-stone-600">この思い出は記録した訪問先をローカル保存したデモです。写真・編集・他の人との共有はできません。</p>
           {outing && <Link href={`/app/outings/${encodeURIComponent(outing.id)}`} className="inline-block font-semibold text-orange-700 underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-700">元のおでかけを見る</Link>}
         </article>
       )}
