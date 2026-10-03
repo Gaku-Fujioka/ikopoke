@@ -18,6 +18,21 @@
 実DBの読み取り調査はDATA-01で接続先と許可範囲を確認してから行う。
 秘密情報の値や本番データは報告へ出さない。
 
+## AUTH-01：実接続前のコード棚卸し（2026-10-03）
+
+これはローカルコードの読み取り結果で、Auth方式の採用や接続成功ではない。
+
+- `components/login-form.tsx`はメール・パスワードで`signInWithPassword()`を呼び、成功時に`/protected`へ遷移する。
+- `components/sign-up-form.tsx`は`signUp()`を呼び、メール確認の遷移先に`/protected`を指定する。
+- `app/auth/confirm/route.ts`は確認トークンを`verifyOtp()`で扱う。実際のメール・redirect設定は未確認。
+- 同Route Handlerの`next`クエリは遷移先としてそのまま使われる。実接続前にアプリ内パスだけを許すか検証する。
+- `lib/supabase/proxy.ts`は公開用環境変数がある場合に`getClaims()`を呼ぶ。`/app`を含む未認証のパスは`/auth/login`へ転送する。環境変数がない場合はこの確認を飛ばす。
+- P1の`lib/kokoiko/mock-repository.ts`はブラウザの`localStorage`専用。Supabase AuthのユーザーやDBと紐付いておらず、共有・権限制御を提供しない。
+
+次の実接続タスクにはログイン方式（Q-01）、招待・退会・管理操作の権限（Q-02）、個人利用（Q-03）、同期と競合（Q-15）、対象の開発環境・接続先が必要。
+まずAuthの遷移と所属の契約を決め、その後に現行DB・RLS・Storageを読み取り調査する。
+外部のスキーマがないと推定してmigrationを適用しない。実APIを使う試験は接続先と費用条件の確認後に分ける。
+
 ## 旧モデルから引き継ぐ論理案
 
 以下は設計候補。テーブルの存在・採用・DDL・カラム必須性を意味しない。
