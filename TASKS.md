@@ -22,6 +22,7 @@ P0〜P5は段階案。以下も将来作業の提案で、全件実装の指示�
 | UI-04 | 候補一覧のタイトル検索、F-05 | ui：`app/app/items/page.tsx`と詳細の戻り導線 | FLOW-01 | URLの`q`、検索0件、条件解除、詳細から戻る時の条件保持 | `3328981`、修正`18fa001`、REV-12指摘解消、統合`5afa63a`。統合状態でlint・型・Node7件・build成功。ブラウザ操作未確認 |
 | AUTH-01 | 実接続前のAuthコード棚卸し、F-01 | core：`docs/data-model.md`の該当節のみ | FLOW-01、Q-01/02/03/15の判断は後続実装前 | 現在の呼出し・遷移・未確認範囲と次の判断を区別 | `52ab6f1`、追記`e0f7c47`、現行Authとの整合修正`d03ba67`。REV-11で指摘解消。実API操作なし |
 | AUTH-02 | メール確認後の遷移先をアプリ内に制限、F-01/N-04 | core：`app/auth/confirm/route.ts`、`lib/auth/`、関連回帰テスト | AUTH-01のコード調査。基準`52ab6f1` | 外部URL・`//`・逆スラッシュを`/`へ戻し、アプリ内パスを保持 | `3fb5525`。lint・型・Node7件・build成功、REV-08指摘なし。実Auth接続なし |
+| REV-13 | main反映前の統合確認 | review：`review/REV-13-*.md`、core：指摘修正と統合 | FLOW-01、UI-04、AUTH-02 | 中心フローと過去指摘、資料リンク、秘密情報、差分を独立確認 | `2d5e92b`をレビュー、文書3件を修正し`44aadeb`で全件解消。ブラウザ・実Auth・CIは未確認 |
 
 共通型、データ処理、`TASKS.md`、`package.json`、lockfile、DB migrationはcoreが担当する。
 共通UIと画面ルート、`docs/frontend.md`はuiが担当する。reviewは独立レビューを行う。
