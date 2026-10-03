@@ -27,7 +27,7 @@ export default function MockAppLayout({ children }: { children: ReactNode }) {
       <main id="main-content" tabIndex={-1} className="mx-auto w-full max-w-5xl px-5 pb-28 pt-9 outline-none sm:px-6 sm:pt-12 md:pb-16">
         {children}
         <p className="mt-12 border-t border-stone-200 pt-5 text-xs leading-6 text-stone-500">
-          P1画面モックです。実APIへの接続、共有、保存はまだ行われません。
+          P1画面モックです。候補・予定・思い出の業務データAPIには未接続で、保存・共有はできません。
         </p>
       </main>
     </div>
