@@ -13,6 +13,7 @@ import type {
 export const MOCK_GROUP_ID = "demo-group";
 export const MOCK_MEMBER_ID = "demo-member";
 const STORAGE_KEY = "kokoiko:p1-mock:v1";
+const corruptDataMessage = "モックデータを読み込めません。保存内容を確認してください。";
 
 const initialSnapshot: KokoikoSnapshot = {
   group: {
@@ -44,24 +45,67 @@ const initialSnapshot: KokoikoSnapshot = {
   memories: [],
 };
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((entry) => typeof entry === "string");
+}
+
+function isDateOnly(value: unknown): value is string {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const parsed = new Date(`${value}T00:00:00.000Z`);
+  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
+}
+
+function isItem(value: unknown): value is Item {
+  return isRecord(value) && typeof value.id === "string" && value.groupId === MOCK_GROUP_ID &&
+    (value.kind === "spot" || value.kind === "activity") && typeof value.title === "string" &&
+    typeof value.note === "string" && typeof value.createdAt === "string" &&
+    (value.imageUrl === undefined || typeof value.imageUrl === "string") &&
+    isRecord(value.reactions) && Object.entries(value.reactions).every(
+      ([memberId, reaction]) => memberId === MOCK_MEMBER_ID &&
+        (reaction === "want_to_go" || reaction === "not_now"),
+    );
+}
+
+function isOuting(value: unknown): value is Outing {
+  return isRecord(value) && typeof value.id === "string" && value.groupId === MOCK_GROUP_ID &&
+    typeof value.title === "string" && (value.date === null || isDateOnly(value.date)) &&
+    (value.status === "planning" || value.status === "completed") &&
+    isStringArray(value.itemIds) && typeof value.note === "string";
+}
+
+function isMemory(value: unknown): value is Memory {
+  return isRecord(value) && typeof value.id === "string" && value.groupId === MOCK_GROUP_ID &&
+    typeof value.outingId === "string" && typeof value.title === "string" &&
+    isStringArray(value.itemTitles) && typeof value.note === "string" &&
+    typeof value.createdAt === "string";
+}
+
+function isSnapshot(value: unknown): value is KokoikoSnapshot {
+  return isRecord(value) && isRecord(value.group) &&
+    value.group.id === MOCK_GROUP_ID && typeof value.group.name === "string" &&
+    isStringArray(value.group.memberNames) &&
+    Array.isArray(value.items) && value.items.every(isItem) &&
+    Array.isArray(value.outings) && value.outings.every(isOuting) &&
+    Array.isArray(value.memories) && value.memories.every(isMemory);
+}
+
 function load(storage: Storage): KokoikoSnapshot {
   const raw = storage.getItem(STORAGE_KEY);
   if (!raw) return structuredClone(initialSnapshot);
-  const value: unknown = JSON.parse(raw);
-  if (
-    !value ||
-    typeof value !== "object" ||
-    !("group" in value) ||
-    !("items" in value) ||
-    !("outings" in value) ||
-    !("memories" in value) ||
-    !Array.isArray(value.items) ||
-    !Array.isArray(value.outings) ||
-    !Array.isArray(value.memories)
-  ) {
-    throw new Error("モックデータを読み込めません。保存内容を確認してください。");
+  let value: unknown;
+  try {
+    value = JSON.parse(raw);
+  } catch {
+    throw new Error(corruptDataMessage);
   }
-  return value as KokoikoSnapshot;
+  if (!isSnapshot(value)) {
+    throw new Error(corruptDataMessage);
+  }
+  return value;
 }
 
 function assertGroup(snapshot: KokoikoSnapshot, groupId: Id): void {
@@ -104,6 +148,7 @@ export function createMockRepository(storage: Storage): KokoikoRepository {
     },
     createItem(groupId, input: NewItem) {
       return update(groupId, (snapshot) => {
+        if (input.kind !== "spot" && input.kind !== "activity") throw new Error("候補の種類が正しくありません。");
         const item: Item = {
           id: crypto.randomUUID(),
           groupId,
@@ -120,7 +165,10 @@ export function createMockRepository(storage: Storage): KokoikoRepository {
     setReaction(groupId, itemId, memberId, value: ReactionValue | null) {
       return update(groupId, (snapshot) => {
         const item = findItem(snapshot, groupId, itemId);
-        if (!memberId.trim()) throw new Error("メンバーが見つかりません。");
+        if (memberId !== MOCK_MEMBER_ID) throw new Error("メンバーが見つかりません。");
+        if (value !== null && value !== "want_to_go" && value !== "not_now") {
+          throw new Error("リアクションが正しくありません。");
+        }
         if (value === null) delete item.reactions[memberId];
         else item.reactions[memberId] = value;
         return item;
@@ -128,6 +176,9 @@ export function createMockRepository(storage: Storage): KokoikoRepository {
     },
     createOuting(groupId, input: NewOuting) {
       return update(groupId, (snapshot) => {
+        if (input.date !== undefined && input.date !== null && !isDateOnly(input.date)) {
+          throw new Error("日付が正しくありません。");
+        }
         const itemIds = [...new Set(input.itemIds ?? [])];
         itemIds.forEach((id) => findItem(snapshot, groupId, id));
         const outing: Outing = {

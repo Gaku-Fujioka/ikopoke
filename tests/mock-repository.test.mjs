@@ -40,3 +40,22 @@ test("a different group cannot read or link the demo group's items", () => {
   }), /候補/);
   assert.equal(repository.read(MOCK_GROUP_ID).outings.length, 0);
 });
+
+test("invalid runtime input is rejected before it reaches local storage", () => {
+  const repository = createMockRepository(memoryStorage());
+  assert.throws(() => repository.createItem(MOCK_GROUP_ID, { kind: "invalid", title: "abc" }), /種類/);
+  const item = repository.createItem(MOCK_GROUP_ID, { kind: "spot", title: "公園" });
+  assert.throws(() => repository.setReaction(MOCK_GROUP_ID, item.id, MOCK_MEMBER_ID, "invalid"), /リアクション/);
+  assert.throws(() => repository.setReaction(MOCK_GROUP_ID, item.id, "stranger", "want_to_go"), /メンバー/);
+  assert.throws(() => repository.createOuting(MOCK_GROUP_ID, { title: "無効", date: "2026-99-99" }), /日付/);
+  assert.equal(repository.read(MOCK_GROUP_ID).outings.length, 0);
+});
+
+test("corrupt local data reports a controlled error", () => {
+  const storage = memoryStorage();
+  storage.setItem("kokoiko:p1-mock:v1", JSON.stringify({
+    group: { id: MOCK_GROUP_ID, name: "demo", memberNames: [] },
+    items: [null], outings: [], memories: [],
+  }));
+  assert.throws(() => createMockRepository(storage).read(MOCK_GROUP_ID), /モックデータを読み込めません/);
+});
