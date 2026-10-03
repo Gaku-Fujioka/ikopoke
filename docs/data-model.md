@@ -24,10 +24,10 @@
 
 - `components/login-form.tsx`はメール・パスワードで`signInWithPassword()`を呼び、成功時に`/protected`へ遷移する。
 - `components/sign-up-form.tsx`は`signUp()`を呼び、メール確認の遷移先に`/protected`を指定する。
-- `components/forgot-password-form.tsx`は`resetPasswordForEmail()`を呼び、再設定先に`/auth/update-password`を指定する。同画面のフォームは`updateUser()`後に`/protected`へ遷移する。
+- `components/forgot-password-form.tsx`は`resetPasswordForEmail()`を呼び、再設定先に`/auth/update-password`を指定する。遷移先の`components/update-password-form.tsx`は`updateUser()`後に`/protected`へ遷移する。
 - `components/logout-button.tsx`は`signOut()`後に`/auth/login`へ遷移する。`components/auth-button.tsx`と`app/protected/page.tsx`も`getClaims()`を呼び、後者は未認証時にログインへ転送する。
 - `app/auth/confirm/route.ts`は確認トークンを`verifyOtp()`で扱う。実際のメール・redirect設定は未確認。
-- 同Route Handlerの`next`クエリは遷移先としてそのまま使われる。実接続前にアプリ内パスだけを許すか検証する。
+- 同Route Handlerの`next`クエリは`safeNextPath()`でアプリ内パスへ制限し、外部などの不正値は`/`へ戻す。アプリ内パスのqueryとfragmentは保持する。実Authでの確認リンク動作は未検証。
 - `lib/supabase/proxy.ts`は公開用環境変数がある場合に`getClaims()`を呼ぶ。`/app`を含む未認証のパスは`/auth/login`へ転送する。環境変数がない場合はこの確認を飛ばす。
 - P1の`lib/kokoiko/mock-repository.ts`はブラウザの`localStorage`専用。Supabase AuthのユーザーやDBと紐付いておらず、共有・権限制御を提供しない。
 
