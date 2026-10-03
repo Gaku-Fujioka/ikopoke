@@ -1,11 +1,16 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 import { ScreenState } from "@/components/flow/screen-state";
 import { useMockSnapshot } from "@/components/flow/use-mock-snapshot";
 
-export default function ItemsPage() {
+function ItemsContent() {
+  const searchParams = useSearchParams();
+  const query = searchParams.get("q")?.trim() ?? "";
   const { snapshot, error, loading, reload } = useMockSnapshot();
+  const items = snapshot?.items.filter((item) => item.title.toLocaleLowerCase().includes(query.toLocaleLowerCase())) ?? [];
 
   return (
     <div className="space-y-7">
@@ -18,6 +23,15 @@ export default function ItemsPage() {
         <Link href="/app/items/new" className="inline-flex min-h-11 items-center rounded-full bg-orange-700 px-6 text-sm font-semibold text-white hover:bg-orange-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-700 focus-visible:ring-offset-2">候補を追加</Link>
       </div>
 
+      <form action="/app/items" method="get" role="search" className="flex flex-wrap items-end gap-3 rounded-3xl border border-stone-200 bg-white p-4 sm:p-5">
+        <div className="min-w-48 flex-1 space-y-2">
+          <label htmlFor="item-search" className="block text-sm font-semibold">候補の名前で検索</label>
+          <input key={query} id="item-search" name="q" type="search" defaultValue={query} placeholder="行きたい場所や、やりたいこと" className="min-h-11 w-full rounded-xl border border-stone-300 px-4 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-700" />
+        </div>
+        <button type="submit" className="min-h-11 rounded-full bg-stone-900 px-6 text-sm font-semibold text-white hover:bg-stone-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-900 focus-visible:ring-offset-2">検索</button>
+        {query && <Link href="/app/items" className="inline-flex min-h-11 items-center rounded-full px-3 text-sm font-semibold text-orange-700 underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-700">条件を解除</Link>}
+      </form>
+
       <ScreenState loading={loading} error={error} onRetry={reload} />
 
       {snapshot && (snapshot.items.length === 0 ? (
@@ -26,20 +40,33 @@ export default function ItemsPage() {
           <p className="mt-2 text-stone-600">まずは気になる場所や、やりたいことを一つ追加しましょう。</p>
           <Link href="/app/items/new" className="mt-5 inline-block font-semibold text-orange-700 underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-700">候補を追加する</Link>
         </div>
+      ) : items.length === 0 ? (
+        <div className="rounded-3xl border border-stone-200 bg-white p-8">
+          <h2 className="text-xl font-semibold">検索結果がありません</h2>
+          <p className="mt-2 text-stone-600">「{query}」に一致する候補は見つかりませんでした。</p>
+          <Link href="/app/items" className="mt-5 inline-block font-semibold text-orange-700 underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-700">検索を解除してすべて見る</Link>
+        </div>
       ) : (
-        <ul className="grid gap-4 sm:grid-cols-2">
-          {snapshot.items.map((item) => (
-            <li key={item.id}>
-              <Link href={`/app/items/${encodeURIComponent(item.id)}`} className="group block h-full rounded-3xl border border-stone-200 bg-white p-6 shadow-sm hover:border-orange-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-700 focus-visible:ring-offset-2">
-                <span className="inline-block rounded-full bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-700">{item.kind === "spot" ? "場所" : "やりたいこと"}</span>
-                <h2 className="mt-4 text-xl font-semibold group-hover:text-orange-700">{item.title}</h2>
-                <p className="mt-2 line-clamp-2 min-h-12 text-sm leading-6 text-stone-600">{item.note || "メモはまだありません"}</p>
-                <p className="mt-4 text-sm font-semibold text-orange-700">詳細を見る →</p>
-              </Link>
-            </li>
-          ))}
-        </ul>
+        <>
+          {query && <p role="status" className="text-sm text-stone-600">「{query}」の検索結果：{items.length}件</p>}
+          <ul className="grid gap-4 sm:grid-cols-2">
+            {items.map((item) => (
+              <li key={item.id}>
+                <Link href={`/app/items/${encodeURIComponent(item.id)}`} className="group block h-full rounded-3xl border border-stone-200 bg-white p-6 shadow-sm hover:border-orange-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-700 focus-visible:ring-offset-2">
+                  <span className="inline-block rounded-full bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-700">{item.kind === "spot" ? "場所" : "やりたいこと"}</span>
+                  <h2 className="mt-4 text-xl font-semibold group-hover:text-orange-700">{item.title}</h2>
+                  <p className="mt-2 line-clamp-2 min-h-12 text-sm leading-6 text-stone-600">{item.note || "メモはまだありません"}</p>
+                  <p className="mt-4 text-sm font-semibold text-orange-700">詳細を見る →</p>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </>
       ))}
     </div>
   );
+}
+
+export default function ItemsPage() {
+  return <Suspense fallback={<p role="status">候補を読み込んでいます…</p>}><ItemsContent /></Suspense>;
 }
