@@ -1,6 +1,9 @@
 # UIと画面の案内
 
 調査日：2026-10-03。現行PNG5枚は前回調査で目視確認済み。
+UI担当ブランチ単独には要件・architecture・development-flow・verification・decisionsの
+5文書を収録していないため、以下の相対リンクは単独checkoutでは開けない。
+これらはcore担当が安全に引き継いだ文書との統合後にリンクを再確認する。
 画像の存在と操作可能な画面は区別する。アプリの起動・ブラウザ操作は未確認。
 目標は[要件§4・§5・§7](kokoiko-requirements.md)、構成は[architecture](architecture.md)を参照。
 
