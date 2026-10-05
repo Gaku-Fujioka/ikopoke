@@ -1,7 +1,19 @@
 # 検証・実行環境
 
-確認日：2026-10-03。コマンドの存在、実行、成功を別々に記録する。
-今回の文書整備ではアプリ起動・lint・型検査・テスト・buildを実行しない。
+更新日：2026-10-05。コマンドの存在、実行、成功を別々に記録する。
+以下の「初期文書整備」は2026-10-03時点の記録。統合後の確認結果は次節に記す。
+
+## 統合後の確認とCI
+
+`integration/kokoiko-mvp`の`3aa6c84`で`npm run lint`、`npx tsc --noEmit`、
+`node --experimental-strip-types --test tests/auth-redirect.test.mjs tests/mock-repository.test.mjs`
+（7件）、`npm run build`が成功した。buildはGoogle Fonts取得のためネットワークが使える環境で再実行した。
+Edgeのヘッドレス操作では360／390／1280px、4入口ナビの配置と横はみ出し、候補追加から思い出まで、
+再読込後の保持、検索条件の復帰、検索0件、欠落ID、スキップリンクへのTab移動を確認した。
+実Auth／業務API／複数利用者の動作は確認していない。
+
+`.github/workflows/ci.yml`はPRと`main`へのpushでNode 22.19.0を使い、`npm ci`、lint、型検査、
+上記7件のテスト、buildを順に実行する。GitHub上のCI結果はworkflowをpushするまで未実行。
 
 ## 実行環境と前提
 
@@ -20,27 +32,27 @@
 | Supabase SSR / Supabase JS | 0.12.6 / 2.115.0 |
 | ESLint / eslint-config-next | 9.39.5 / 15.3.1 |
 
-Nextとeslint-config-nextの版が異なる。互換性やlint成功は未確認（VERIFY-01）。
+Nextとeslint-config-nextの版が異なる。統合後のlintは成功したが、版の整合方針は未決定。
 NextとSupabaseのpackage指定は`latest`。固定・更新方針は別タスクで判断する。
 
 ## 現行コマンド
 
-以下の4件がpackage.jsonの実在スクリプト。今回の実行結果はいずれも「未実行」。
+以下の4件がpackage.jsonの実在スクリプト。実行結果は2026-10-05の確認分。
 
-| コマンド | 実体・用途 | 前提 | 存在 | 今回の実行／成功 |
+| コマンド | 実体・用途 | 前提 | 存在 | 統合後の実行結果 |
 |---|---|---|---|---|
-| `npm run dev` | `next dev`：開発サーバー | 依存導入、利用可能なポート | 確認済み | 未実行／未確認 |
-| `npm run lint` | `eslint .`：lint | 依存・ESLint設定 | 確認済み | 未実行／未確認 |
-| `npm run build` | `next build`：build | 依存、対象環境、必要な接続・ネットワーク | 確認済み | 未実行／未確認 |
-| `npm run start` | `next start`：productionサーバー | 成功したbuild | 確認済み | 未実行／未確認 |
+| `npm run dev` | `next dev`：開発サーバー | 依存導入、利用可能なポート | 確認済み | 今回未実行 |
+| `npm run lint` | `eslint .`：lint | 依存・ESLint設定 | 確認済み | 成功 |
+| `npm run build` | `next build`：build | 依存、対象環境、Google Fontsへの接続 | 確認済み | 成功。接続不可の環境ではフォント取得失敗 |
+| `npm run start` | `next start`：productionサーバー | 成功したbuild | 確認済み | 起動・HTTP応答を確認 |
 
 新規checkoutで依存導入が必要なら、lockfileを確認して`npm ci`を使う手順とする。
 これはnpmの依存導入コマンドでpackage scriptではない。今回未実行。
 既存node_modulesを勝手に入れ直さず、依存変更を別タスクへ分ける。
 
 型検査は[tsconfig.json](../tsconfig.json)にstrict・noEmit設定があり、TypeScript依存もある。
-`typecheck`スクリプト・標準実行手順は未整備。`test`・`check`スクリプト、
-テストファイル・runner・設定もない。VERIFY-02／VERIFY-03で整理するまで
+`typecheck`・`test`・`check`のnpmスクリプトはない。型検査は`npx tsc --noEmit`、
+回帰テストはNode組み込みrunnerで`tests/*.test.mjs`を実行する。
 架空のnpmスクリプトを実行例や成功条件として置かない。
 
 ## 起動と接続
@@ -66,7 +78,7 @@ Supabase未設定時はトップに設定案内を出しproxy確認をスキッ�
 | 変更 | 必要な確認 | 現状の不足 |
 |---|---|---|
 | 文書のみ | 相互リンク・パス・要件ID・コマンド根拠・提案と決定・自己レビュー・差分 | 文書用lintやリンク検査の標準スクリプトなし。手動／一時的な読み取り検査で結果を記録 |
-| UI・ルート | lint、利用可能な型検査、関連検証、ブラウザ操作。buildは影響に応じて | 型検査・テスト手順未整備。実行できない項目は理由を記録 |
+| UI・ルート | lint、型検査、関連検証、ブラウザ操作。buildは影響に応じて | npmの型検査・テストscriptはない。上記の直接コマンドを使う |
 | 認証・保存 | 上記＋正常／失敗／セッション切れ／再取得・再ログイン | 開発接続先・試用アカウント・外部設定は未確認 |
 | DB・Storage | migration差分、所属別の直接取得・更新、画像取得、保全・再実行 | migration・RLS・Storage・検証環境が未整備／未確認 |
 | バグ | 修正前の再現、必要な回帰検証、修正後の同じ操作 | テストrunnerがなければ再現手順を残し、必要な基盤を別途決める |
@@ -91,10 +103,9 @@ Supabase未設定時はトップに設定案内を出しproxy確認をスキッ�
 
 ## CI・結果記録
 
-作業ツリーと追跡ファイルにGitHub Actions workflowはない。
-旧PRテンプレートはCIの実装ではない。CI-01で最小CIを設計し、別の許可されたタスクで実装する。
-その際は実際のローカルコマンドと同じ検証を使い、環境前提を揃える。
-CI未整備を成功と扱わず、導入後は対象commitの結果を確認し、失敗時はマージしない。
+GitHub Actionsの[CI workflow](../.github/workflows/ci.yml)を追加した。
+旧PRテンプレートはCIの実装ではない。workflowの構文とローカルコマンドは確認したが、
+GitHub側での実行は未確認。対象commitの結果を確認し、失敗時は原因を修正する。
 
 結果は[タスクテンプレート](tasks/TEMPLATE.md)に記録する。
 各項目に「存在確認／実行済み・未実行／成功・失敗・未確認」と理由を付ける。

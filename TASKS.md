@@ -1,6 +1,6 @@
 # ここいこ：小さいタスクの候補
 
-更新日：2026-10-03。参照：[要件](docs/kokoiko-requirements.md)、[開発手順](docs/development-flow.md)、
+更新日：2026-10-05。参照：[要件](docs/kokoiko-requirements.md)、[開発手順](docs/development-flow.md)、
 [検証](docs/verification.md)、[決定](docs/decisions.md)、[タスクテンプレート](docs/tasks/TEMPLATE.md)。
 P0〜P5は段階案。以下も将来作業の提案で、全件実装の指示・採用決定ではない。
 着手時に1件を選び、テンプレートで範囲と採用済みDoneを具体化する。
@@ -23,6 +23,8 @@ P0〜P5は段階案。以下も将来作業の提案で、全件実装の指示�
 | AUTH-01 | 実接続前のAuthコード棚卸し、F-01 | core：`docs/data-model.md`の該当節のみ | FLOW-01、Q-01/02/03/15の判断は後続実装前 | 現在の呼出し・遷移・未確認範囲と次の判断を区別 | `52ab6f1`、追記`e0f7c47`、現行Authとの整合修正`d03ba67`。REV-11で指摘解消。実API操作なし |
 | AUTH-02 | メール確認後の遷移先をアプリ内に制限、F-01/N-04 | core：`app/auth/confirm/route.ts`、`lib/auth/`、関連回帰テスト | AUTH-01のコード調査。基準`52ab6f1` | 外部URL・`//`・逆スラッシュを`/`へ戻し、アプリ内パスを保持 | `3fb5525`。lint・型・Node7件・build成功、REV-08指摘なし。実Auth接続なし |
 | REV-13 | main反映前の統合確認 | review：`review/REV-13-*.md`、core：指摘修正と統合 | FLOW-01、UI-04、AUTH-02 | 中心フローと過去指摘、資料リンク、秘密情報、差分を独立確認 | `2d5e92b`をレビュー、文書3件を修正し`44aadeb`で全件解消。ブラウザ・実Auth・CIは未確認 |
+| VERIFY-04 | P1モックのブラウザ操作確認、N-01/03/10 | core：統合`3aa6c84`をEdgeヘッドレスで操作 | REV-13 | 360/390/1280px、候補→思い出、再読込、検索・0件・欠落ID、スキップリンク | 2026-10-05に対象操作成功。実Auth・業務APIは未接続。`main`へfast-forward済み |
+| CI-02 | 最小CIの実装、N-10 | core：`.github/workflows/ci.yml`、`docs/verification.md`、本表 | VERIFY-04、実在のローカル検証 | PRとmain更新時にlint・型・Node7件・buildを実行 | ローカルコマンド成功。workflow構文確認済み。GitHub上の実行はpush後まで未確認 |
 
 共通型、データ処理、`TASKS.md`、`package.json`、lockfile、DB migrationはcoreが担当する。
 共通UIと画面ルート、`docs/frontend.md`はuiが担当する。reviewは独立レビューを行う。
@@ -44,10 +46,10 @@ P0〜P5は段階案。以下も将来作業の提案で、全件実装の指示�
 |---|---|---|---|---|---|---|
 | DOC-01・A：文書の案内整備 | N-09、N-10、§11 | 前回調査・今回の指示 | AGENTS、README、TASKS、今回の関連docs | 参照先と事実・案・不足が明確。原本と既存変更を保護 | リンク、根拠、ID、hash・diff、本文自己レビュー | 不可：共通文書を単独担当。別レビュー・CI・マージ未実施 |
 | DOC-02・A：文書差分の人間レビュー | N-09、N-10 | DOC-01自己確認 | 上記文書を読み取り。修正はDOC-01担当へ返す | 参照・境界・未決定・旧ルールの維持について指摘／採用範囲を記録 | 固定した差分・新規本文・原本を照合 | 可：差分固定後の読み取り。現在は人間レビュー待ち |
-| VERIFY-01・A：既存lintの現状確認 | N-10 | DOC-02、検証実行の依頼 | package、eslint設定は読み取り。結果はverification | 実在lintを実行して結果・NextとESLint設定の差異を記録。修正は分離 | `npm run lint`。失敗時は再現と原因調査 | 条件付：他のソース編集を止め結果対象を固定。今回は未実行 |
-| VERIFY-02・A：型検査手順の設計 | N-10 | DOC-02 | tsconfig・依存は読み取り、verificationの案 | 既存TypeScriptを使う方法、生成型・出力・前提と追加タスクを定義 | 設定照合、人間レビュー。採用前に成功扱いしない | 不可：verification共通文書担当。手順・scriptが未決定 |
-| VERIFY-03・B：最初の回帰テスト対象選定 | N-10 | 小タスクの方針、VERIFY-02 | 対象処理とverification。runner導入は別タスク | 実装をなぞるだけでない1つのリスクと再現条件・最小基盤案を定義 | 再現手順・採用判断のレビュー | 不可：検証文書・依存の共有。対象機能が未選択 |
-| CI-01・B：最小CIの設計 | N-10 | VERIFY-01・02、必要なら03 | verification。workflow作成は後続の別タスク | 実在検証に対応するjob・Node・環境・失敗時運用と後続Doneを定義 | package／lock／手順照合、人間レビュー | 不可：検証契約を先に固定。workflow未整備、今回は実装しない |
+| VERIFY-01・A：既存lintの現状確認 | N-10 | DOC-02、検証実行の依頼 | package、eslint設定は読み取り。結果はverification | 実在lintを実行して結果・NextとESLint設定の差異を記録。修正は分離 | `npm run lint`。失敗時は再現と原因調査 | 初期案。2026-10-05にlint成功、現行結果はverificationに記録 |
+| VERIFY-02・A：型検査手順の設計 | N-10 | DOC-02 | tsconfig・依存は読み取り、verificationの案 | 既存TypeScriptを使う方法、生成型・出力・前提と追加タスクを定義 | 設定照合、人間レビュー。採用前に成功扱いしない | 初期案。`npx tsc --noEmit`を実行・成功し、CI-02でも使用 |
+| VERIFY-03・B：最初の回帰テスト対象選定 | N-10 | 小タスクの方針、VERIFY-02 | 対象処理とverification。runner導入は別タスク | 実装をなぞるだけでない1つのリスクと再現条件・最小基盤案を定義 | 再現手順・採用判断のレビュー | 初期案。Auth遷移とモック保存のNodeテスト7件が実装・成功 |
+| CI-01・B：最小CIの設計 | N-10 | VERIFY-01・02、必要なら03 | verification。workflow作成は後続の別タスク | 実在検証に対応するjob・Node・環境・失敗時運用と後続Doneを定義 | package／lock／手順照合、人間レビュー | 初期案。CI-02でworkflowを具体化。GitHub上の実行は未確認 |
 
 ## P1：モックを小さく試す候補
 
