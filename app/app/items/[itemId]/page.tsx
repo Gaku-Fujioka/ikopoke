@@ -6,12 +6,15 @@ import { Suspense, useState } from "react";
 import { ScreenState } from "@/components/flow/screen-state";
 import { messageFromError, useMockSnapshot } from "@/components/flow/use-mock-snapshot";
 import type { ReactionValue } from "@/lib/kokoiko/contracts";
+import { itemKindFromQuery, itemListHref } from "@/lib/kokoiko/item-list-query";
 import { createMockRepository, MOCK_GROUP_ID, MOCK_MEMBER_ID } from "@/lib/kokoiko/mock-repository";
 
 function ItemDetailContent() {
   const { itemId } = useParams<{ itemId: string }>();
-  const query = useSearchParams().get("q")?.trim() ?? "";
-  const listHref = query ? `/app/items?q=${encodeURIComponent(query)}` : "/app/items";
+  const searchParams = useSearchParams();
+  const query = searchParams.get("q")?.trim() ?? "";
+  const kind = itemKindFromQuery(searchParams.get("kind"));
+  const listHref = itemListHref(query, kind);
   const { snapshot, error, loading, reload } = useMockSnapshot();
   const [actionError, setActionError] = useState<string | null>(null);
   const [success, setSuccess] = useState("");

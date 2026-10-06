@@ -26,6 +26,7 @@ P0〜P5は段階案。以下も将来作業の提案で、全件実装の指示�
 | VERIFY-04 | P1モックのブラウザ操作確認、N-01/03/10 | core：統合`3aa6c84`をEdgeヘッドレスで操作 | REV-13 | 360/390/1280px、候補→思い出、再読込、検索・0件・欠落ID、スキップリンク | 2026-10-05に対象操作成功。実Auth・業務APIは未接続。`main`へfast-forward済み |
 | CI-02 | 最小CIの実装、N-10 | core：`.github/workflows/ci.yml`、`docs/verification.md`、本表 | VERIFY-04、実在のローカル検証 | PRとmain更新時にlint・型・Node7件・buildを実行 | ローカルコマンド成功。workflow構文確認済み。GitHub上の実行はpush後まで未確認 |
 | UI-ROOT-01 | ルートの入口修正、N-01/09 | core：`next.config.ts`、旧`app/page.tsx`、frontend、architecture、decisions、本表 | P1画面の統合とブラウザ確認 | `/`から`/app`へ進み、スターターのトップ画面を出さない。Auth proxyの既存条件を維持 | lint・型・build成功。dev/startとも`/`は307、転送先`/app`は200でP1ホームを返す。実Authは未確認 |
+| UI-08 | 候補一覧の種類切り替え、F-05/N-02 | coreが今回だけ画面と`lib/kokoiko/item-list-query.ts`、frontend、本表を担当 | UI-04 | `kind=spot/activity`を`q`と併用し、詳細から戻っても保持。0件と解除を表示 | 2026-10-06にlint・型・Node7件・build成功。Edgeヘッドレスで360/1280px、種類と検索の併用、詳細往復、0件、解除、無効なkindを確認。ローカルモックのURL規則は今回の小さい仮定。実API・DBは未接続 |
 
 共通型、データ処理、`TASKS.md`、`package.json`、lockfile、DB migrationはcoreが担当する。
 共通UIと画面ルート、`docs/frontend.md`はuiが担当する。reviewは独立レビューを行う。
