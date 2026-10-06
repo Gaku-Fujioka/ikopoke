@@ -28,6 +28,7 @@ P0〜P5は段階案。以下も将来作業の提案で、全件実装の指示�
 | UI-ROOT-01 | ルートの入口修正、N-01/09 | core：`next.config.ts`、旧`app/page.tsx`、frontend、architecture、decisions、本表 | P1画面の統合とブラウザ確認 | `/`から`/app`へ進み、スターターのトップ画面を出さない。Auth proxyの既存条件を維持 | lint・型・build成功。dev/startとも`/`は307、転送先`/app`は200でP1ホームを返す。実Authは未確認 |
 | UI-08 | 候補一覧の種類切り替え、F-05/N-02 | coreが今回だけ画面と`lib/kokoiko/item-list-query.ts`、frontend、本表を担当 | UI-04 | `kind=spot/activity`を`q`と併用し、詳細から戻っても保持。0件と解除を表示 | 2026-10-06にlint・型・Node7件・build成功。Edgeヘッドレスで360/1280px、種類と検索の併用、詳細往復、0件、解除、無効なkindを確認。ローカルモックのURL規則は今回の小さい仮定。実API・DBは未接続 |
 | UI-09 | おでかけ一覧の状態別表示、F-07/N-02 | uiが`app/app/outings/page.tsx`、coreが統合と本表を担当 | UI-05 | 計画中と終了済みを件数付きで分け、空状態・日付未定・候補0件と詳細導線を表示 | 2026-10-06にUI担当のlint・型・build成功。coreがEdgeヘッドレスで360/390/1280px、空状態、両区分と詳細遷移を確認。独立レビュー指摘なし。ローカルモックで実API・DBは未接続 |
+| UI-11 | 候補一覧の自分の反応フィルタ、F-05/06/N-02 | core：候補一覧・詳細、URL helper、frontend、本表 | UI-08 | 行きたい・あんまり・未反応を種類・タイトル検索と併用し、詳細から戻っても保持 | 2026-10-06にlint・型・Node7件・build成功。Edgeヘッドレスで360/1280px、反応変更後の件数、種類・検索との併用、詳細往復、0件と解除を確認。P1ローカルモックの固定メンバーだけを対象とする小さい仮定。実ユーザー・API・DBは未接続 |
 
 共通型、データ処理、`TASKS.md`、`package.json`、lockfile、DB migrationはcoreが担当する。
 共通UIと画面ルート、`docs/frontend.md`はuiが担当する。reviewは独立レビューを行う。
