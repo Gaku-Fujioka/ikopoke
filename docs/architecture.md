@@ -1,6 +1,7 @@
 # 構成と責務
 
-調査日：2026-10-03。コードの存在・読み取りに基づく現状で、起動・動作は未確認。
+初回調査日：2026-10-03。統合後の更新日：2026-10-05。
+P1ローカルモックは起動・操作確認済み。実Auth・業務APIの動作は未確認。
 機能の目標は[要件](kokoiko-requirements.md)、採用判断は[decisions](decisions.md)を参照。
 
 ## 現在の構成
@@ -10,8 +11,8 @@ Next.js App Router、TypeScript、Tailwind CSS、Supabaseのスターターが�
 
 | パス | 現在の責務・事実 |
 |---|---|
-| [app/page.tsx](../app/page.tsx) | `/`。スターター案内、Auth表示、チュートリアル。ここいこのホームはない |
-| [app/layout.tsx](../app/layout.tsx) | フォント、メタデータ、ThemeProvider。現在は英語・スターター名 |
+| [app/app/](../app/app/) | P1モックのホーム、候補、計画、思い出と共通枠 |
+| [app/layout.tsx](../app/layout.tsx) | フォント、ここいこのメタデータ、ThemeProvider |
 | [app/globals.css](../app/globals.css) | Tailwindと明暗テーマ用CSS変数 |
 | [app/protected/page.tsx](../app/protected/page.tsx) | `/protected`。claims確認・未認証時リダイレクト・利用者情報の表示 |
 | [app/protected/layout.tsx](../app/protected/layout.tsx) | スターター用ヘッダー・フッター |
@@ -22,12 +23,18 @@ Next.js App Router、TypeScript、Tailwind CSS、Supabaseのスターターが�
 | [lib/supabase/proxy.ts](../lib/supabase/proxy.ts) | セッション確認・Cookie更新、未認証の対象ルートをログインへ誘導 |
 | [proxy.ts](../proxy.ts) | 上記処理とmatcher。画像拡張子等は対象外 |
 | [lib/utils.ts](../lib/utils.ts) | `cn()`とSupabase環境変数の存在判定 |
-| [next.config.ts](../next.config.ts) | `cacheComponents: true` |
+| [lib/kokoiko/](../lib/kokoiko/) | P1の型・グループ境界を持つローカル保存処理 |
+| [next.config.ts](../next.config.ts) | `cacheComponents: true`。`/`からP1ホーム`/app`へ一時転送 |
 
-`app/(app)/`、業務画面、業務API、`types/`、`lib/maps/`、`supabase/migrations/`は現状ではない。
-地図ライブラリ、業務データアクセス層、アップロード処理も見つかっていない。
+業務API、`types/`、`lib/maps/`、`supabase/migrations/`は現状ではない。
+地図ライブラリ、実DBの業務データアクセス層、アップロード処理も見つかっていない。
 
 ## コード上のデータの流れ
+
+P1では`app/app/`のClient Componentが`lib/kokoiko/mock-repository.ts`を呼び、
+候補・反応・計画・訪問・思い出を同じブラウザの`localStorage`へ保存する。
+グループ名は固定デモ表示で、実ユーザーとの共有はない。
+以下は別に残るSupabaseスターターのAuth処理。
 
 1. Browserの認証フォームが`lib/supabase/client.ts`を通してSupabase Authを呼ぶ。
 2. ログイン成功時は`/protected`へ移動するコードがある。登録・再設定もAuthを呼ぶ。
