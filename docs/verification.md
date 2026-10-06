@@ -69,7 +69,8 @@ NextとSupabaseのpackage指定は`latest`。固定・更新方針は別タス�
 | VERCEL_ENV / VERCEL_PROJECT_PRODUCTION_URL | 配備時のチュートリアル案内用 |
 
 現行作業ツリーには`.env.example`のみ見つかった。外部注入・配備設定は不明。
-Supabase未設定時はトップに設定案内を出しproxy確認をスキップするコードがある。
+Supabase未設定時はproxyの認証確認をスキップし、`/`から`/app`のP1モックへ進む。
+スターターの設定案内部品はコードに残るが、トップ画面には表示しない。
 認証動作の確認には専用の開発接続先、Authメール・redirect設定、試用アカウントが必要。
 旧環境テンプレートのGoogleキー名は現行コードでは未使用。今は設定不要。
 
