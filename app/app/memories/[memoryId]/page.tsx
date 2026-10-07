@@ -2,9 +2,70 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { Suspense } from "react";
+import { type FormEvent, Suspense, useRef, useState } from "react";
 import { ScreenState } from "@/components/flow/screen-state";
-import { useMockSnapshot } from "@/components/flow/use-mock-snapshot";
+import { messageFromError, useMockSnapshot } from "@/components/flow/use-mock-snapshot";
+import type { Memory } from "@/lib/kokoiko/contracts";
+import { createMockRepository, MOCK_GROUP_ID } from "@/lib/kokoiko/mock-repository";
+
+function MemoryEditForm({ memory, reload }: { memory: Memory; reload: () => void }) {
+  const titleInputRef = useRef<HTMLInputElement>(null);
+  const submitting = useRef(false);
+  const [title, setTitle] = useState(memory.title);
+  const [note, setNote] = useState(memory.note);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState("");
+  const [saving, setSaving] = useState(false);
+  const titleError = error === "名前を入力してください。";
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (submitting.current) return;
+    if (!title.trim()) {
+      setError("名前を入力してください。");
+      setSuccess("");
+      titleInputRef.current?.focus();
+      return;
+    }
+    submitting.current = true;
+    setSaving(true);
+    setError(null);
+    setSuccess("");
+    try {
+      const updated = createMockRepository(window.localStorage).updateMemory(MOCK_GROUP_ID, memory.id, { title, note });
+      setTitle(updated.title);
+      setNote(updated.note);
+      reload();
+      setSuccess("思い出を保存しました。");
+    } catch (cause) {
+      setError(messageFromError(cause));
+    } finally {
+      submitting.current = false;
+      setSaving(false);
+    }
+  }
+
+  return (
+    <section aria-labelledby="memory-edit" className="rounded-3xl border border-stone-200 bg-white p-6 sm:p-8">
+      <h2 id="memory-edit" className="text-xl font-semibold">思い出を編集</h2>
+      <p className="mt-2 text-sm leading-6 text-stone-600">タイトルとメモをこのブラウザに保存できます。訪問先の記録はそのまま残ります。</p>
+      <form onSubmit={handleSubmit} noValidate className="mt-5 space-y-5">
+        <div className="space-y-2">
+          <label htmlFor="memory-title" className="block text-sm font-semibold">タイトル <span className="text-orange-700">必須</span></label>
+          <input ref={titleInputRef} id="memory-title" value={title} onChange={(event) => { setTitle(event.target.value); if (titleError) setError(null); setSuccess(""); }} aria-required="true" aria-invalid={titleError} aria-describedby={titleError ? "memory-title-error" : undefined} className="min-h-12 w-full rounded-xl border border-stone-300 px-4 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-700" />
+          {titleError && <p id="memory-title-error" role="alert" className="text-sm font-medium text-red-700">{error}</p>}
+        </div>
+        <div className="space-y-2">
+          <label htmlFor="memory-note-input" className="block text-sm font-semibold">メモ <span className="font-normal text-stone-500">任意</span></label>
+          <textarea id="memory-note-input" value={note} onChange={(event) => { setNote(event.target.value); setSuccess(""); }} rows={4} className="w-full rounded-xl border border-stone-300 px-4 py-3 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-700" />
+        </div>
+        {error && !titleError && <p role="alert" className="text-sm font-medium text-red-700">保存できませんでした：{error}</p>}
+        {success && <p role="status" className="text-sm font-medium text-green-800">{success}</p>}
+        <button type="submit" disabled={saving} className="min-h-12 rounded-full bg-orange-700 px-6 font-semibold text-white hover:bg-orange-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-700 focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60">{saving ? "保存中…" : "思い出を保存"}</button>
+      </form>
+    </section>
+  );
+}
 
 function MemoryDetailContent() {
   const { memoryId } = useParams<{ memoryId: string }>();
@@ -45,7 +106,8 @@ function MemoryDetailContent() {
             <h2 id="memory-note" className="text-xl font-semibold">メモ</h2>
             <p className="mt-3 whitespace-pre-wrap leading-7 text-stone-700">{memory.note || "メモはまだありません。"}</p>
           </section>
-          <p className="text-sm leading-6 text-stone-600">この思い出は記録した訪問先をローカル保存したデモです。写真・編集・他の人との共有はできません。</p>
+          <MemoryEditForm key={memory.id} memory={memory} reload={reload} />
+          <p className="text-sm leading-6 text-stone-600">この思い出は記録した訪問先をローカル保存したデモです。写真・他の人との共有はできません。</p>
           {outing && <Link href={`/app/outings/${encodeURIComponent(outing.id)}`} className="inline-block font-semibold text-orange-700 underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-700">元のおでかけを見る</Link>}
         </article>
       )}

@@ -76,6 +76,11 @@ export interface NewOuting {
   itemIds?: Id[];
 }
 
+export interface MemoryEdits {
+  title: string;
+  note: string;
+}
+
 /**
  * Every operation is scoped to a group. The mock checks this in memory; it is
  * not an authorization boundary. Real persistence must enforce membership in
@@ -89,4 +94,5 @@ export interface KokoikoRepository {
   addItemToOuting(groupId: Id, outingId: Id, itemId: Id): Outing;
   recordVisit(groupId: Id, outingId: Id, itemId: Id, note?: string): Visit;
   completeOuting(groupId: Id, outingId: Id): Memory;
+  updateMemory(groupId: Id, memoryId: Id, edits: MemoryEdits): Memory;
 }

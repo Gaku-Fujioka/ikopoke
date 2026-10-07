@@ -47,6 +47,26 @@ test("finishing a plan does not mark unvisited candidates as visited", () => {
   assert.throws(() => repository.recordVisit(MOCK_GROUP_ID, outing.id, skipped.id), /終了/);
 });
 
+test("memory title and note edits persist without changing visited places", () => {
+  const storage = memoryStorage();
+  const repository = createMockRepository(storage);
+  const item = repository.createItem(MOCK_GROUP_ID, { kind: "spot", title: "海" });
+  const outing = repository.createOuting(MOCK_GROUP_ID, { title: "日帰り", itemIds: [item.id] });
+  repository.recordVisit(MOCK_GROUP_ID, outing.id, item.id);
+  const memory = repository.completeOuting(MOCK_GROUP_ID, outing.id);
+
+  const edited = repository.updateMemory(MOCK_GROUP_ID, memory.id, { title: "  海の思い出  ", note: "  楽しかった  " });
+  assert.equal(edited.title, "海の思い出");
+  assert.equal(edited.note, "楽しかった");
+  assert.deepEqual(edited.itemTitles, ["海"]);
+  assert.deepEqual(createMockRepository(storage).read(MOCK_GROUP_ID).memories[0], edited);
+
+  assert.throws(() => repository.updateMemory(MOCK_GROUP_ID, memory.id, { title: "   ", note: "失敗" }), /名前/);
+  assert.throws(() => repository.updateMemory("another-group", memory.id, { title: "変更", note: "" }), /グループ/);
+  assert.throws(() => repository.updateMemory(MOCK_GROUP_ID, "missing", { title: "変更", note: "" }), /思い出/);
+  assert.deepEqual(repository.read(MOCK_GROUP_ID).memories[0], edited);
+});
+
 test("a different group cannot read or link the demo group's items", () => {
   const repository = createMockRepository(memoryStorage());
   assert.throws(() => repository.read("another-group"), /グループ/);

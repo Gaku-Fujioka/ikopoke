@@ -4,6 +4,7 @@ import type {
   KokoikoRepository,
   KokoikoSnapshot,
   Memory,
+  MemoryEdits,
   NewItem,
   NewOuting,
   Outing,
@@ -252,6 +253,19 @@ export function createMockRepository(storage: Storage): KokoikoRepository {
           createdAt: new Date().toISOString(),
         };
         snapshot.memories.unshift(memory);
+        return memory;
+      });
+    },
+    updateMemory(groupId, memoryId, edits: MemoryEdits) {
+      return update(groupId, (snapshot) => {
+        const memory = snapshot.memories.find((entry) => entry.id === memoryId && entry.groupId === groupId);
+        if (!memory) throw new Error("思い出が見つかりません。");
+        if (typeof edits.title !== "string" || typeof edits.note !== "string") {
+          throw new Error("思い出の入力が正しくありません。");
+        }
+        const title = requiredTitle(edits.title);
+        memory.title = title;
+        memory.note = edits.note.trim();
         return memory;
       });
     },
