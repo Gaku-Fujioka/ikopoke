@@ -166,8 +166,8 @@ function MemoryDetailContent() {
       )}
       {memory && (
         <article className="space-y-7">
-          <MemoryBook key={memory.id} memory={memory} date={outing?.date ?? null} visits={visits} />
-          <MemoryEditForm key={memory.id} memory={memory} reload={reload} />
+          <MemoryBook key={`book-${memory.id}`} memory={memory} date={outing?.date ?? null} visits={visits} />
+          <MemoryEditForm key={`edit-${memory.id}`} memory={memory} reload={reload} />
           <p className="text-sm leading-6 text-stone-600">この思い出は記録した訪問先をローカル保存したデモです。写真・他の人との共有はできません。</p>
           {outing && <Link href={`/app/outings/${encodeURIComponent(outing.id)}`} className="inline-block font-semibold text-orange-700 underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-700">元のおでかけを見る</Link>}
         </article>
