@@ -67,6 +67,28 @@ test("memory title and note edits persist without changing visited places", () =
   assert.deepEqual(repository.read(MOCK_GROUP_ID).memories[0], edited);
 });
 
+test("candidate edits persist while completed memories keep their original place name", () => {
+  const storage = memoryStorage();
+  const repository = createMockRepository(storage);
+  const item = repository.createItem(MOCK_GROUP_ID, { kind: "spot", title: "旧い名前" });
+  const outing = repository.createOuting(MOCK_GROUP_ID, { title: "日帰り", itemIds: [item.id] });
+  repository.recordVisit(MOCK_GROUP_ID, outing.id, item.id);
+  const memory = repository.completeOuting(MOCK_GROUP_ID, outing.id);
+
+  const edited = repository.updateItem(MOCK_GROUP_ID, item.id, { title: "  新しい名前  ", note: "  メモ  " });
+  assert.equal(edited.title, "新しい名前");
+  assert.equal(edited.note, "メモ");
+  assert.equal(edited.kind, "spot");
+  const reloaded = createMockRepository(storage).read(MOCK_GROUP_ID);
+  assert.deepEqual(reloaded.items.find((entry) => entry.id === item.id), edited);
+  assert.deepEqual(reloaded.memories.find((entry) => entry.id === memory.id).itemTitles, ["旧い名前"]);
+
+  assert.throws(() => repository.updateItem(MOCK_GROUP_ID, item.id, { title: "  ", note: "失敗" }), /名前/);
+  assert.throws(() => repository.updateItem("another-group", item.id, { title: "変更", note: "" }), /グループ/);
+  assert.throws(() => repository.updateItem(MOCK_GROUP_ID, "missing", { title: "変更", note: "" }), /候補/);
+  assert.deepEqual(repository.read(MOCK_GROUP_ID).items.find((entry) => entry.id === item.id), edited);
+});
+
 test("a different group cannot read or link the demo group's items", () => {
   const repository = createMockRepository(memoryStorage());
   assert.throws(() => repository.read("another-group"), /グループ/);

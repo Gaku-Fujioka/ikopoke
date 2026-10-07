@@ -1,6 +1,7 @@
 import type {
   Id,
   Item,
+  ItemEdits,
   KokoikoRepository,
   KokoikoSnapshot,
   Memory,
@@ -171,6 +172,17 @@ export function createMockRepository(storage: Storage): KokoikoRepository {
           reactions: {},
         };
         snapshot.items.unshift(item);
+        return item;
+      });
+    },
+    updateItem(groupId, itemId, edits: ItemEdits) {
+      return update(groupId, (snapshot) => {
+        const item = findItem(snapshot, groupId, itemId);
+        if (typeof edits.title !== "string" || typeof edits.note !== "string") {
+          throw new Error("候補の入力が正しくありません。");
+        }
+        item.title = requiredTitle(edits.title);
+        item.note = edits.note.trim();
         return item;
       });
     },

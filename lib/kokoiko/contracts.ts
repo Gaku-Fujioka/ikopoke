@@ -69,6 +69,11 @@ export interface NewItem {
   note?: string;
 }
 
+export interface ItemEdits {
+  title: string;
+  note: string;
+}
+
 export interface NewOuting {
   title: string;
   date?: string | null;
@@ -89,6 +94,7 @@ export interface MemoryEdits {
 export interface KokoikoRepository {
   read(groupId: Id): KokoikoSnapshot;
   createItem(groupId: Id, input: NewItem): Item;
+  updateItem(groupId: Id, itemId: Id, edits: ItemEdits): Item;
   setReaction(groupId: Id, itemId: Id, memberId: Id, value: ReactionValue | null): Item;
   createOuting(groupId: Id, input: NewOuting): Outing;
   addItemToOuting(groupId: Id, outingId: Id, itemId: Id): Outing;

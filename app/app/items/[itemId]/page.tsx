@@ -2,12 +2,71 @@
 
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
-import { Suspense, useState } from "react";
+import { type FormEvent, Suspense, useRef, useState } from "react";
 import { ScreenState } from "@/components/flow/screen-state";
 import { messageFromError, useMockSnapshot } from "@/components/flow/use-mock-snapshot";
-import type { ReactionValue } from "@/lib/kokoiko/contracts";
+import type { Item, ReactionValue } from "@/lib/kokoiko/contracts";
 import { itemKindFromQuery, itemListHref, reactionFromQuery } from "@/lib/kokoiko/item-list-query";
 import { createMockRepository, MOCK_GROUP_ID, MOCK_MEMBER_ID } from "@/lib/kokoiko/mock-repository";
+
+function ItemEditForm({ item, reload }: { item: Item; reload: () => void }) {
+  const titleInputRef = useRef<HTMLInputElement>(null);
+  const submitting = useRef(false);
+  const [title, setTitle] = useState(item.title);
+  const [note, setNote] = useState(item.note);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState("");
+  const [saving, setSaving] = useState(false);
+  const titleError = error === "名前を入力してください。";
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (submitting.current) return;
+    if (!title.trim()) {
+      setError("名前を入力してください。");
+      setSuccess("");
+      titleInputRef.current?.focus();
+      return;
+    }
+    submitting.current = true;
+    setSaving(true);
+    setError(null);
+    setSuccess("");
+    try {
+      const updated = createMockRepository(window.localStorage).updateItem(MOCK_GROUP_ID, item.id, { title, note });
+      setTitle(updated.title);
+      setNote(updated.note);
+      reload();
+      setSuccess("候補を保存しました。");
+    } catch (cause) {
+      setError(messageFromError(cause));
+    } finally {
+      submitting.current = false;
+      setSaving(false);
+    }
+  }
+
+  return (
+    <section aria-labelledby="item-edit-title" className="rounded-3xl border border-stone-200 bg-white p-6 sm:p-8">
+      <h2 id="item-edit-title" className="text-xl font-semibold">候補を編集</h2>
+      <p className="mt-2 text-sm leading-6 text-stone-600">名前とメモをこのブラウザに保存できます。</p>
+      <form onSubmit={handleSubmit} noValidate className="mt-5 space-y-5">
+        <div className="space-y-2">
+          <label htmlFor="edit-item-title" className="block text-sm font-semibold">名前 <span className="text-orange-700">必須</span></label>
+          <input ref={titleInputRef} id="edit-item-title" value={title} onChange={(event) => { setTitle(event.target.value); if (titleError) setError(null); setSuccess(""); }} aria-required="true" aria-invalid={titleError} aria-describedby={titleError ? "edit-item-title-error" : undefined} className="min-h-12 w-full rounded-xl border border-stone-300 px-4 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-700" />
+          {titleError && <p id="edit-item-title-error" role="alert" className="text-sm font-medium text-red-700">{error}</p>}
+        </div>
+        <div className="space-y-2">
+          <label htmlFor="edit-item-note" className="block text-sm font-semibold">メモ <span className="font-normal text-stone-500">任意</span></label>
+          <textarea id="edit-item-note" value={note} onChange={(event) => { setNote(event.target.value); setSuccess(""); }} rows={4} className="w-full rounded-xl border border-stone-300 px-4 py-3 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-700" />
+        </div>
+        {error && !titleError && <p role="alert" className="text-sm font-medium text-red-700">保存できませんでした：{error}</p>}
+        {success && <p role="status" className="text-sm font-medium text-green-800">{success}</p>}
+        <button type="submit" disabled={saving} className="min-h-12 rounded-full bg-orange-700 px-6 font-semibold text-white hover:bg-orange-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-700 focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60">{saving ? "保存中…" : "候補を保存"}</button>
+      </form>
+    </section>
+  );
+}
 
 function ItemDetailContent() {
   const { itemId } = useParams<{ itemId: string }>();
@@ -70,6 +129,7 @@ function ItemDetailContent() {
             {actionError && <p role="alert" className="mt-4 text-sm text-red-700">{actionError}</p>}
             {success && <p role="status" className="mt-4 text-sm text-green-800">{success}</p>}
           </section>
+          <ItemEditForm key={item.id} item={item} reload={reload} />
           <Link href={`/app/outings/new?itemId=${encodeURIComponent(item.id)}`} className="inline-flex min-h-12 w-full items-center justify-center rounded-full bg-orange-700 px-6 font-semibold text-white hover:bg-orange-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-700 focus-visible:ring-offset-2">この候補からおでかけを作る</Link>
         </>
       )}
