@@ -13,7 +13,10 @@ GROUP-02はlint・型検査・34件のNodeテスト・buildを実施し、結果
 全テストのコマンド：`node --experimental-strip-types --test tests/auth-redirect.test.mjs tests/auth-handlers.test.mjs tests/mock-repository.test.mjs tests/group-actions.test.mjs tests/group-database.test.mjs`。
 DBテストはPGliteのPostgreSQLでmigrationとRLSを実行する。実Supabaseのschema・migration・REST権限の検証とは分ける。
 既存node_modules保護のため、ローカルのPGliteは一時ディレクトリを`KOKOIKO_PGLITE_MODULE_URL`で指定。CIはnpm lockfileのdevDependencyを使う。
-実DBへのmigrationは管理接続と既存スキーマ確認の後。ブラウザ操作用ツールには接続ブラウザがなく、グループ画面の実操作は未実施。
+実DBについては、ユーザーが別の接続先チャットで実行した調査・適用結果を報告した。`create_groups`のversion `20261017091513`と定義・RLS・権限・履歴の確認成功を報告済み。
+初回は貼り付け由来の装飾で失敗し、許可された装飾のみを直して成功したとの報告。ローカルSQL本文は変更せず、実versionに改名してテストの参照先も更新する。
+本Agentは実DBの構造・履歴を直接照合していない。別途、同じ開発プロジェクトへ匿名RESTで両テーブルSELECT（取得件数0）とRPC（両入力null）を要求し、3件ともHTTP401・`42501`で拒否されることを確認した。設定値・ユーザーデータは表示せず、保存可能な入力は送っていない。
+ブラウザ操作用ツールには接続ブラウザがなく、グループ画面の実操作・実JWTによる所属別RESTの検証は未実施。
 
 ## AUTH-03の確認（2026-10-17）
 

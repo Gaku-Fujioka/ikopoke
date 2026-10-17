@@ -9,7 +9,7 @@ P0〜P5は段階案。以下も将来作業の提案で、全件実装の指示�
 
 1. **AUTH-03：認証画面とアプリへの導線**。最新head `182fc8b`のGitHub CIでlint・型・19件のテスト・build成功。自己レビューとD-009のユーザー指示に従い、[PR #1](https://github.com/Gaku-Fujioka/kokoiko/pull/1)をmainへマージ済み（`d24f54a`）。独立レビューは未実施。実Authのその後の確認はAUTH-04参照。[範囲とDone](docs/tasks/AUTH-03.md)。
 2. **AUTH-04：開発用Supabase接続と実認証の確認**。ユーザーが登録・メール確認、ログアウト・再ログイン・再読込、再設定・新パスワードでの再ログイン成功を報告。Agentは設定値を表示せず公開Auth設定HTTP200と未認証の画面誘導を確認。異常系・複数利用者は未確認。
-3. **GROUP-02：グループ作成と所属の保存**。D-008で1人からの手動作成・全員での通常管理を採用。画面・migration・RLSを実装しローカル検証と34件のテストを含むCI成功。[PR #2](https://github.com/Gaku-Fujioka/kokoiko/pull/2)をmain基準に更新し、D-009に従い最新CI確認後に統合する。実DB適用・実ブラウザ確認は未実施。[範囲・結果](docs/tasks/GROUP-02.md)。
+3. **GROUP-02：グループ作成と所属の保存**。D-008に従い画面・migration・RLSを実装し、34件のテストを含むCI成功。[PR #2](https://github.com/Gaku-Fujioka/kokoiko/pull/2)をmainへマージ済み（`932de69`）。ユーザーが接続先チャットでの実DB適用成功を報告（version `20261017091513`）。ローカルのmigration名も実適用versionへ揃える。実ユーザーでの保存・再取得、非所属の直接操作は確認待ち。[範囲・結果](docs/tasks/GROUP-02.md)。
 4. 候補・反応・リスト・コメントの共有保存、その後に計画編集、写真・評価・思い出の実データ化へ進む。
 
 順次実装・必要なcommit/pushはユーザー指示で許可済み（D-007）。実Authの基本正常系はユーザー確認済み。業務データの共有保存は未完成。
