@@ -1,7 +1,8 @@
 # 構成と責務
 
 初回調査日：2026-10-03。統合後の更新日：2026-10-05。
-P1ローカルモックは起動・操作確認済み。2026-10-17のAUTH-03で認証画面・遷移を整備した。実Auth・業務APIの動作は未確認。
+P1ローカルモックは起動・操作確認済み。2026-10-17のAUTH-03で認証画面・遷移を整備し、AUTH-04の基本正常系はユーザー確認済み。
+GROUP-02で実グループの画面・保存処理・migrationを追加したが、実DB適用は待ち。候補・予定・思い出の業務データはモックのまま。
 機能の目標は[要件](kokoiko-requirements.md)、採用判断は[decisions](decisions.md)を参照。
 
 ## 現在の構成
@@ -12,6 +13,9 @@ Next.js App Router、TypeScript、Tailwind CSS、Supabaseのスターターが�
 | パス | 現在の責務・事実 |
 |---|---|
 | [app/app/](../app/app/) | P1モックのホーム、候補、計画、思い出と共通枠 |
+| [app/app/groups/](../app/app/groups/) | 実グループの一覧・作成・詳細、Server Action。実DBの適用待ち |
+| [lib/groups/](../lib/groups/) | 実グループの入力検証とSupabaseアクセス。所属による分離はDBのRLSが担当 |
+| [supabase/migrations/](../supabase/migrations/) | グループと所属のmigration。ローカルPostgreSQL検証済み、実DBには未適用 |
 | [app/layout.tsx](../app/layout.tsx) | フォント、ここいこのメタデータ、ThemeProvider |
 | [app/globals.css](../app/globals.css) | Tailwindと明暗テーマ用CSS変数 |
 | [app/protected/page.tsx](../app/protected/page.tsx) | `/protected`。claims確認・未認証時リダイレクト・利用者情報の表示 |
@@ -26,8 +30,8 @@ Next.js App Router、TypeScript、Tailwind CSS、Supabaseのスターターが�
 | [lib/kokoiko/](../lib/kokoiko/) | P1の型・グループ境界を持つローカル保存処理 |
 | [next.config.ts](../next.config.ts) | `cacheComponents: true`。`/`からP1ホーム`/app`へ一時転送 |
 
-業務API、`types/`、`lib/maps/`、`supabase/migrations/`は現状ではない。
-地図ライブラリ、実DBの業務データアクセス層、アップロード処理も見つかっていない。
+独立した業務API、`types/`、`lib/maps/`は現状ではない。
+グループ以外の実DBアクセス、地図ライブラリ、アップロード処理は未実装。
 
 ## コード上のデータの流れ
 
@@ -42,10 +46,10 @@ P1では`app/app/`のClient Componentが`lib/kokoiko/mock-repository.ts`を呼�
 4. Server側のAuth表示とprotectedページも`getClaims()`を呼ぶ。
 5. [callback](../app/auth/callback/route.ts)がPKCEコードをセッションに交換する。token hash方式の[メール確認](../app/auth/confirm/route.ts)は`verifyOtp()`を呼ぶ。
 
-これは実APIを呼ぶコードで、動作成功の証拠ではない。メールテンプレート、redirect設定、
-接続先、外部Auth設定は未確認。環境変数未設定時はproxyの確認をスキップする。
+上記コードの存在だけでは動作成功の証拠にならない。AUTH-04ではユーザーがメール確認・再ログイン・再読込・再設定後の再ログインを確認した。
+異常系と複数ユーザーの業務共有は未確認。環境変数未設定時はproxyの確認をスキップする。
 protectedページ自身の確認は別にある。グループ所属の確認はどちらにもない。
-開発用Supabaseはユーザー回答で未作成。[設定手順](auth-setup.md)の実施と実メールの検証は後続。
+開発用Supabaseはユーザーが作成・設定済み。Agentは設定値を表示せず、Auth公開設定の接続成功を確認した。実DBの管理接続とスキーマ調査は後続。
 
 [fetch-data-steps.tsx](../components/tutorial/fetch-data-steps.tsx)の`notes` SQL・取得例・RLSは
 画面へ表示する文字列であり、実行する業務処理ではない。チャット追加の案内も機能ではない。

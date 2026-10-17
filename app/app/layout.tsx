@@ -1,6 +1,7 @@
 import { Suspense, type ReactNode } from "react";
 import { AppNav } from "@/components/layout/app-nav";
 import { AppAccountMenu } from "@/components/app-account-menu";
+import { GroupEntry } from "@/components/groups/group-entry";
 
 export default function MockAppLayout({ children }: { children: ReactNode }) {
   return (
@@ -18,9 +19,7 @@ export default function MockAppLayout({ children }: { children: ReactNode }) {
             <span>ここいこ</span>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <div className="rounded-full bg-stone-100 px-4 py-2 text-sm font-medium text-stone-700">
-              デモグループ
-            </div>
+            <Suspense fallback={<span className="text-sm text-stone-600">グループ</span>}><GroupEntry /></Suspense>
             <Suspense fallback={<p role="status" className="text-sm text-stone-600">ログイン状態を確認中…</p>}><AppAccountMenu /></Suspense>
           </div>
         </div>
@@ -33,7 +32,7 @@ export default function MockAppLayout({ children }: { children: ReactNode }) {
       <main id="main-content" tabIndex={-1} className="mx-auto w-full max-w-5xl px-5 pb-28 pt-9 outline-none sm:px-6 sm:pt-12 md:pb-16">
         {children}
         <p className="mt-12 border-t border-stone-200 pt-5 text-xs leading-6 text-stone-500">
-          P1画面モックです。業務データAPIには未接続です。デモの候補・予定・思い出はこのブラウザにだけ保存され、他の人とは共有されません。
+          グループ管理はアカウントに紐づく保存機能です。行きたい・おでかけ・思い出はP1画面モックで、このブラウザにだけ保存され、他の人とは共有されません。
         </p>
       </main>
     </div>

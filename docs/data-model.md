@@ -6,6 +6,11 @@
 
 ## 確認できた現状
 
+2026-10-17追記：Authの基本正常系（メール確認、再ログイン、再読込、再設定と新パスワード）はユーザーが確認済み。
+GROUP-02ではグループと初期所属のmigration・型・RPC・RLS・画面をリポジトリへ追加した。
+PostgreSQLでのローカル検証は成功したが、実Supabaseのスキーマ・migration履歴は管理接続前で未確認、migrationは未適用。
+[GROUP-02](tasks/GROUP-02.md)とD-008が現在の範囲。以下の箇条書きは2026-10-03の初回調査として残す。
+
 - [lib/supabase/](../lib/supabase/)はAuth用クライアントとCookie連携。
 - 認証の利用はコード上に存在するが、外部Supabaseの設定・接続成功は未確認。
 - 業務テーブルの定義・migration・SQLファイル・生成DB型・DB更新処理はリポジトリ内にない。
