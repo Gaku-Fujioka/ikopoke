@@ -7,7 +7,7 @@ GROUP-02はmain統合済みで、実DB適用と実ユーザーの作成・再読
 
 ## 現在の構成
 
-REACTION-02で`lib/items/reactions.ts`・反応Actionとフォームを追加し、候補詳細から実データの反応を扱う。集計は所属を検証するRPCで行い、ブラウザに他メンバーの識別子を渡さない。新migrationはローカル検証済み、外部DB未適用。
+REACTION-02で`lib/items/reactions.ts`・反応Actionとフォームを追加し、候補詳細から実データの反応を扱う。集計は所属を検証するRPCで行い、ブラウザに他メンバーの識別子を渡さない。実適用version `20261017153040`と実アカウントでの保存・再読込・変更・取消はユーザー確認済み。別アカウントは未確認。
 
 ITEM-02で`lib/items/`に候補の検証・Supabaseアクセス、`app/app/groups/[groupId]/items/`に実データ用のServer Componentと保存Action、`components/items/`に入力操作だけのClient Componentを追加した。
 グループ内の候補作成・閲覧のmigrationはローカル検証済み、ユーザーから実適用version `20261017112451`と実アカウントでの候補追加・再読込後の保持の成功報告を受領。別アカウントの共有は未確認。以下のP1モックと並行して段階的に導入する。
