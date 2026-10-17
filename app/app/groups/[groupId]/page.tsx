@@ -10,6 +10,14 @@ import { InviteManagement } from "@/components/groups/invite-management";
 import { listInvites, InviteError } from "@/lib/groups/invitations";
 import { RenameGroupForm } from "@/components/groups/rename-group-form";
 
+async function GroupInvitations({ client, groupId }: { client: Awaited<ReturnType<typeof createClient>>; groupId: string }) {
+  try {
+    return <InviteManagement groupId={groupId} invites={await listInvites(client, groupId)} />;
+  } catch (error) {
+    return <p role="status" className="rounded-3xl border border-stone-200 bg-white p-6 text-sm leading-6 text-stone-600">{error instanceof InviteError ? error.message : "招待を読み込めませんでした。グループを開き直してください。"}</p>;
+  }
+}
+
 async function GroupContent({ params }: { params: Promise<{ groupId: string }> }) {
   const { groupId } = await params;
   if (!isGroupId(groupId)) notFound();
@@ -24,12 +32,6 @@ async function GroupContent({ params }: { params: Promise<{ groupId: string }> }
     return <p role="alert" className="rounded-3xl border border-stone-200 bg-white p-6 leading-7">{cause instanceof GroupStoreError ? cause.message : "グループを読み込めませんでした。もう一度お試しください。"}</p>;
   }
   if (!group) notFound();
-  let invitationContent;
-  try {
-    invitationContent = <InviteManagement groupId={groupId} invites={await listInvites(client, groupId)} />;
-  } catch (error) {
-    invitationContent = <p role="status" className="rounded-3xl border border-stone-200 bg-white p-6 text-sm leading-6 text-stone-600">{error instanceof InviteError ? error.message : "招待を読み込めませんでした。グループを開き直してください。"}</p>;
-  }
   return (
     <div className="space-y-6">
     <section className="space-y-5 rounded-3xl border border-stone-200 bg-white p-6 sm:p-8">
@@ -40,7 +42,9 @@ async function GroupContent({ params }: { params: Promise<{ groupId: string }> }
       <p className="text-sm leading-6 text-stone-500">「みんなの候補」で、このグループの候補を共有できます。下のナビの「行きたい・おでかけ・思い出」は、これまでのデモ画面です。</p>
     </section>
     <RenameGroupForm groupId={groupId} name={group.name} />
-    {invitationContent}
+    <Suspense fallback={<p role="status" className="rounded-3xl border border-stone-200 bg-white p-6 text-sm text-stone-600">招待を読み込んでいます…</p>}>
+      <GroupInvitations client={client} groupId={groupId} />
+    </Suspense>
     </div>
   );
 }

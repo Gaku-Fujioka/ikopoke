@@ -32,8 +32,11 @@ async function ItemsContent({ params, searchParams }: Props) {
   let group;
   let saved;
   try {
-    group = await getGroup(client, groupId);
-    if (group) saved = searchError ? { items: [], total: 0 } : await listItems(client, groupId, page, query, filters);
+    // RLS and the explicit group filter apply to both independent reads.
+    [group, saved] = await Promise.all([
+      getGroup(client, groupId),
+      searchError ? Promise.resolve({ items: [], total: 0 }) : listItems(client, groupId, page, query, filters),
+    ]);
   } catch (cause) {
     return (
       <div role="alert" className="space-y-4 rounded-3xl border border-stone-200 bg-white p-6">
