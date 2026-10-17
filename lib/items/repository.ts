@@ -23,6 +23,20 @@ export class ItemStoreError extends Error {
 
 export async function listItems(client: SupabaseClient<Database>, groupId: string, page: number, query = "", filters: ItemFilters = {}): Promise<{ items: SavedItem[]; total: number }> {
   if (!validItemSearch(query)) throw new ItemStoreError(null);
+  if (filters.list) {
+    const { data, error } = await client.rpc("get_group_items", {
+      p_group_id: groupId, p_query: query, p_kind: filters.kind ?? null, p_reaction: filters.reaction ?? null,
+      p_list_id: filters.list === "unclassified" ? null : filters.list,
+      p_unclassified: filters.list === "unclassified", p_page: page,
+    });
+    if (error) throw new ItemStoreError(error);
+    const row = data?.[0];
+    const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!row || !Array.isArray(row.items) || row.items.length > ITEM_PAGE_SIZE || !Number.isSafeInteger(row.total_count) || row.total_count < 0 || row.items.some(item =>
+      !uuid.test(item.id) || item.group_id !== groupId || typeof item.title !== "string" || !["spot", "activity"].includes(item.kind) || typeof item.memo !== "string" || typeof item.created_at !== "string"
+    )) throw new ItemStoreError(null);
+    return { items: row.items.map(item => ({ id: item.id, group_id: item.group_id, title: item.title, kind: item.kind, memo: item.memo, created_at: item.created_at })), total: row.total_count };
+  }
   const start = (page - 1) * ITEM_PAGE_SIZE;
   const reactionRequest = (reaction: NonNullable<ItemFilters["reaction"]>) => {
     const feed = client.from("shared_item_feed").select(columns, { count: "exact" });

@@ -13,7 +13,7 @@ import { CreateItemForm } from "@/components/items/create-item-form";
 import { RetryItems } from "@/components/items/retry-items";
 import { itemSearchQuery, itemFilters, validItemSearch, sharedItemListHref, sharedItemDetailHref } from "@/lib/items/search";
 
-type Props = { params: Promise<{ groupId: string }>; searchParams: Promise<{ page?: string | string[]; q?: string | string[]; kind?: string | string[]; reaction?: string | string[] }> };
+type Props = { params: Promise<{ groupId: string }>; searchParams: Promise<{ page?: string | string[]; q?: string | string[]; kind?: string | string[]; reaction?: string | string[]; list?: string | string[] }> };
 
 async function ItemsContent({ params, searchParams }: Props) {
   const { groupId } = await params;
@@ -23,7 +23,7 @@ async function ItemsContent({ params, searchParams }: Props) {
   const page = itemPage(search.page);
   const query = itemSearchQuery(search.q);
   const filters = itemFilters(search);
-  const hasConditions = Boolean(query || filters.kind || filters.reaction);
+  const hasConditions = Boolean(query || filters.kind || filters.reaction || filters.list);
   const searchError = !validItemSearch(query);
   const listPath = `/app/groups/${groupId}/items`;
   const client = await createClient();
@@ -42,6 +42,7 @@ async function ItemsContent({ params, searchParams }: Props) {
       <div role="alert" className="space-y-4 rounded-3xl border border-stone-200 bg-white p-6">
         <p>{cause instanceof GroupStoreError || cause instanceof ItemStoreError ? cause.message : "候補を読み込めませんでした。もう一度お試しください。"}</p>
         <RetryItems />
+        {hasConditions && <Link href={listPath} className="inline-flex min-h-11 items-center px-3 font-semibold text-orange-700 underline underline-offset-4">条件を解除</Link>}
         <Link href={`/app/groups/${groupId}`} className="inline-flex min-h-11 items-center px-3 font-semibold text-stone-600 underline underline-offset-4">グループへ</Link>
       </div>
     );
@@ -56,9 +57,11 @@ async function ItemsContent({ params, searchParams }: Props) {
           <h1 className="mt-2 text-3xl font-bold tracking-tight">みんなの候補</h1>
           <p className="mt-3 text-sm leading-6 text-stone-600">このグループのメンバーに共有されます。新しい順に表示しています。</p>
         </div>
-        <a href="#add-item" className="inline-flex min-h-11 items-center rounded-full bg-orange-700 px-6 text-sm font-semibold text-white hover:bg-orange-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-700 focus-visible:ring-offset-2">候補を追加</a>
+        <div className="flex flex-wrap items-center gap-3"><Link href={`/app/groups/${groupId}/lists`} className="inline-flex min-h-11 items-center font-semibold text-orange-700 underline underline-offset-4">リストを管理</Link><a href="#add-item" className="inline-flex min-h-11 items-center rounded-full bg-orange-700 px-6 text-sm font-semibold text-white hover:bg-orange-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-700 focus-visible:ring-offset-2">候補を追加</a></div>
       </div>
+      <div className="flex flex-wrap gap-3 text-sm"><Link href={sharedItemListHref(groupId,"",1,{list:"unclassified"})} className="inline-flex min-h-11 items-center font-semibold text-orange-700 underline underline-offset-4">未分類の候補を見る</Link>{filters.list && <span className="inline-flex min-h-11 items-center rounded-full bg-orange-50 px-4 font-semibold text-orange-800">{filters.list === "unclassified" ? "未分類" : "リストで絞り込み中"}</span>}</div>
       <form action={listPath} method="get" role="search" className="flex flex-wrap items-end gap-3 rounded-3xl border border-stone-200 bg-white p-5">
+        {filters.list && <input type="hidden" name="list" value={filters.list} />}
         <div className="min-w-0 flex-1 basis-48 space-y-2">
           <label htmlFor="shared-item-search" className="block text-sm font-semibold">候補の名前で検索</label>
           <input key={query} id="shared-item-search" name="q" type="search" defaultValue={query} aria-invalid={searchError} aria-describedby={searchError ? "shared-search-error" : undefined} placeholder="名前の一部を入力" className="min-h-12 w-full rounded-xl border border-stone-300 px-4 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-700" />

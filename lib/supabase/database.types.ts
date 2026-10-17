@@ -9,6 +9,18 @@ export type GroupRow = {
 export type Database = {
   public: {
     Tables: {
+      lists: {
+        Row: { id: string; group_id: string; name: string; created_by: string; created_at: string };
+        Insert: { id: string; group_id: string; name: string };
+        Update: { name: string };
+        Relationships: [];
+      };
+      item_list_memberships: {
+        Row: { item_id: string; list_id: string; group_id: string };
+        Insert: { item_id: string; list_id: string; group_id: string };
+        Update: never;
+        Relationships: [];
+      };
       item_comments: {
         Row: { id: string; item_id: string; body: string; created_by: string; created_at: string };
         Insert: never;
@@ -53,6 +65,12 @@ export type Database = {
       };
     };
     Functions: {
+      create_list: { Args: { p_group_id: string; p_name: string; p_request_id: string }; Returns: string };
+      rename_list: { Args: { p_group_id: string; p_list_id: string; p_name: string; p_expected_name: string }; Returns: undefined };
+      delete_list: { Args: { p_group_id: string; p_list_id: string; p_expected_name: string }; Returns: undefined };
+      set_item_list: { Args: { p_group_id: string; p_item_id: string; p_list_id: string; p_selected: boolean }; Returns: undefined };
+      get_item_lists: { Args: { p_group_id: string; p_item_id: string; p_query: string; p_page: number }; Returns: { lists: { id: string; name: string; is_selected: boolean }[]; total_count: number }[] };
+      get_group_items: { Args: { p_group_id: string; p_query: string; p_kind: string | null; p_reaction: string | null; p_list_id: string | null; p_unclassified: boolean; p_page: number }; Returns: { items: { id: string; group_id: string; title: string; kind: "spot" | "activity"; memo: string; created_at: string }[]; total_count: number }[] };
       rename_group: { Args: { p_group_id: string; p_name: string; p_expected_name: string }; Returns: string };
       create_item_comment: { Args: { p_group_id: string; p_item_id: string; p_body: string; p_request_id: string }; Returns: string };
       get_item_comments: { Args: { p_group_id: string; p_item_id: string; p_page: number }; Returns: { comments: { id: string; body: string; created_at: string; is_mine: boolean }[]; total_count: number }[] };

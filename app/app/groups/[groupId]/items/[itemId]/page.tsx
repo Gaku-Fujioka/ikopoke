@@ -12,9 +12,11 @@ import { RetryItems } from "@/components/items/retry-items";
 import { ItemReactionSection } from "@/components/items/item-reaction-section";
 import { EditItemForm } from "@/components/items/edit-item-form";
 import { ItemComments } from "@/components/items/item-comments";
-import { itemSearchQuery, itemFilters, sharedItemListHref, sharedItemDetailHref, sharedItemCommentsHref } from "@/lib/items/search";
+import { ItemLists } from "@/components/lists/item-lists";
+import { listQuery } from "@/lib/lists/validation";
+import { itemSearchQuery, itemFilters, sharedItemListHref, sharedItemDetailHref, sharedItemCommentsHref, sharedItemListsHref } from "@/lib/items/search";
 
-type Props = { params: Promise<{ groupId: string; itemId: string }>; searchParams: Promise<{ page?: string | string[]; q?: string | string[]; kind?: string | string[]; reaction?: string | string[]; commentsPage?: string | string[] }> };
+type Props = { params: Promise<{ groupId: string; itemId: string }>; searchParams: Promise<{ page?: string | string[]; q?: string | string[]; kind?: string | string[]; reaction?: string | string[]; list?: string | string[]; commentsPage?: string | string[]; listsPage?: string | string[]; listsQ?: string | string[] }> };
 
 async function ItemContent({ params, searchParams }: Props) {
   const { groupId, itemId } = await params;
@@ -29,7 +31,9 @@ async function ItemContent({ params, searchParams }: Props) {
   const { data, error } = await client.auth.getClaims();
   const detailHref = sharedItemDetailHref(groupId, itemId, query, page, filters);
   const commentsPage = itemPage(search.commentsPage);
-  if (error || !data?.claims?.sub) redirect(`/auth/login?next=${encodeURIComponent(sharedItemCommentsHref(detailHref, commentsPage))}`);
+  const listsPage = itemPage(search.listsPage), listsQ = listQuery(search.listsQ);
+  const currentHref = sharedItemCommentsHref(sharedItemListsHref(detailHref, listsPage, listsQ), commentsPage);
+  if (error || !data?.claims?.sub) redirect(`/auth/login?next=${encodeURIComponent(currentHref)}`);
   let group;
   let item;
   try {
@@ -59,11 +63,14 @@ async function ItemContent({ params, searchParams }: Props) {
         </section>
       </article>
       <EditItemForm groupId={groupId} itemId={itemId} title={item.title} memo={item.memo} />
+      <Suspense fallback={<section role="status" aria-label="リスト" className="rounded-3xl border border-stone-200 bg-white p-6">リストを読み込んでいます…</section>}>
+        <ItemLists client={client} groupId={groupId} itemId={itemId} page={listsPage} query={listsQ} detailHref={currentHref} />
+      </Suspense>
       <Suspense fallback={<section role="status" aria-label="リアクション" className="rounded-3xl border border-stone-200 bg-white p-6">反応を読み込んでいます…</section>}>
         <ItemReactionSection client={client} groupId={groupId} itemId={itemId} />
       </Suspense>
       <Suspense fallback={<section role="status" aria-label="コメント" className="rounded-3xl border border-stone-200 bg-white p-6">コメントを読み込んでいます…</section>}>
-        <ItemComments client={client} groupId={groupId} itemId={itemId} page={commentsPage} detailHref={detailHref} />
+        <ItemComments client={client} groupId={groupId} itemId={itemId} page={commentsPage} detailHref={currentHref} />
       </Suspense>
     </div>
   );
