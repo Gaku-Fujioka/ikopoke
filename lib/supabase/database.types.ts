@@ -9,6 +9,18 @@ export type GroupRow = {
 export type Database = {
   public: {
     Tables: {
+      outings: {
+        Row: { id: string; group_id: string; title: string; outing_date: string; mode: "exact" | "period" | "order"; memo: string; revision: number; created_by: string; created_at: string; updated_at: string };
+        Insert: never; Update: never; Relationships: [];
+      };
+      outing_items: {
+        Row: { outing_id: string; group_id: string; item_id: string; position: number; planned_time: string | null; period: "morning" | "noon" | "afternoon" | "night" | null };
+        Insert: never; Update: never; Relationships: [];
+      };
+      outing_participants: {
+        Row: { outing_id: string; group_id: string; user_id: string };
+        Insert: never; Update: never; Relationships: [];
+      };
       profiles: {
         Row: { user_id: string; display_name: string; updated_at: string };
         Insert: { user_id: string; display_name: string };
@@ -71,6 +83,7 @@ export type Database = {
       };
     };
     Functions: {
+      save_outing: { Args: { p_group_id: string; p_outing_id: string; p_expected_revision: number; p_title: string; p_date: string; p_mode: string; p_memo: string; p_items: { item_id: string; planned_time: string | null; period: string | null }[]; p_participants: string[] }; Returns: number };
       set_my_display_name: { Args: { p_name: string }; Returns: string };
       get_group_members: { Args: { p_group_id: string }; Returns: { user_id: string; display_name: string | null }[] };
       create_list: { Args: { p_group_id: string; p_name: string; p_request_id: string }; Returns: string };
