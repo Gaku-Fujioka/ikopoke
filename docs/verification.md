@@ -5,6 +5,8 @@
 
 ## ITEM-03の検証（2026-10-18）
 
+この後の候補編集・絞り込み・コメント・グループ名変更の実装は[SHARED-TOOLS-01](tasks/SHARED-TOOLS-01.md)を参照。全テストには`tests/item-tools-database.test.mjs`・`tests/item-tools-actions.test.mjs`・`tests/group-rename.test.mjs`も含める。DB適用と実画面確認はユーザーへまとめて依頼する。
+
 - 全120件テストとlint成功。検索のUnicode文字数・入力正規化・記号・REST値の引用・URLの条件保持、グループ内の全候補に対するページ取得前の絞り込みと件数を検証済み。
 - PostgreSQLの`~*`で記号・日本語・大文字小文字の一致を確認。取得には[PostgRESTのimatch](https://docs.postgrest.org/en/stable/references/api/tables_views.html#operators)を使い、正規表現のリテラルエスケープを行う。IN/OR向けの引用規則を個別フィルターへ適用した初回の誤りは修正した。
 - 実開発プロジェクトへの記号入りの匿名検索4件（取得件数0）は、構文エラーではなくHTTP401・`42501`で拒否。設定値・ユーザーデータを表示せず、書き込みなし。実JWTによる検索結果の確認とは区別する。

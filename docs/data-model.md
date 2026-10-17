@@ -6,6 +6,12 @@
 
 ## 確認できた現状
 
+2026-10-18の追加実装（実DBは未適用）：`update_item`は所属と候補をロックし、名前・メモの比較で古い入力による上書きを防ぐ。種類・所属先・作成者を変更する権限は追加しない。
+`shared_item_feed`はPostgreSQL 15以上の`security_invoker=true`で元テーブルのRLSを適用し、本人の反応と未反応で候補を絞り込む。
+`item_comments`は所属RLSとSELECT列制限、作成/取得RPCを持つ。本文上限2,000文字・再送UUIDで重複防止・20件のページ取得。本人かのbooleanだけを返し、他者のAuth識別子をClientへ渡さない。編集・削除は未提供。
+`rename_group`は所属メンバーによる名前だけの更新を許し、作成情報を保持する。候補編集と同様に開いた時点の内容と比較する。
+4つのmigrationとローカル検証・外部適用の境界は[今回のまとめ](tasks/SHARED-TOOLS-01.md)。既存migration本文と実履歴は変更しない。
+
 REACTION-02：D-013の現在の反応を`item_reactions`へ保存する実装を追加。PKは`(item_id,user_id)`で、希望状態のUPSERTと本人行だけのDELETEで変更・取消を行う。
 本人IDは`auth.uid()`から取得し、候補とグループの一致・所属を両RPCで確認する。同一メンバーの保存・取消は所属行のロックで直列化する。別メンバーの反応は上書きしない。
 直接書き込みは許可せず、RLSで生データのSELECTを本人かつ所属中の行へ制限する。`get_item_reactions(uuid,uuid)`は所属を確認して全体件数と本人の現在値だけを返す。
