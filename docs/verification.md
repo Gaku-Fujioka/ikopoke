@@ -23,7 +23,9 @@ DBテストはPGliteのPostgreSQLでmigrationとRLSを実行する。実Supabase
 ローカルでlint・型検査・62件のNodeテスト・build成功。追加したDBテスト13件とServer Actionテスト11件、認証proxyテスト3件、認証復帰の追加1件を含む。
 CIは既存5ファイルに`tests/auth-proxy.test.mjs`・`tests/group-invitations-database.test.mjs`・`tests/group-invitation-actions.test.mjs`を加える。PGliteのローカル指定方法は前節と同じ。
 HTTPで4件成功：未ログインの招待入口200、グループ一覧307、登録とメール確認待ち画面の招待復帰リンク保持。
-新しいmigrationは実DBへ未適用。実アカウントでの招待参加・無効化・新規登録からの復帰とコピー・モバイル操作は未確認。Cuaの接続ブラウザ一覧は空だった。
+ユーザーが接続先チャットでの`create_group_invites`適用成功（version `20261017094719`）と定義・RLS・列権限・4関数本体・履歴の確認成功を報告した。本Agentによる構造・履歴の直接照合とは分ける。
+本Agentは同じ開発プロジェクトで匿名RESTの招待テーブルSELECT（取得件数0）と4関数（全引数null）の実行を確認し、5件ともHTTP401・`42501`で拒否された。設定値やユーザーデータは表示せず、保存や更新ができる入力は送っていない。
+SQL本文は維持して実適用versionへファイル名を同期し、テストの参照先も更新する。実アカウントでの招待参加・無効化・新規登録からの復帰とコピー・モバイル操作は未確認。Cuaの接続ブラウザ一覧は空だった。
 初回lintで未使用importを検出して削除し、再実行は成功。既存のNodeモジュール形式警告・Next partialPrefetching案内は残る。
 
 ## AUTH-03の確認（2026-10-17）
