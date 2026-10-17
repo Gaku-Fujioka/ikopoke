@@ -1,6 +1,7 @@
 "use client";
 
 import { cn, hasEnvVars } from "@/lib/utils";
+import { appNextPath, authEntryPath } from "@/lib/auth/safe-next-path";
 import { AuthSetupNotice } from "@/components/auth-setup-notice";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -19,8 +20,9 @@ import { useRef, useState } from "react";
 
 export function SignUpForm({
   className,
+  nextPath = "/app",
   ...props
-}: React.ComponentPropsWithoutRef<"div">) {
+}: React.ComponentPropsWithoutRef<"div"> & { nextPath?: string }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [repeatPassword, setRepeatPassword] = useState("");
@@ -43,16 +45,18 @@ export function SignUpForm({
     setIsLoading(true);
     try {
       const supabase = createClient();
+      const callback = new URL("/auth/callback", window.location.origin);
+      callback.searchParams.set("next", appNextPath(nextPath));
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          emailRedirectTo: callback.href,
         },
       });
       if (error) throw error;
       // Local Supabase can disable email confirmation and return a session.
-      router.replace(data.session ? "/app" : "/auth/sign-up-success");
+      router.replace(data.session ? appNextPath(nextPath) : authEntryPath("sign-up-success", nextPath));
       router.refresh();
     } catch {
       setError("登録できませんでした。入力内容や通信状態をご確認のうえ、時間をおいて再度お試しください。");
@@ -120,7 +124,7 @@ export function SignUpForm({
             </fieldset>
             <div className="mt-4 text-center text-sm">
               アカウントをお持ちの方は{" "}
-              <Link href="/auth/login" className="underline underline-offset-4">
+              <Link href={authEntryPath("login", nextPath)} className="underline underline-offset-4">
                 ログイン
               </Link>
             </div>

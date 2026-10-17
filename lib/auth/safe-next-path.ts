@@ -28,3 +28,8 @@ export function confirmationNextPath(next: string | null, type?: string | null):
   const path = safeNextPath(next);
   return path === "/auth/update-password" ? path : appNextPath(path);
 }
+
+/** Carry only an app destination between login, signup and confirmation screens. */
+export function authEntryPath(page: "login" | "sign-up" | "sign-up-success", next: string | null): string {
+  return `/auth/${page}?${new URLSearchParams({ next: appNextPath(next) })}`;
+}
