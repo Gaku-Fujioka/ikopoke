@@ -1,6 +1,6 @@
 # GROUP-04：グループ名の変更
 
-作成日：2026-10-18。状態：実装・ローカル検証・自己レビュー完了、実DB・画面確認待ち。CI・統合は[PR #13](https://github.com/Gaku-Fujioka/kokoiko/pull/13)。担当：本Agent単独。
+作成日：2026-10-18。状態：[PR #13](https://github.com/Gaku-Fujioka/kokoiko/pull/13)でmain統合・CI成功。実DB適用version `20261017162954`と定義・権限の検証成功はユーザー報告済み。実画面確認待ち。担当：本Agent単独。
 branch：`feat/shared-candidate-tools`。基準：`3b202a8`。F-02、N-02/03/04/06。
 
 ## Goal・範囲・Done
@@ -14,6 +14,6 @@ D-008の通常管理を全員で行う方針に従い、所属メンバー全員
 - 名前だけ更新し、作成者・日時・所属・招待・候補の関係を変更しない。直接UPDATE権限は追加しない。
 - フォームは失敗時に入力を保持し、成功時だけ比較元を更新する。保存後はグループ一覧・詳細・候補一覧・候補詳細を再取得対象にする。
 - PostgreSQLで匿名・非所属・本人なし・全メンバー・改ざん・Unicode・競合・所属削除を確認する。Actionで検証前保存の防止・本人の外部指定無視・失敗時の情報保護を確認する。
-- 実DB適用と画面操作は未実施。CI・統合結果は[まとめ](SHARED-TOOLS-01.md)。
+- 実DB適用・定義検証の成功はユーザー報告済み。画面操作は未実施。CI・統合結果は[まとめ](SHARED-TOOLS-01.md)。
 
 主な対象：グループ詳細・rename Action・Clientフォーム、`lib/groups/rename.ts`とrepository、DB型、migration、関連テスト。

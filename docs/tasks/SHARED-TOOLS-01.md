@@ -1,6 +1,6 @@
 # SHARED-TOOLS-01：追加APIなしの共有機能をまとめて検証する
 
-作成日：2026-10-18。状態：実装・ローカル検証・自己レビュー完了。実DB適用・実画面確認待ち。CI・統合状態は[PR #13](https://github.com/Gaku-Fujioka/kokoiko/pull/13)を参照。
+作成日：2026-10-18。状態：[PR #13](https://github.com/Gaku-Fujioka/kokoiko/pull/13)でmain統合、PRとマージ後mainのCI成功。ユーザーが4件の実DB適用・定義と権限の検証成功を報告。実画面確認待ち。
 担当：本Agent単独。branch：`feat/shared-candidate-tools`。基準：`3b202a8`。
 
 ## 今回の実装
@@ -18,7 +18,21 @@
 Agentが利用可能な認証済みブラウザがないため、実画面・複数ユーザー・モバイルとキーボードの操作確認はユーザーへまとめて依頼する。
 
 未適用でも既存の候補表示・名前検索・種類絞り込みを維持し、未適用のコメントや反応フィルター・保存RPCは準備中と表示する。成功や0件として扱わない。
-外部DB適用と実画面確認は未実施で、実機能の受入完了とは報告しない。適用時は既存オブジェクトと履歴を調査し、ファイル本文を変更せず順番に適用する。
+ユーザーが別の接続先チャットで4件を順番に適用し、定義・RLS・権限・viewのsecurity_invoker設定・履歴の検証成功を報告した。本Agentによる管理接続での直接照合とは区別する。実ユーザーのRPC・画面確認は未実施で、実機能の受入完了とは報告しない。
+
+## 実適用versionとの同期
+
+| migration名 | ユーザー報告の実適用version |
+|---|---|
+| edit_items | `20261017162832` |
+| shared_item_feed | `20261017162907` |
+| create_item_comments | `20261017162931` |
+| rename_groups | `20261017162954` |
+
+ローカルの4ファイルを同じversionへ改名し、DBテストの参照先も同期する。SQL本文は4件とも改名前後のSHA256一致を確認する。外部DBの再適用・履歴書換えは行わない。
+同期対応のbranchは`chore/align-shared-tools-migrations`、基準は`3d985de`。改名後の関連DBテスト17件と関連9文書のローカルリンク71件が成功し、差分と本文不変を自己レビューした。実行コード・SQLの変更がないためローカルlint・型・buildは繰り返さず、CIでは既存の全検証を行う。同期対応のCI・統合結果は該当PRを正本とする。
+ユーザーは前回許可された字下げの特殊空白のみ補正し、文字列・Unicodeエスケープを維持したと報告。関数本体と投入SQLの一致、所有者・SECURITY DEFINER・空のsearch_path、コメントのRLS・列権限・直接UPDATE不可、viewのinvoker設定を確認済みとの報告である。
+AdvisorのSECURITY DEFINER実行警告と新規索引の未使用INFOも報告された。追加変更は行わない。投稿者IDの非公開と所属制限の動作はローカルテストで確認し、実ユーザーの操作・他アカウント共有とは区別する。
 
 ## 判断待ちへ分けた範囲
 
@@ -35,6 +49,6 @@ Agentが利用可能な認証済みブラウザがないため、実画面・複
 ## 検証結果
 
 最終差分で全148件のNodeテスト・lint・型検査・本番build成功。自己レビューで4つのmigrationの実行権限・RLS・viewの実行主体・全員編集の範囲、Clientへ返すデータ、エラーと成功の区別、URL保持とページ、編集開始時の比較元保持、コメント再送時のUUIDと成功後の更新を確認した。独立レビューはD-009に従い未実施。関連10文書のローカルリンク73件を確認した。
-候補機能は`0f76ee5`、グループ名変更とCI登録は`e75b7ea`。GitHub CI・最新headと統合の正本は[PR #13](https://github.com/Gaku-Fujioka/kokoiko/pull/13)。必要なCI成功後にD-009に従ってAgentが統合する。
+候補機能は`0f76ee5`、グループ名変更とCI登録は`e75b7ea`。[PR #13](https://github.com/Gaku-Fujioka/kokoiko/pull/13)の最新head `2e30cdd`のCIと、統合後main `3d985de`のCI成功を確認した。D-009に従うAgentの統合で、独立レビューの実施とは区別する。
 DBでRLSとviewの実行主体・別グループ・他者の反応・権限・再送・衝突拒否・ページと件数を確認。実SDKの合成transportは実際のHTTP条件をSQLへ渡して確認し、実PostgRESTとして扱わない。
 既存のNext partialPrefetching警告とNode module形式警告は今回の範囲外。

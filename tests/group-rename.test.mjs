@@ -22,7 +22,7 @@ before(async()=>{
   db=await PGlite.create();await db.exec(`create role anon nologin;create role authenticated nologin;
   create schema auth;create table auth.users(id uuid primary key);create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;
   grant usage on schema auth to anon,authenticated;insert into auth.users(id) values('${alice}'),('${bob}'),('${outsider}');`);
-  for(const file of ["20261017091513_create_groups.sql","20261018013000_rename_groups.sql"])await db.exec(await readFile(new URL(`../supabase/migrations/${file}`,import.meta.url),"utf8"));
+  for(const file of ["20261017091513_create_groups.sql","20261017162954_rename_groups.sql"])await db.exec(await readFile(new URL(`../supabase/migrations/${file}`,import.meta.url),"utf8"));
   await asUser(alice,()=>db.query("select public.create_group('元の名前',$1)",[group]));
   await db.query("insert into public.group_members(group_id,user_id) values($1,$2)",[group,bob]);
 });

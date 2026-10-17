@@ -1,6 +1,6 @@
 # COMMENT-02：候補へのコメント投稿・閲覧
 
-作成日：2026-10-18。状態：実装・ローカル検証・自己レビュー完了、実DB・画面確認待ち。CI・統合は[PR #13](https://github.com/Gaku-Fujioka/kokoiko/pull/13)。担当：本Agent単独。
+作成日：2026-10-18。状態：[PR #13](https://github.com/Gaku-Fujioka/kokoiko/pull/13)でmain統合・CI成功。実DB適用version `20261017162931`と定義・RLS・権限の検証成功はユーザー報告済み。実画面確認待ち。担当：本Agent単独。
 branch：`feat/shared-candidate-tools`。基準：`3b202a8`。F-06、N-02/03/04/06/07。D-014の範囲。
 
 ## Goal・範囲・Done
@@ -18,6 +18,6 @@ branch：`feat/shared-candidate-tools`。基準：`3b202a8`。F-06、N-02/03/04/
 - Server Actionは検証・認証後に保存し、成功時だけ再取得と次のrequest UUID発行を行う。失敗時は本文とUUIDを維持する。
 - 古いコメントページで投稿した場合は最新ページへ戻り、候補一覧の検索条件・ページは保つ。
 - SQLの権限・文字数・改ざん・再送・ページ・所属削除、Actionの失敗時保護・生データ非公開、取得異常を検証する。
-- 実DB適用・実ユーザー投稿・モバイル/キーボード・複数ユーザー確認は未実施。CI・統合結果は[まとめ](SHARED-TOOLS-01.md)。
+- 実DB適用・定義検証の成功はユーザー報告済み。実ユーザー投稿・モバイル/キーボード・複数ユーザー確認は未実施。CI・統合結果は[まとめ](SHARED-TOOLS-01.md)。
 
 主な対象：コメントmigration、`lib/items/comments.ts`、DB型、コメントAction・Server表示とClientフォーム、候補詳細、関連テスト。
