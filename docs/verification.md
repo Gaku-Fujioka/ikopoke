@@ -3,9 +3,13 @@
 更新日：2026-10-05。コマンドの存在、実行、成功を別々に記録する。
 以下の「初期文書整備」は2026-10-03時点の記録。統合後の確認結果は次節に記す。
 
+## PERF-01の検証（2026-10-18）
+
+保存/投稿直後の表示待ちの改善で、lint・型・全154件のNodeテスト・本番build成功。新規の`tests/render-boundaries.test.mjs`は実async Server ComponentのReactツリーを合成providerで検証する6件で、CIへ追加した。ブラウザのStreaming描画や実Auth/DB時間の測定ではない。自己レビュー・CI・未計測の範囲は[PERF-01](tasks/PERF-01.md)へ記録する。共有機能5項目の基本操作成功はユーザー報告済みで、速度改善の実測とは区別する。
+
 ## ITEM-03の検証（2026-10-18）
 
-この後の候補編集・絞り込み・コメント・グループ名変更の実装は[SHARED-TOOLS-01](tasks/SHARED-TOOLS-01.md)を参照。全テストには`tests/item-tools-database.test.mjs`・`tests/item-tools-actions.test.mjs`・`tests/group-rename.test.mjs`も含める。4件の実DB適用・定義と権限の検証成功はユーザー報告済み。実画面確認はまとめて依頼する。
+この後の候補編集・絞り込み・コメント・グループ名変更の実装は[SHARED-TOOLS-01](tasks/SHARED-TOOLS-01.md)を参照。全テストには`tests/item-tools-database.test.mjs`・`tests/item-tools-actions.test.mjs`・`tests/group-rename.test.mjs`も含める。4件の実DB適用・定義と権限、実画面5項目の成功はユーザー報告済み。保存/投稿直後の待ち時間は[PERF-01](tasks/PERF-01.md)で別途扱う。
 
 - 全120件テストとlint成功。検索のUnicode文字数・入力正規化・記号・REST値の引用・URLの条件保持、グループ内の全候補に対するページ取得前の絞り込みと件数を検証済み。
 - PostgreSQLの`~*`で記号・日本語・大文字小文字の一致を確認。取得には[PostgRESTのimatch](https://docs.postgrest.org/en/stable/references/api/tables_views.html#operators)を使い、正規表現のリテラルエスケープを行う。IN/OR向けの引用規則を個別フィルターへ適用した初回の誤りは修正した。

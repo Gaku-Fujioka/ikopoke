@@ -9,8 +9,7 @@ import { getItem, ItemStoreError } from "@/lib/items/repository";
 import { itemPage } from "@/lib/items/validation";
 import { AuthSetupNotice } from "@/components/auth-setup-notice";
 import { RetryItems } from "@/components/items/retry-items";
-import { getReactions, ReactionError } from "@/lib/items/reactions";
-import { ItemReactions } from "@/components/items/item-reactions";
+import { ItemReactionSection } from "@/components/items/item-reaction-section";
 import { EditItemForm } from "@/components/items/edit-item-form";
 import { ItemComments } from "@/components/items/item-comments";
 import { itemSearchQuery, itemFilters, sharedItemListHref, sharedItemDetailHref, sharedItemCommentsHref } from "@/lib/items/search";
@@ -34,8 +33,9 @@ async function ItemContent({ params, searchParams }: Props) {
   let group;
   let item;
   try {
-    group = await getGroup(client, groupId);
-    if (group) item = await getItem(client, groupId, itemId);
+    // Both reads enforce membership in the DB and are scoped to this group.
+    // Neither needs the result of the other.
+    [group, item] = await Promise.all([getGroup(client, groupId), getItem(client, groupId, itemId)]);
   } catch (cause) {
     return (
       <div role="alert" className="space-y-4 rounded-3xl border border-stone-200 bg-white p-6">
@@ -46,17 +46,6 @@ async function ItemContent({ params, searchParams }: Props) {
     );
   }
   if (!group || !item) notFound();
-  let reactionContent;
-  try {
-    reactionContent = <ItemReactions groupId={groupId} itemId={itemId} summary={await getReactions(client, groupId, itemId)} />;
-  } catch (cause) {
-    reactionContent = (
-      <section aria-label="リアクション" className="space-y-3 rounded-3xl border border-stone-200 bg-white p-6">
-        <p role="status" className="text-sm leading-6 text-stone-600">{cause instanceof ReactionError ? cause.message : "反応を読み込めませんでした。もう一度お試しください。"}</p>
-        <RetryItems />
-      </section>
-    );
-  }
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <Link href={listPath} className="inline-flex min-h-11 items-center text-sm font-semibold text-stone-600 underline underline-offset-4">← みんなの候補へ</Link>
@@ -70,8 +59,12 @@ async function ItemContent({ params, searchParams }: Props) {
         </section>
       </article>
       <EditItemForm groupId={groupId} itemId={itemId} title={item.title} memo={item.memo} />
-      {reactionContent}
-      <ItemComments client={client} groupId={groupId} itemId={itemId} page={commentsPage} detailHref={detailHref} />
+      <Suspense fallback={<section role="status" aria-label="リアクション" className="rounded-3xl border border-stone-200 bg-white p-6">反応を読み込んでいます…</section>}>
+        <ItemReactionSection client={client} groupId={groupId} itemId={itemId} />
+      </Suspense>
+      <Suspense fallback={<section role="status" aria-label="コメント" className="rounded-3xl border border-stone-200 bg-white p-6">コメントを読み込んでいます…</section>}>
+        <ItemComments client={client} groupId={groupId} itemId={itemId} page={commentsPage} detailHref={detailHref} />
+      </Suspense>
     </div>
   );
 }

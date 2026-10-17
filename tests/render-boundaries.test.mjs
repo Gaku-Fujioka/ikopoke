@@ -1,0 +1,91 @@
+import assert from "node:assert/strict";
+import {readFileSync} from "node:fs";
+import {registerHooks} from "node:module";
+import {fileURLToPath} from "node:url";
+import {beforeEach,test} from "node:test";
+import {setImmediate} from "node:timers/promises";
+import {Suspense} from "react";
+import ts from "typescript";
+
+// Execute the real async Server Component functions and inspect their React
+// trees. This verifies wait/error boundaries, not browser streaming or timings.
+const moduleURL=source=>`data:text/javascript,${encodeURIComponent(source)}`;
+const providerURL=moduleURL(`
+export const calls=[];let plan={};export function configure(value){plan=value;calls.length=0;}
+export class GroupStoreError extends Error{};export class ItemStoreError extends Error{};export class ReactionError extends Error{};export class InviteError extends Error{};export class CommentError extends Error{};
+export const ITEM_PAGE_SIZE=20,COMMENT_PAGE_SIZE=20;
+export async function createClient(){return {auth:{getClaims:async()=>{calls.push(['auth']);return {data:plan.signedOut?null:{claims:{sub:'synthetic-user'}},error:null};}}};}
+export async function getGroup(client,id){calls.push(['group',id]);return plan.group();}
+export async function getItem(client,group,item){calls.push(['item',group,item]);return plan.item();}
+export async function listItems(client,...args){calls.push(['items',...args]);return plan.items();}
+export async function getReactions(client,...args){calls.push(['reactions',...args]);return plan.reactions();}
+export async function getComments(client,...args){calls.push(['comments',...args]);return plan.comments();}
+export async function listInvites(client,...args){calls.push(['invites',...args]);return plan.invites();}
+`);
+const leafURL=moduleURL("export function AuthSetupNotice(){return null;}export function CreateItemForm(){return null;}export function RetryItems(){return null;}export function EditItemForm(){return null;}export function ItemReactions(){return null;}export function CommentForm(){return null;}export function InviteManagement(){return null;}export function RenameGroupForm(){return null;}export default function Link(){return null;}");
+const navigationURL=moduleURL("export function notFound(){const error=new Error('not found');error.navigation='not-found';throw error;}export function redirect(path){const error=new Error('redirect');error.location=path;throw error;}");
+registerHooks({
+  resolve(specifier,context,next){
+    if(specifier==="@/lib/utils")return {url:moduleURL("export const hasEnvVars=true;"),shortCircuit:true};
+    if(["@/lib/supabase/server","@/lib/groups/repository","@/lib/items/repository","@/lib/items/reactions","@/lib/items/comments","@/lib/groups/invitations"].includes(specifier))return {url:providerURL,shortCircuit:true};
+    if(specifier==="next/navigation")return {url:navigationURL,shortCircuit:true};
+    if(specifier==="next/link"||(specifier.startsWith("@/components/")&& !["@/components/items/item-comments","@/components/items/item-reaction-section"].includes(specifier)))return {url:leafURL,shortCircuit:true};
+    if(specifier.startsWith("@/"))return {url:new URL(`../${specifier.slice(2)}${specifier.startsWith("@/components/")?".tsx":".ts"}`,import.meta.url).href,shortCircuit:true};
+    return next(specifier,context);
+  },
+  load(url,context,next){
+    if(url.endsWith(".tsx"))return {format:"module",source:ts.transpileModule(readFileSync(fileURLToPath(url),"utf8"),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022,jsx:ts.JsxEmit.ReactJSX}}).outputText,shortCircuit:true};
+    return next(url,context);
+  },
+});
+const {default:Detail}=await import("../app/app/groups/[groupId]/items/[itemId]/page.tsx");
+const {default:List}=await import("../app/app/groups/[groupId]/items/page.tsx");
+const {default:Group}=await import("../app/app/groups/[groupId]/page.tsx");
+const {ItemReactionSection}=await import("../components/items/item-reaction-section.tsx");
+const provider=await import(providerURL);
+const groupId="10000000-0000-4000-8000-000000000001",itemId="20000000-0000-4000-8000-000000000001";
+const group={id:groupId,name:"テストグループ"},item={id:itemId,group_id:groupId,title:"テスト候補",kind:"spot",memo:"メモ"};
+const props=()=>({params:Promise.resolve({groupId,itemId}),searchParams:Promise.resolve({})});
+const deferred=()=>{let resolve;const promise=new Promise(done=>{resolve=done;});return {promise,resolve};};
+function walk(node,predicate){if(!node||typeof node!=="object")return [];const children=Array.isArray(node)?node:[node.props?.children];return [...(!Array.isArray(node)&&predicate(node)?[node]:[]),...children.flatMap(child=>walk(child,predicate))];}
+function text(node){if(typeof node==="string"||typeof node==="number")return String(node);if(!node||typeof node!=="object")return "";return (Array.isArray(node)?node:[node.props?.children]).map(text).join(" ");}
+function content(Page,input=props()){const tree=Page(input);const boundary=tree.type===Suspense?tree:walk(tree,node=>node.type===Suspense)[0];return boundary.props.children.type(boundary.props.children.props);}
+beforeEach(()=>provider.configure({group:()=>group,item:()=>item,items:()=>({items:[],total:0}),reactions:()=>({want_count:0,not_now_count:0,my_reaction:null}),comments:()=>({comments:[],total:0}),invites:()=>[]}));
+
+test("candidate metadata starts both authorized reads without waiting and has independent reaction/comment boundaries",async()=>{
+  const groupRead=deferred(),itemRead=deferred();provider.configure({group:()=>groupRead.promise,item:()=>itemRead.promise});
+  const pending=content(Detail);await setImmediate();
+  assert.deepEqual(provider.calls.map(call=>call[0]),["auth","group","item"]);
+  assert.deepEqual(provider.calls[2],["item",groupId,itemId]);
+  groupRead.resolve(group);itemRead.resolve(item);const body=await pending;
+  assert.match(text(body),/テスト候補/);assert.match(text(body),/メモ/);
+  const boundaries=walk(body,node=>node.type===Suspense);
+  assert.equal(boundaries.length,2);assert.match(text(boundaries[0].props.fallback),/反応/);assert.match(text(boundaries[1].props.fallback),/コメント/);
+  assert.equal(boundaries[0].props.children.type,ItemReactionSection);
+  assert.deepEqual(provider.calls.map(call=>call[0]),["auth","group","item"]);
+});
+test("list reads start together and keep the selected group and filters",async()=>{
+  const groupRead=deferred(),itemsRead=deferred();provider.configure({group:()=>groupRead.promise,items:()=>itemsRead.promise});
+  const input=props();input.searchParams=Promise.resolve({q:"候補",kind:"spot",reaction:"unreacted",page:"2"});
+  const pending=content(List,input);await setImmediate();
+  assert.deepEqual(provider.calls.map(call=>call[0]),["auth","group","items"]);
+  assert.deepEqual(provider.calls[2],["items",groupId,2,"候補",{kind:"spot",reaction:"unreacted"}]);
+  groupRead.resolve(group);itemsRead.resolve({items:[],total:0});assert.match(text(await pending),/みんなの候補/);
+});
+test("group metadata and rename form can render before invitation data is fetched",async()=>{
+  const body=await content(Group);assert.match(text(body),/テストグループ/);
+  const boundaries=walk(body,node=>node.type===Suspense);assert.equal(boundaries.length,1);assert.match(text(boundaries[0].props.fallback),/招待/);
+  assert.deepEqual(provider.calls.map(call=>call[0]),["auth","group"]);
+});
+test("signed-out renders redirect before any data read",async()=>{
+  for(const Page of [Detail,List,Group]){
+    provider.configure({signedOut:true});await assert.rejects(content(Page),error=>error.location.startsWith("/auth/login?next="));assert.deepEqual(provider.calls,[["auth"]]);
+  }
+});
+test("non-member candidate reads fail closed and do not start auxiliary sections",async()=>{
+  provider.configure({group:()=>null,item:()=>null});await assert.rejects(content(Detail),error=>error.navigation==="not-found");assert.deepEqual(provider.calls.map(call=>call[0]),["auth","group","item"]);
+});
+test("reaction failures stay in their section, with no raw provider detail or false zero count",async()=>{
+  provider.configure({reactions:()=>{throw new Error("private provider detail");}});
+  const section=await ItemReactionSection({client:{},groupId,itemId});assert.match(text(section),/反応を読み込めませんでした/);assert.ok(!text(section).includes("private"));assert.ok(!text(section).includes("0人"));
+});

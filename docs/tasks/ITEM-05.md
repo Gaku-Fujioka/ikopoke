@@ -1,6 +1,6 @@
 # ITEM-05：種類と自分の反応による絞り込み
 
-作成日：2026-10-18。状態：[PR #13](https://github.com/Gaku-Fujioka/kokoiko/pull/13)でmain統合・CI成功。実DB適用version `20261017162907`と定義・invoker設定・権限の検証成功はユーザー報告済み。実画面確認待ち。担当：本Agent単独。
+作成日：2026-10-18。状態：[PR #13](https://github.com/Gaku-Fujioka/kokoiko/pull/13)でmain統合・CI成功。実DB適用version `20261017162907`と定義・invoker設定・権限、実画面の検索/絞り込み併用・条件保持/解除の成功はユーザー報告済み。担当：本Agent単独。
 branch：`feat/shared-candidate-tools`。基準：`3b202a8`。F-05、N-02/03/04/07。
 
 ## Goal・範囲・Done
@@ -17,6 +17,6 @@ branch：`feat/shared-candidate-tools`。基準：`3b202a8`。F-05、N-02/03/04/
 - 反応保存時に一覧も再取得対象へ追加する。
 - 公式根拠：[Supabaseの安全なview](https://supabase.com/docs/guides/database/postgres/row-level-security#expose-a-view-safely)、[PostgreSQL CREATE VIEW](https://www.postgresql.org/docs/current/sql-createview.html)。PostgreSQL 15以上が必要。
 - PostgreSQLでRLS・別グループ・他者の反応混入防止を検証。実SDKの合成HTTP transportが作る条件を加工せずSQLへ渡し、検索・種類・反応・未反応・ページと件数を確認する。実PostgRESTサーバー検証とは区別する。
-- ユーザーのDB適用・定義検証は報告済み。実画面確認は他の機能とまとめる。CI・統合結果は[今回のまとめ](SHARED-TOOLS-01.md)に記録する。
+- ユーザーのDB適用・定義検証と実画面の併用/条件保持/解除は成功報告済み。別アカウントは未確認。CI・統合結果は[今回のまとめ](SHARED-TOOLS-01.md)に記録する。
 
 主な対象：共有候補の一覧・詳細、`lib/items/search.ts`とrepository、DB型、view migration、関連テスト。新しい依存・外部APIは追加しない。
