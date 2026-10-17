@@ -49,11 +49,11 @@ test("unconfigured and signed-out requests cannot save",async()=>{
   assert.deepEqual(provider.calls,[]);assert.deepEqual(cache.paths,[]);
 });
 
-test("saving ignores forged user IDs, specifies the desired state and revalidates only the candidate",async()=>{
+test("saving ignores forged user IDs and refreshes the candidate and reaction-filtered list",async()=>{
   const result=await setReactionAction({error:null},form({userId:"forged",user_id:"forged"}));
   assert.deepEqual(result,{error:null,saved:true});
   assert.deepEqual(provider.calls,[{name:"set_item_reaction",input:{p_group_id:groupId,p_item_id:itemId,p_value:"want_to_go"}}]);
-  assert.deepEqual(cache.paths,[`/app/groups/${groupId}/items/${itemId}`]);
+  assert.deepEqual(cache.paths,[`/app/groups/${groupId}/items/${itemId}`,`/app/groups/${groupId}/items`]);
 });
 
 test("an explicit cancellation is sent as null rather than a toggle",async()=>{

@@ -22,5 +22,6 @@ export async function setReactionAction(_previous: ReactionState, form: FormData
     return { error: error instanceof ReactionError ? error.message : "反応を保存できませんでした。もう一度お試しください。" };
   }
   revalidatePath(`/app/groups/${groupId}/items/${itemId}`);
+  revalidatePath(`/app/groups/${groupId}/items`);
   return { error: null, saved: true };
 }

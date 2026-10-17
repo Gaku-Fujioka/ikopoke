@@ -11,9 +11,11 @@ import { AuthSetupNotice } from "@/components/auth-setup-notice";
 import { RetryItems } from "@/components/items/retry-items";
 import { getReactions, ReactionError } from "@/lib/items/reactions";
 import { ItemReactions } from "@/components/items/item-reactions";
-import { itemSearchQuery, sharedItemListHref, sharedItemDetailHref } from "@/lib/items/search";
+import { EditItemForm } from "@/components/items/edit-item-form";
+import { ItemComments } from "@/components/items/item-comments";
+import { itemSearchQuery, itemFilters, sharedItemListHref, sharedItemDetailHref, sharedItemCommentsHref } from "@/lib/items/search";
 
-type Props = { params: Promise<{ groupId: string; itemId: string }>; searchParams: Promise<{ page?: string | string[]; q?: string | string[] }> };
+type Props = { params: Promise<{ groupId: string; itemId: string }>; searchParams: Promise<{ page?: string | string[]; q?: string | string[]; kind?: string | string[]; reaction?: string | string[]; commentsPage?: string | string[] }> };
 
 async function ItemContent({ params, searchParams }: Props) {
   const { groupId, itemId } = await params;
@@ -22,10 +24,13 @@ async function ItemContent({ params, searchParams }: Props) {
   const search = await searchParams;
   const page = itemPage(search.page);
   const query = itemSearchQuery(search.q);
-  const listPath = sharedItemListHref(groupId, query, page);
+  const filters = itemFilters(search);
+  const listPath = sharedItemListHref(groupId, query, page, filters);
   const client = await createClient();
   const { data, error } = await client.auth.getClaims();
-  if (error || !data?.claims?.sub) redirect(`/auth/login?next=${encodeURIComponent(sharedItemDetailHref(groupId, itemId, query, page))}`);
+  const detailHref = sharedItemDetailHref(groupId, itemId, query, page, filters);
+  const commentsPage = itemPage(search.commentsPage);
+  if (error || !data?.claims?.sub) redirect(`/auth/login?next=${encodeURIComponent(sharedItemCommentsHref(detailHref, commentsPage))}`);
   let group;
   let item;
   try {
@@ -64,7 +69,9 @@ async function ItemContent({ params, searchParams }: Props) {
           <p className="mt-3 whitespace-pre-wrap break-words leading-7 text-stone-700">{item.memo || "メモはまだありません。"}</p>
         </section>
       </article>
+      <EditItemForm groupId={groupId} itemId={itemId} title={item.title} memo={item.memo} />
       {reactionContent}
+      <ItemComments client={client} groupId={groupId} itemId={itemId} page={commentsPage} detailHref={detailHref} />
     </div>
   );
 }

@@ -11,9 +11,9 @@ import { itemPage } from "@/lib/items/validation";
 import { AuthSetupNotice } from "@/components/auth-setup-notice";
 import { CreateItemForm } from "@/components/items/create-item-form";
 import { RetryItems } from "@/components/items/retry-items";
-import { itemSearchQuery, validItemSearch, sharedItemListHref, sharedItemDetailHref } from "@/lib/items/search";
+import { itemSearchQuery, itemFilters, validItemSearch, sharedItemListHref, sharedItemDetailHref } from "@/lib/items/search";
 
-type Props = { params: Promise<{ groupId: string }>; searchParams: Promise<{ page?: string | string[]; q?: string | string[] }> };
+type Props = { params: Promise<{ groupId: string }>; searchParams: Promise<{ page?: string | string[]; q?: string | string[]; kind?: string | string[]; reaction?: string | string[] }> };
 
 async function ItemsContent({ params, searchParams }: Props) {
   const { groupId } = await params;
@@ -22,16 +22,18 @@ async function ItemsContent({ params, searchParams }: Props) {
   const search = await searchParams;
   const page = itemPage(search.page);
   const query = itemSearchQuery(search.q);
+  const filters = itemFilters(search);
+  const hasConditions = Boolean(query || filters.kind || filters.reaction);
   const searchError = !validItemSearch(query);
   const listPath = `/app/groups/${groupId}/items`;
   const client = await createClient();
   const { data, error } = await client.auth.getClaims();
-  if (error || !data?.claims?.sub) redirect(`/auth/login?next=${encodeURIComponent(sharedItemListHref(groupId, query, page))}`);
+  if (error || !data?.claims?.sub) redirect(`/auth/login?next=${encodeURIComponent(sharedItemListHref(groupId, query, page, filters))}`);
   let group;
   let saved;
   try {
     group = await getGroup(client, groupId);
-    if (group) saved = searchError ? { items: [], total: 0 } : await listItems(client, groupId, page, query);
+    if (group) saved = searchError ? { items: [], total: 0 } : await listItems(client, groupId, page, query, filters);
   } catch (cause) {
     return (
       <div role="alert" className="space-y-4 rounded-3xl border border-stone-200 bg-white p-6">
@@ -58,17 +60,29 @@ async function ItemsContent({ params, searchParams }: Props) {
           <label htmlFor="shared-item-search" className="block text-sm font-semibold">候補の名前で検索</label>
           <input key={query} id="shared-item-search" name="q" type="search" defaultValue={query} aria-invalid={searchError} aria-describedby={searchError ? "shared-search-error" : undefined} placeholder="名前の一部を入力" className="min-h-12 w-full rounded-xl border border-stone-300 px-4 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-700" />
         </div>
-        <button type="submit" className="min-h-12 rounded-full bg-stone-900 px-6 text-sm font-semibold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-900 focus-visible:ring-offset-2">検索</button>
-        {query && <Link href={listPath} className="inline-flex min-h-12 items-center px-3 font-semibold text-orange-700 underline underline-offset-4">条件を解除</Link>}
+        <div className="space-y-2">
+          <label htmlFor="shared-item-kind" className="block text-sm font-semibold">種類</label>
+          <select key={filters.kind ?? "all"} id="shared-item-kind" name="kind" defaultValue={filters.kind ?? ""} className="min-h-12 rounded-xl border border-stone-300 bg-white px-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-700">
+            <option value="">すべて</option><option value="spot">スポット</option><option value="activity">やりたいこと</option>
+          </select>
+        </div>
+        <div className="space-y-2">
+          <label htmlFor="shared-item-reaction" className="block text-sm font-semibold">自分の反応</label>
+          <select key={filters.reaction ?? "all"} id="shared-item-reaction" name="reaction" defaultValue={filters.reaction ?? ""} className="min-h-12 rounded-xl border border-stone-300 bg-white px-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-700">
+            <option value="">すべて</option><option value="want_to_go">行きたい！</option><option value="not_now">そこまで</option><option value="unreacted">未反応</option>
+          </select>
+        </div>
+        <button type="submit" className="min-h-12 rounded-full bg-stone-900 px-6 text-sm font-semibold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-900 focus-visible:ring-offset-2">検索・絞り込み</button>
+        {hasConditions && <Link href={listPath} className="inline-flex min-h-12 items-center px-3 font-semibold text-orange-700 underline underline-offset-4">条件を解除</Link>}
         {searchError && <p id="shared-search-error" role="alert" className="w-full text-sm text-red-700">検索語は100文字以内で入力してください。</p>}
       </form>
       {!searchError && <section aria-label="保存した候補" className="space-y-4">
-        <p role="status" className="break-words text-sm text-stone-600">{query ? `「${query}」の検索結果：${saved.total}件` : `全${saved.total}件`}</p>
+        <p role="status" className="break-words text-sm text-stone-600">{query ? `「${query}」の検索結果：${saved.total}件` : hasConditions ? `条件に合う候補：${saved.total}件` : `全${saved.total}件`}</p>
         {saved.items.length ? (
           <ul className="grid gap-4 sm:grid-cols-2">
             {saved.items.map((item) => (
               <li key={item.id} className="min-w-0">
-                <Link href={sharedItemDetailHref(groupId, item.id, query, page)} className="block h-full rounded-3xl border border-stone-200 bg-white p-6 hover:border-orange-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-700">
+                <Link href={sharedItemDetailHref(groupId, item.id, query, page, filters)} className="block h-full rounded-3xl border border-stone-200 bg-white p-6 hover:border-orange-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-700">
                   <span className="text-xs font-semibold text-orange-700">{item.kind === "spot" ? "スポット" : "やりたいこと"}</span>
                   <h2 className="mt-3 break-words text-xl font-semibold">{item.title}</h2>
                   <p className="mt-3 line-clamp-3 whitespace-pre-wrap break-words text-sm leading-6 text-stone-600">{item.memo || "メモはまだありません。"}</p>
@@ -78,16 +92,16 @@ async function ItemsContent({ params, searchParams }: Props) {
           </ul>
         ) : (
           <div className="rounded-3xl border border-stone-200 bg-white p-6">
-            <h2 className="text-xl font-semibold">{page > 1 ? "このページには候補がありません" : query ? "条件に合う候補がありません" : "候補がまだありません"}</h2>
-            <p className="mt-2 leading-7 text-stone-600">{page > 1 ? "最初のページから候補をご確認ください。" : query ? "名前の一部を変えるか、条件を解除してお試しください。" : "気になる場所や、やりたいことを一つ追加しましょう。"}</p>
-            {page > 1 && <Link href={sharedItemListHref(groupId, query)} className="inline-flex min-h-11 items-center font-semibold text-orange-700 underline underline-offset-4">最初のページへ</Link>}
+            <h2 className="text-xl font-semibold">{page > 1 ? "このページには候補がありません" : hasConditions ? "条件に合う候補がありません" : "候補がまだありません"}</h2>
+            <p className="mt-2 leading-7 text-stone-600">{page > 1 ? "最初のページから候補をご確認ください。" : hasConditions ? "検索・絞り込みの条件を変えるか、条件を解除してお試しください。" : "気になる場所や、やりたいことを一つ追加しましょう。"}</p>
+            {page > 1 && <Link href={sharedItemListHref(groupId, query, 1, filters)} className="inline-flex min-h-11 items-center font-semibold text-orange-700 underline underline-offset-4">最初のページへ</Link>}
           </div>
         )}
         {(page > 1 || page * ITEM_PAGE_SIZE < saved.total) && (
           <nav aria-label="候補一覧のページ" className="flex flex-wrap items-center gap-5">
-            {page > 1 && <Link href={sharedItemListHref(groupId, query, page - 1)} className="inline-flex min-h-11 items-center font-semibold text-orange-700 underline underline-offset-4">前のページ</Link>}
+            {page > 1 && <Link href={sharedItemListHref(groupId, query, page - 1, filters)} className="inline-flex min-h-11 items-center font-semibold text-orange-700 underline underline-offset-4">前のページ</Link>}
             <span className="text-sm text-stone-600">{page}ページ</span>
-            {page * ITEM_PAGE_SIZE < saved.total && <Link href={sharedItemListHref(groupId, query, page + 1)} className="inline-flex min-h-11 items-center font-semibold text-orange-700 underline underline-offset-4">次のページ</Link>}
+            {page * ITEM_PAGE_SIZE < saved.total && <Link href={sharedItemListHref(groupId, query, page + 1, filters)} className="inline-flex min-h-11 items-center font-semibold text-orange-700 underline underline-offset-4">次のページ</Link>}
           </nav>
         )}
       </section>}
