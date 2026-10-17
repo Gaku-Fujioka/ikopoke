@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { getItem, listItems } from "../lib/items/repository.ts";
+import { registerHooks } from "node:module";
+registerHooks({resolve(specifier,context,next){return specifier==="@/lib/items/search"?{url:new URL("../lib/items/search.ts",import.meta.url).href,shortCircuit:true}:next(specifier,context);}});
+const {getItem,listItems}=await import("../lib/items/repository.ts");
 
 const groupA="10000000-0000-4000-8000-000000000001", groupB="10000000-0000-4000-8000-000000000002";
 const rows=Array.from({length:23},(_,index)=>({id:`candidate-${index}`,group_id:groupA,title:`候補${index}`,kind:"spot",memo:"",created_at:`2026-10-17T00:00:${String(index).padStart(2,"0")}Z`}))
@@ -15,6 +17,7 @@ function client(error=null){return {from(table){
   const query={
     select(){return query;},
     eq(key,value){filtered=filtered.filter(row=>row[key]===value);return query;},
+    filter(key,operator,value){assert.equal(operator,"imatch");assert.ok(value.startsWith('"')&&value.endsWith('"'));const pattern=value.slice(1,-1).replace(/\\(["\\])/g,"$1");filtered=filtered.filter(row=>new RegExp(pattern,"i").test(row[key]));return query;},
     order(key,{ascending}){orders.push({key,ascending});return query;},
     range(first,last){
       start=first;end=last;
@@ -40,6 +43,17 @@ test("an item from another joined group cannot appear under the selected group's
   assert.equal(await getItem(client(),groupA,"other-group-candidate"),null);
   assert.equal((await getItem(client(),groupB,"other-group-candidate")).title,"別グループ");
   assert.equal(await getItem(client(),groupA,"missing"),null);
+});
+
+test("search filters all candidates before pagination and preserves selected-group isolation",async()=>{
+  const result=await listItems(client(),groupA,1,"候補2");
+  assert.equal(result.total,4);assert.deepEqual(result.items.map(row=>row.title),["候補22","候補21","候補20","候補2"]);
+  assert.deepEqual(await listItems(client(),groupA,1,"別グループ"),{items:[],total:0});
+  assert.deepEqual(await listItems(client(),groupA,1,".*"),{items:[],total:0});
+});
+
+test("overlong search input is rejected before any database request",async()=>{
+  await assert.rejects(listItems({from(){throw new Error("must-not-be-called");}},groupA,1,"x".repeat(101)),error=>!error.message.includes("must-not-be-called"));
 });
 
 test("an unavailable store or failed query is an error, never a misleading empty list",async()=>{

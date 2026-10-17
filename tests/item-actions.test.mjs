@@ -21,6 +21,7 @@ registerHooks({resolve(specifier,context,next){
     "@/lib/groups/validation":new URL("../lib/groups/validation.ts",import.meta.url).href,
     "@/lib/items/validation":new URL("../lib/items/validation.ts",import.meta.url).href,
     "@/lib/items/repository":new URL("../lib/items/repository.ts",import.meta.url).href,
+    "@/lib/items/search":new URL("../lib/items/search.ts",import.meta.url).href,
     "next/navigation":navigationModule,"next/cache":cacheModule,
   }[specifier];
   return url?{url,shortCircuit:true}:next(specifier,context);

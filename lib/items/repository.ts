@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../supabase/database.types";
 import type { ItemInput } from "./validation";
+import { titleSearchFilter, validItemSearch } from "@/lib/items/search";
 
 export type SavedItem = Pick<Database["public"]["Tables"]["items"]["Row"], "id" | "group_id" | "title" | "kind" | "memo" | "created_at">;
 export const ITEM_PAGE_SIZE = 20;
@@ -17,9 +18,12 @@ export class ItemStoreError extends Error {
   }
 }
 
-export async function listItems(client: SupabaseClient<Database>, groupId: string, page: number): Promise<{ items: SavedItem[]; total: number }> {
+export async function listItems(client: SupabaseClient<Database>, groupId: string, page: number, query = ""): Promise<{ items: SavedItem[]; total: number }> {
+  if (!validItemSearch(query)) throw new ItemStoreError(null);
   const start = (page - 1) * ITEM_PAGE_SIZE;
-  const { data, error, count } = await client.from("items").select(columns, { count: "exact" }).eq("group_id", groupId)
+  let request = client.from("items").select(columns, { count: "exact" }).eq("group_id", groupId);
+  if (query) request = request.filter("title", "imatch", titleSearchFilter(query));
+  const { data, error, count } = await request
     .order("created_at", { ascending: false }).order("id", { ascending: false }).range(start, start + ITEM_PAGE_SIZE - 1);
   if (error) throw new ItemStoreError(error);
   return { items: data ?? [], total: count ?? 0 };

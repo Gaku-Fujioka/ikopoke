@@ -11,23 +11,27 @@ import { itemPage } from "@/lib/items/validation";
 import { AuthSetupNotice } from "@/components/auth-setup-notice";
 import { CreateItemForm } from "@/components/items/create-item-form";
 import { RetryItems } from "@/components/items/retry-items";
+import { itemSearchQuery, validItemSearch, sharedItemListHref, sharedItemDetailHref } from "@/lib/items/search";
 
-type Props = { params: Promise<{ groupId: string }>; searchParams: Promise<{ page?: string | string[] }> };
+type Props = { params: Promise<{ groupId: string }>; searchParams: Promise<{ page?: string | string[]; q?: string | string[] }> };
 
 async function ItemsContent({ params, searchParams }: Props) {
   const { groupId } = await params;
   if (!isGroupId(groupId)) notFound();
   if (!hasEnvVars) return <AuthSetupNotice />;
-  const page = itemPage((await searchParams).page);
+  const search = await searchParams;
+  const page = itemPage(search.page);
+  const query = itemSearchQuery(search.q);
+  const searchError = !validItemSearch(query);
   const listPath = `/app/groups/${groupId}/items`;
   const client = await createClient();
   const { data, error } = await client.auth.getClaims();
-  if (error || !data?.claims?.sub) redirect(`/auth/login?next=${encodeURIComponent(`${listPath}?page=${page}`)}`);
+  if (error || !data?.claims?.sub) redirect(`/auth/login?next=${encodeURIComponent(sharedItemListHref(groupId, query, page))}`);
   let group;
   let saved;
   try {
     group = await getGroup(client, groupId);
-    if (group) saved = await listItems(client, groupId, page);
+    if (group) saved = searchError ? { items: [], total: 0 } : await listItems(client, groupId, page, query);
   } catch (cause) {
     return (
       <div role="alert" className="space-y-4 rounded-3xl border border-stone-200 bg-white p-6">
@@ -49,13 +53,22 @@ async function ItemsContent({ params, searchParams }: Props) {
         </div>
         <a href="#add-item" className="inline-flex min-h-11 items-center rounded-full bg-orange-700 px-6 text-sm font-semibold text-white hover:bg-orange-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-700 focus-visible:ring-offset-2">候補を追加</a>
       </div>
-      <section aria-label="保存した候補" className="space-y-4">
-        <p className="text-sm text-stone-600">全{saved.total}件</p>
+      <form action={listPath} method="get" role="search" className="flex flex-wrap items-end gap-3 rounded-3xl border border-stone-200 bg-white p-5">
+        <div className="min-w-0 flex-1 basis-48 space-y-2">
+          <label htmlFor="shared-item-search" className="block text-sm font-semibold">候補の名前で検索</label>
+          <input key={query} id="shared-item-search" name="q" type="search" defaultValue={query} aria-invalid={searchError} aria-describedby={searchError ? "shared-search-error" : undefined} placeholder="名前の一部を入力" className="min-h-12 w-full rounded-xl border border-stone-300 px-4 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-700" />
+        </div>
+        <button type="submit" className="min-h-12 rounded-full bg-stone-900 px-6 text-sm font-semibold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-900 focus-visible:ring-offset-2">検索</button>
+        {query && <Link href={listPath} className="inline-flex min-h-12 items-center px-3 font-semibold text-orange-700 underline underline-offset-4">条件を解除</Link>}
+        {searchError && <p id="shared-search-error" role="alert" className="w-full text-sm text-red-700">検索語は100文字以内で入力してください。</p>}
+      </form>
+      {!searchError && <section aria-label="保存した候補" className="space-y-4">
+        <p role="status" className="break-words text-sm text-stone-600">{query ? `「${query}」の検索結果：${saved.total}件` : `全${saved.total}件`}</p>
         {saved.items.length ? (
           <ul className="grid gap-4 sm:grid-cols-2">
             {saved.items.map((item) => (
               <li key={item.id} className="min-w-0">
-                <Link href={`${listPath}/${item.id}?page=${page}`} className="block h-full rounded-3xl border border-stone-200 bg-white p-6 hover:border-orange-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-700">
+                <Link href={sharedItemDetailHref(groupId, item.id, query, page)} className="block h-full rounded-3xl border border-stone-200 bg-white p-6 hover:border-orange-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-700">
                   <span className="text-xs font-semibold text-orange-700">{item.kind === "spot" ? "スポット" : "やりたいこと"}</span>
                   <h2 className="mt-3 break-words text-xl font-semibold">{item.title}</h2>
                   <p className="mt-3 line-clamp-3 whitespace-pre-wrap break-words text-sm leading-6 text-stone-600">{item.memo || "メモはまだありません。"}</p>
@@ -65,19 +78,19 @@ async function ItemsContent({ params, searchParams }: Props) {
           </ul>
         ) : (
           <div className="rounded-3xl border border-stone-200 bg-white p-6">
-            <h2 className="text-xl font-semibold">{page === 1 ? "候補がまだありません" : "このページには候補がありません"}</h2>
-            <p className="mt-2 leading-7 text-stone-600">{page === 1 ? "気になる場所や、やりたいことを一つ追加しましょう。" : "最初のページから候補をご確認ください。"}</p>
-            {page > 1 && <Link href={listPath} className="inline-flex min-h-11 items-center font-semibold text-orange-700 underline underline-offset-4">最初のページへ</Link>}
+            <h2 className="text-xl font-semibold">{page > 1 ? "このページには候補がありません" : query ? "条件に合う候補がありません" : "候補がまだありません"}</h2>
+            <p className="mt-2 leading-7 text-stone-600">{page > 1 ? "最初のページから候補をご確認ください。" : query ? "名前の一部を変えるか、条件を解除してお試しください。" : "気になる場所や、やりたいことを一つ追加しましょう。"}</p>
+            {page > 1 && <Link href={sharedItemListHref(groupId, query)} className="inline-flex min-h-11 items-center font-semibold text-orange-700 underline underline-offset-4">最初のページへ</Link>}
           </div>
         )}
         {(page > 1 || page * ITEM_PAGE_SIZE < saved.total) && (
           <nav aria-label="候補一覧のページ" className="flex flex-wrap items-center gap-5">
-            {page > 1 && <Link href={`${listPath}?page=${page - 1}`} className="inline-flex min-h-11 items-center font-semibold text-orange-700 underline underline-offset-4">前のページ</Link>}
+            {page > 1 && <Link href={sharedItemListHref(groupId, query, page - 1)} className="inline-flex min-h-11 items-center font-semibold text-orange-700 underline underline-offset-4">前のページ</Link>}
             <span className="text-sm text-stone-600">{page}ページ</span>
-            {page * ITEM_PAGE_SIZE < saved.total && <Link href={`${listPath}?page=${page + 1}`} className="inline-flex min-h-11 items-center font-semibold text-orange-700 underline underline-offset-4">次のページ</Link>}
+            {page * ITEM_PAGE_SIZE < saved.total && <Link href={sharedItemListHref(groupId, query, page + 1)} className="inline-flex min-h-11 items-center font-semibold text-orange-700 underline underline-offset-4">次のページ</Link>}
           </nav>
         )}
-      </section>
+      </section>}
       <CreateItemForm groupId={groupId} groupName={group.name} requestId={randomUUID()} />
     </div>
   );

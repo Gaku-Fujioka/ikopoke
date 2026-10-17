@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { after, before, test } from "node:test";
+import { literalTitlePattern } from "../lib/items/search.ts";
 
 const { PGlite } = await import(process.env.KOKOIKO_PGLITE_MODULE_URL ?? "@electric-sql/pglite");
 let db;
@@ -123,4 +124,12 @@ test("membership removal revokes reads and even retries of previously saved inpu
     assert.deepEqual((await db.query("select id from public.items")).rows, []);
     await fails(create(groupA,"名前だけの候補","activity","","20000000-0000-4000-8000-000000000005"), "42501");
   });
+});
+
+test("PostgreSQL title patterns preserve literal punctuation, Japanese and case-insensitive matching",async()=>{
+  for(const query of [".*+?^${}()|[]\\%_", "カフェ（海）", "O'Reilly, (sample)", '"quote", name:(x).*']){
+    const result=await db.query("select $1::text ~* $2 as matches, 'unrelated' ~* $2 as other",[`before${query}after`,literalTitlePattern(query)]);
+    assert.deepEqual(result.rows[0],{matches:true,other:false});
+  }
+  assert.equal((await db.query("select 'Cafe BLUE' ~* $1 as matches",[literalTitlePattern("cafe")])).rows[0].matches,true);
 });
