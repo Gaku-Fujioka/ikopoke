@@ -9,6 +9,8 @@ import { getItem, ItemStoreError } from "@/lib/items/repository";
 import { itemPage } from "@/lib/items/validation";
 import { AuthSetupNotice } from "@/components/auth-setup-notice";
 import { RetryItems } from "@/components/items/retry-items";
+import { getReactions, ReactionError } from "@/lib/items/reactions";
+import { ItemReactions } from "@/components/items/item-reactions";
 
 type Props = { params: Promise<{ groupId: string; itemId: string }>; searchParams: Promise<{ page?: string | string[] }> };
 
@@ -36,6 +38,17 @@ async function ItemContent({ params, searchParams }: Props) {
     );
   }
   if (!group || !item) notFound();
+  let reactionContent;
+  try {
+    reactionContent = <ItemReactions groupId={groupId} itemId={itemId} summary={await getReactions(client, groupId, itemId)} />;
+  } catch (cause) {
+    reactionContent = (
+      <section aria-label="リアクション" className="space-y-3 rounded-3xl border border-stone-200 bg-white p-6">
+        <p role="status" className="text-sm leading-6 text-stone-600">{cause instanceof ReactionError ? cause.message : "反応を読み込めませんでした。もう一度お試しください。"}</p>
+        <RetryItems />
+      </section>
+    );
+  }
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <Link href={`${listPath}?page=${page}`} className="inline-flex min-h-11 items-center text-sm font-semibold text-stone-600 underline underline-offset-4">← みんなの候補へ</Link>
@@ -48,6 +61,7 @@ async function ItemContent({ params, searchParams }: Props) {
           <p className="mt-3 whitespace-pre-wrap break-words leading-7 text-stone-700">{item.memo || "メモはまだありません。"}</p>
         </section>
       </article>
+      {reactionContent}
     </div>
   );
 }

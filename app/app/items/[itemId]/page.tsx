@@ -6,6 +6,7 @@ import { type FormEvent, Suspense, useRef, useState } from "react";
 import { ScreenState } from "@/components/flow/screen-state";
 import { messageFromError, useMockSnapshot } from "@/components/flow/use-mock-snapshot";
 import type { Item, ReactionValue } from "@/lib/kokoiko/contracts";
+import { REACTION_OPTIONS, reactionLabel } from "@/lib/items/reaction-values";
 import { itemKindFromQuery, itemListHref, reactionFromQuery } from "@/lib/kokoiko/item-list-query";
 import { createMockRepository, MOCK_GROUP_ID, MOCK_MEMBER_ID } from "@/lib/kokoiko/mock-repository";
 
@@ -119,10 +120,10 @@ function ItemDetailContent() {
           </div>
           <section aria-labelledby="reaction-title" className="rounded-3xl border border-stone-200 bg-white p-6 sm:p-8">
             <h2 id="reaction-title" className="text-xl font-semibold">あなたの気持ち</h2>
-            <p className="mt-2 text-sm text-stone-600">現在の反応：{reaction === "want_to_go" ? "行きたい" : reaction === "not_now" ? "あんまり" : "未反応"}</p>
+            <p className="mt-2 text-sm text-stone-600">現在の反応：{reactionLabel(reaction ?? null)}</p>
             <div className="mt-5 flex flex-wrap gap-3">
-              {(["want_to_go", "not_now"] as const).map((value) => (
-                <button key={value} type="button" disabled={saving} onClick={() => chooseReaction(value)} aria-pressed={reaction === value} className={`min-h-11 rounded-full border px-5 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-700 focus-visible:ring-offset-2 disabled:opacity-60 ${reaction === value ? "border-orange-700 bg-orange-50 text-orange-800" : "border-stone-300 bg-white text-stone-700 hover:bg-stone-50"}`}>{value === "want_to_go" ? "行きたい" : "あんまり"}</button>
+              {REACTION_OPTIONS.map(({ value, label }) => (
+                <button key={value} type="button" disabled={saving} onClick={() => chooseReaction(value)} aria-pressed={reaction === value} className={`min-h-11 rounded-full border px-5 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-700 focus-visible:ring-offset-2 disabled:opacity-60 ${reaction === value ? "border-orange-700 bg-orange-50 text-orange-800" : "border-stone-300 bg-white text-stone-700 hover:bg-stone-50"}`}>{label}</button>
               ))}
             </div>
             <p className="mt-3 text-xs leading-5 text-stone-500">選択中の反応をもう一度押すと未反応に戻ります。</p>

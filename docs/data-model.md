@@ -6,6 +6,12 @@
 
 ## 確認できた現状
 
+REACTION-02：D-013の現在の反応を`item_reactions`へ保存する実装を追加。PKは`(item_id,user_id)`で、希望状態のUPSERTと本人行だけのDELETEで変更・取消を行う。
+本人IDは`auth.uid()`から取得し、候補とグループの一致・所属を両RPCで確認する。同一メンバーの保存・取消は所属行のロックで直列化する。別メンバーの反応は上書きしない。
+直接書き込みは許可せず、RLSで生データのSELECTを本人かつ所属中の行へ制限する。`get_item_reactions(uuid,uuid)`は所属を確認して全体件数と本人の現在値だけを返す。
+`set_item_reaction(uuid,uuid,text)`に利用者IDを受け取らせない。表示は「行きたい！／そこまで」、保存値は`want_to_go`／`not_now`を維持する。未反応は行が存在しない状態で、どちらの値とも区別する。
+`20261018001000_create_item_reactions.sql`はローカルPostgreSQLで検証済み、外部DB未適用。退会のAPI・他者の反応変更・名前の表示・コメントは含めない。
+
 ITEM-02：D-012の共有候補をローカルに実装。`items`はグループ・名前・spot/activity・メモ・登録者・登録日時を保存する。
 所属者だけSELECTできるRLSと`create_item(uuid,text,text,text,uuid)`を追加。作成はセッションの所属・入力を確認して行い、同じrequest UUIDと同じ内容の再送では重複を作らない。内容・グループ・登録者の異なる再利用は拒否する。
 直接INSERT/UPDATE/DELETEは公開せず、名前100文字・メモ2,000文字をDBでも制限する。外部キーの削除はRESTRICTで、削除と保全の仕様を確定した意味ではない。
