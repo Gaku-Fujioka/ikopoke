@@ -9,6 +9,12 @@ export type GroupRow = {
 export type Database = {
   public: {
     Tables: {
+      item_comments: {
+        Row: { id: string; item_id: string; body: string; created_by: string; created_at: string };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
       item_reactions: {
         Row: { item_id: string; user_id: string; value: "want_to_go" | "not_now"; updated_at: string };
         Insert: never;
@@ -40,8 +46,17 @@ export type Database = {
         Relationships: [];
       };
     };
-    Views: { [_ in never]: never };
+    Views: {
+      shared_item_feed: {
+        Row: { id: string; group_id: string; title: string; kind: "spot" | "activity"; memo: string; created_at: string; my_reaction: "want_to_go" | "not_now" | null };
+        Relationships: [];
+      };
+    };
     Functions: {
+      rename_group: { Args: { p_group_id: string; p_name: string; p_expected_name: string }; Returns: string };
+      create_item_comment: { Args: { p_group_id: string; p_item_id: string; p_body: string; p_request_id: string }; Returns: string };
+      get_item_comments: { Args: { p_group_id: string; p_item_id: string; p_page: number }; Returns: { comments: { id: string; body: string; created_at: string; is_mine: boolean }[]; total_count: number }[] };
+      update_item: { Args: { p_group_id: string; p_item_id: string; p_title: string; p_memo: string; p_expected_title: string; p_expected_memo: string }; Returns: string };
       get_item_reactions: { Args: { p_group_id: string; p_item_id: string }; Returns: { want_count: number; not_now_count: number; my_reaction: "want_to_go" | "not_now" | null }[] };
       set_item_reaction: { Args: { p_group_id: string; p_item_id: string; p_value: string | null }; Returns: undefined };
       create_item: { Args: { p_group_id: string; p_title: string; p_kind: string; p_memo: string; p_request_id: string }; Returns: string };

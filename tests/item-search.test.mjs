@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import {test} from "node:test";
-import {itemSearchQuery,validItemSearch,literalTitlePattern,titleSearchFilter,sharedItemListHref,sharedItemDetailHref} from "../lib/items/search.ts";
+import {itemSearchQuery,itemFilters,validItemSearch,literalTitlePattern,titleSearchFilter,sharedItemListHref,sharedItemDetailHref,sharedItemCommentsHref} from "../lib/items/search.ts";
 
 test("search trims blank input and accepts only one textual query",()=>{
   assert.equal(itemSearchQuery("　カフェ \n"),"カフェ");
@@ -33,4 +33,23 @@ test("detail and pagination links keep the same literal search without query or 
   assert.equal(detail.search,list.search);assert.equal(detail.searchParams.get("q"),query);assert.equal(detail.searchParams.get("page"),"2");assert.equal(detail.hash,"");
   assert.equal(sharedItemListHref(groupId),`/app/groups/${groupId}/items`);
   assert.equal(new URL(sharedItemListHref(groupId,query),list).searchParams.get("page"),null);
+});
+
+test("kind and own-reaction filters reject arbitrary inputs and survive detail/pagination links",()=>{
+  assert.deepEqual(itemFilters({kind:["spot"],reaction:"other"}),{kind:undefined,reaction:undefined});
+  for(const reaction of ["want_to_go","not_now","unreacted"]){
+    const filters=itemFilters({kind:"activity",reaction});
+    const detail=new URL(sharedItemDetailHref("group","item","カフェ",2,filters),"https://example.test");
+    const list=new URL(sharedItemListHref("group","カフェ",2,filters),detail);
+    assert.equal(detail.search,list.search);assert.equal(detail.searchParams.get("kind"),"activity");assert.equal(detail.searchParams.get("reaction"),reaction);
+    assert.equal(new URL(sharedItemListHref("group","カフェ",1,filters),detail).searchParams.get("page"),null);
+  }
+});
+
+test("comment pagination keeps candidate filters and page while returning to latest removes only comment paging",()=>{
+  const detail=sharedItemDetailHref("group","item","海 & #",3,{kind:"spot",reaction:"want_to_go"});
+  const older=sharedItemCommentsHref(detail,2),latest=sharedItemCommentsHref(older,1);
+  const url=new URL(older,"https://example.test");
+  assert.equal(url.searchParams.get("commentsPage"),"2");assert.equal(url.searchParams.get("page"),"3");assert.equal(url.searchParams.get("q"),"海 & #");
+  assert.equal(latest,detail);assert.equal(url.hash,"");
 });

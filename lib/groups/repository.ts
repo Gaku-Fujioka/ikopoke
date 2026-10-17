@@ -7,7 +7,9 @@ export class GroupStoreError extends Error {
   constructor(error: { code?: string } | null) {
     super(error && ["42P01", "PGRST202", "PGRST205"].includes(error.code ?? "")
       ? "グループ機能は準備中です。利用できるようになるまでお待ちください。"
-      : "グループを読み書きできませんでした。通信状態をご確認のうえ、もう一度お試しください。");
+      : error?.code === "40001"
+        ? "グループ名は別の画面で変更されています。入力内容を控えてから再読み込みし、最新の名前をご確認ください。"
+        : "グループを読み書きできませんでした。通信状態をご確認のうえ、もう一度お試しください。");
     this.name = "GroupStoreError";
   }
 }
@@ -30,4 +32,9 @@ export async function createGroup(client: SupabaseClient<Database>, input: { nam
   const { data, error } = await client.rpc("create_group", { p_name: input.name, p_request_id: input.requestId });
   if (error || !data) throw new GroupStoreError(error);
   return data;
+}
+
+export async function renameGroup(client: SupabaseClient<Database>, input: { groupId: string; name: string; expectedName: string }): Promise<void> {
+  const { data, error } = await client.rpc("rename_group", { p_group_id: input.groupId, p_name: input.name, p_expected_name: input.expectedName });
+  if (error || data !== input.groupId) throw new GroupStoreError(error);
 }
