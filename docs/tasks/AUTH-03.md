@@ -45,14 +45,17 @@ AUTH-01/02、D-007。実装・文書は本Agent単独。branch：`feat/auth-app-
 
 ## 結果・レビュー対象
 
-基準は`bb11b1d`。既存の未コミット変更は対象外。AUTH-03の固定commitをPRで人間レビューへ渡す。
+基準は`bb11b1d`、実装の固定commitは`5b2af74`。既存の未コミット変更は対象外。
+[Draft PR #1](https://github.com/Gaku-Fujioka/kokoiko/pull/1)で人間レビューへ渡す。人間レビューとブラウザ検証前なのでmainには未マージ。
 
 - 実装：日本語フォーム、未設定時の送信抑止、アプリへの復帰、PKCE/token hash確認、固定エラー、セッション更新、ログアウト導線、設定手順。
 - ローカルlint・型検査・build成功。回帰テスト19件成功（認証Route Handlerは試験用provider、実Authではない）。
 - HTTP確認9件成功。ブラウザ操作は利用可能ブラウザがないため未実施。実Auth・Cookieの実接続・メール・共同利用は未確認。
 - 初回の古い生成型による型検査失敗は、build後の再検査で解消。モジュール形式のNode警告とNextのpartialPrefetching案内は残る。依存・設定の無関係な変更はしない。
 - 自己レビュー：外部転送／Authループ／不正token種別／失敗時の情報漏れ／未設定時の操作／既存デモとの境界を確認。独立レビューは未実施。
-- GitHub CI・push・PRの結果は公開後に追記する。mainへのマージは人間レビュー後とし、実接続・公開済みとは扱わない。
+- `feat/auth-app-entry`をpush済み。`5b2af74`の[GitHub CI](https://github.com/Gaku-Fujioka/kokoiko/actions/runs/39015073943)は`npm ci`・lint・型検査・19件のNodeテスト・buildすべて成功。
+- 以前のローカルmain `bb11b1d`もユーザーのpush許可に従って公開し、[mainのCI](https://github.com/Gaku-Fujioka/kokoiko/actions/runs/39015018628)成功を確認。AUTH-03のmainマージ、deploy、外部DB変更はしていない。
+- 変更docs内のローカルリンク81件を確認し、欠落なし。検証用ローカルサーバーは停止済み。
 
 ## 次のタスク
 

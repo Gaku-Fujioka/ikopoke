@@ -7,7 +7,7 @@ P0〜P5は段階案。以下も将来作業の提案で、全件実装の指示�
 
 ## 現在の作業と次の順序（2026-10-17）
 
-1. **AUTH-03：認証画面とアプリへの導線**。`feat/auth-app-entry`でローカル自己確認済み、レビュー・実接続待ち。[範囲とDone](docs/tasks/AUTH-03.md)。
+1. **AUTH-03：認証画面とアプリへの導線**。`5b2af74`をpushし、ローカルとGitHub CIのlint・型・19件のテスト・build成功。[Draft PR #1](https://github.com/Gaku-Fujioka/kokoiko/pull/1)で人間レビュー・ブラウザ確認待ち。実Authは未接続。[範囲とDone](docs/tasks/AUTH-03.md)。
 2. **AUTH-04：開発用Supabase接続と実認証の確認**。ユーザーによるプロジェクト作成・ローカル設定後に実施。[設定手順](docs/auth-setup.md)。
 3. **DATA-01 / GROUP-01**：グループ・招待・個人利用・履歴保全・競合の未決定事項を決め、DB・RLSを小さく実装する。
 4. 候補・反応・リスト・コメントの共有保存、その後に計画編集、写真・評価・思い出の実データ化へ進む。

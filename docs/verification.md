@@ -16,7 +16,8 @@
 - 最初のsandbox内lint/型検査は既存node_modulesの読み取り権限で失敗し、権限付きで再実行した。
   型検査で古い`.next/types`が削除済み`app/page`を参照していたため、buildで生成し直した後の型検査は成功した。
 - 現在のnode_modulesはNext 16.4.2で、下の2026-10-05のlockfile調査値と異なる。今回依存やlockfileは変更せず、CIでは`npm ci`による検証を別に確認する。
-- CIに`auth-handlers.test.mjs`を追加した。GitHubの実行結果は個別タスクとPRで記録する。
+- CIに`auth-handlers.test.mjs`を追加した。実装commit `5b2af74`の[GitHub CI](https://github.com/Gaku-Fujioka/kokoiko/actions/runs/39015073943)で`npm ci`・lint・型検査・19件のテスト・buildがすべて成功。
+  [Draft PR #1](https://github.com/Gaku-Fujioka/kokoiko/pull/1)は人間レビュー・ブラウザ検証待ちで、mainへ未マージ。
 
 ## 統合後の確認とCI
 
