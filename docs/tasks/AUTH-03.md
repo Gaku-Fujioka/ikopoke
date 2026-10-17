@@ -45,6 +45,9 @@ AUTH-01/02、D-007。実装・文書は本Agent単独。branch：`feat/auth-app-
 
 ## 結果・レビュー対象
 
+2026-10-17追記：最新head `182fc8b`の[CI](https://github.com/Gaku-Fujioka/kokoiko/actions/runs/39015189804)成功と自己レビュー後、D-009のユーザー指示に従いPR #1をmainへマージした（`d24f54a`）。独立レビューは未実施。
+実Authの基本正常系はユーザーが確認済み（TASKSのAUTH-04）。以下は初回提出時点の記録。
+
 基準は`bb11b1d`、実装の固定commitは`5b2af74`。既存の未コミット変更は対象外。
 [Draft PR #1](https://github.com/Gaku-Fujioka/kokoiko/pull/1)で人間レビューへ渡す。人間レビューとブラウザ検証前なのでmainには未マージ。
 

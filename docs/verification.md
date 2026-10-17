@@ -3,6 +3,18 @@
 更新日：2026-10-05。コマンドの存在、実行、成功を別々に記録する。
 以下の「初期文書整備」は2026-10-03時点の記録。統合後の確認結果は次節に記す。
 
+## AUTH-04とGROUP-02の確認（2026-10-17）
+
+ユーザーが開発用Supabaseの作成・ローカル設定・リダイレクト設定を実施し、登録・メール確認、ログアウト・再ログイン・再読込、再設定後の新パスワードでのログイン成功を報告した。
+Agentは値を表示せず公開Auth設定HTTP200（メール方式有効・登録有効・メール確認あり）と、未認証のアプリURLから検索条件を保持したログイン誘導をHTTPで確認。
+誤パスワード・期限切れ・セッション期限・複数アカウントは実サービスで未確認。
+
+GROUP-02はlint・型検査・34件のNodeテスト・buildを実施し、結果を[個別タスク](tasks/GROUP-02.md)に記録する。
+全テストのコマンド：`node --experimental-strip-types --test tests/auth-redirect.test.mjs tests/auth-handlers.test.mjs tests/mock-repository.test.mjs tests/group-actions.test.mjs tests/group-database.test.mjs`。
+DBテストはPGliteのPostgreSQLでmigrationとRLSを実行する。実Supabaseのschema・migration・REST権限の検証とは分ける。
+既存node_modules保護のため、ローカルのPGliteは一時ディレクトリを`KOKOIKO_PGLITE_MODULE_URL`で指定。CIはnpm lockfileのdevDependencyを使う。
+実DBへのmigrationは管理接続と既存スキーマ確認の後。ブラウザ操作用ツールには接続ブラウザがなく、グループ画面の実操作は未実施。
+
 ## AUTH-03の確認（2026-10-17）
 
 `feat/auth-app-entry`で認証導線の実装を検証する。開発用Supabaseはユーザー回答で未作成。
