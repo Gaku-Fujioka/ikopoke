@@ -2,6 +2,7 @@
 
 import { cn, hasEnvVars } from "@/lib/utils";
 import { appNextPath, authEntryPath } from "@/lib/auth/safe-next-path";
+import { signUpErrorMessage } from "@/lib/auth/sign-up-error";
 import { AuthSetupNotice } from "@/components/auth-setup-notice";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -58,8 +59,8 @@ export function SignUpForm({
       // Local Supabase can disable email confirmation and return a session.
       router.replace(data.session ? appNextPath(nextPath) : authEntryPath("sign-up-success", nextPath));
       router.refresh();
-    } catch {
-      setError("登録できませんでした。入力内容や通信状態をご確認のうえ、時間をおいて再度お試しください。");
+    } catch (error) {
+      setError(signUpErrorMessage(error));
     } finally {
       submitting.current = false;
       setIsLoading(false);
