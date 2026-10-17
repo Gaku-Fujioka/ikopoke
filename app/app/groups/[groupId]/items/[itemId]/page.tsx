@@ -57,6 +57,7 @@ async function ItemContent({ params, searchParams }: Props) {
         <p className="break-words text-sm font-semibold text-orange-700">{group.name} / {item.kind === "spot" ? "スポット" : "やりたいこと"}</p>
         <h1 className="break-words text-3xl font-bold tracking-tight sm:text-4xl">{item.title}</h1>
         <p className="text-sm leading-6 text-stone-600">このグループのメンバーに共有されています。</p>
+        <Link href={`/app/groups/${groupId}/outings/new?item=${itemId}`} className="inline-flex min-h-11 items-center font-semibold text-orange-700 underline underline-offset-4">この候補から計画を作る</Link>
         <section aria-labelledby="item-memo-heading" className="border-t border-stone-200 pt-5">
           <h2 id="item-memo-heading" className="font-semibold">メモ</h2>
           <p className="mt-3 whitespace-pre-wrap break-words leading-7 text-stone-700">{item.memo || "メモはまだありません。"}</p>
