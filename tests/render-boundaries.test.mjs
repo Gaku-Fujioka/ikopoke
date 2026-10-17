@@ -12,7 +12,7 @@ import ts from "typescript";
 const moduleURL=source=>`data:text/javascript,${encodeURIComponent(source)}`;
 const providerURL=moduleURL(`
 export const calls=[];let plan={};export function configure(value){plan=value;calls.length=0;}
-export class GroupStoreError extends Error{};export class ItemStoreError extends Error{};export class ReactionError extends Error{};export class InviteError extends Error{};export class CommentError extends Error{};
+export class GroupStoreError extends Error{};export class ItemStoreError extends Error{};export class ReactionError extends Error{};export class InviteError extends Error{};export class CommentError extends Error{};export class ListStoreError extends Error{};
 export const ITEM_PAGE_SIZE=20,COMMENT_PAGE_SIZE=20;
 export async function createClient(){return {auth:{getClaims:async()=>{calls.push(['auth']);return {data:plan.signedOut?null:{claims:{sub:'synthetic-user'}},error:null};}}};}
 export async function getGroup(client,id){calls.push(['group',id]);return plan.group();}
@@ -21,15 +21,16 @@ export async function listItems(client,...args){calls.push(['items',...args]);re
 export async function getReactions(client,...args){calls.push(['reactions',...args]);return plan.reactions();}
 export async function getComments(client,...args){calls.push(['comments',...args]);return plan.comments();}
 export async function listInvites(client,...args){calls.push(['invites',...args]);return plan.invites();}
+export async function getItemLists(client,...args){calls.push(['lists',...args]);return plan.lists();}
 `);
-const leafURL=moduleURL("export function AuthSetupNotice(){return null;}export function CreateItemForm(){return null;}export function RetryItems(){return null;}export function EditItemForm(){return null;}export function ItemReactions(){return null;}export function CommentForm(){return null;}export function InviteManagement(){return null;}export function RenameGroupForm(){return null;}export default function Link(){return null;}");
+const leafURL=moduleURL("export function AuthSetupNotice(){return null;}export function CreateItemForm(){return null;}export function RetryItems(){return null;}export function EditItemForm(){return null;}export function ItemReactions(){return null;}export function CommentForm(){return null;}export function InviteManagement(){return null;}export function RenameGroupForm(){return null;}export function ItemListButton(){return null;}export default function Link(){return null;}");
 const navigationURL=moduleURL("export function notFound(){const error=new Error('not found');error.navigation='not-found';throw error;}export function redirect(path){const error=new Error('redirect');error.location=path;throw error;}");
 registerHooks({
   resolve(specifier,context,next){
     if(specifier==="@/lib/utils")return {url:moduleURL("export const hasEnvVars=true;"),shortCircuit:true};
-    if(["@/lib/supabase/server","@/lib/groups/repository","@/lib/items/repository","@/lib/items/reactions","@/lib/items/comments","@/lib/groups/invitations"].includes(specifier))return {url:providerURL,shortCircuit:true};
+    if(["@/lib/supabase/server","@/lib/groups/repository","@/lib/items/repository","@/lib/items/reactions","@/lib/items/comments","@/lib/groups/invitations","@/lib/lists/repository"].includes(specifier))return {url:providerURL,shortCircuit:true};
     if(specifier==="next/navigation")return {url:navigationURL,shortCircuit:true};
-    if(specifier==="next/link"||(specifier.startsWith("@/components/")&& !["@/components/items/item-comments","@/components/items/item-reaction-section"].includes(specifier)))return {url:leafURL,shortCircuit:true};
+    if(specifier==="next/link"||(specifier.startsWith("@/components/")&& !["@/components/items/item-comments","@/components/items/item-reaction-section","@/components/lists/item-lists"].includes(specifier)))return {url:leafURL,shortCircuit:true};
     if(specifier.startsWith("@/"))return {url:new URL(`../${specifier.slice(2)}${specifier.startsWith("@/components/")?".tsx":".ts"}`,import.meta.url).href,shortCircuit:true};
     return next(specifier,context);
   },
@@ -42,6 +43,7 @@ const {default:Detail}=await import("../app/app/groups/[groupId]/items/[itemId]/
 const {default:List}=await import("../app/app/groups/[groupId]/items/page.tsx");
 const {default:Group}=await import("../app/app/groups/[groupId]/page.tsx");
 const {ItemReactionSection}=await import("../components/items/item-reaction-section.tsx");
+const {ItemLists}=await import("../components/lists/item-lists.tsx");
 const provider=await import(providerURL);
 const groupId="10000000-0000-4000-8000-000000000001",itemId="20000000-0000-4000-8000-000000000001";
 const group={id:groupId,name:"テストグループ"},item={id:itemId,group_id:groupId,title:"テスト候補",kind:"spot",memo:"メモ"};
@@ -50,7 +52,7 @@ const deferred=()=>{let resolve;const promise=new Promise(done=>{resolve=done;})
 function walk(node,predicate){if(!node||typeof node!=="object")return [];const children=Array.isArray(node)?node:[node.props?.children];return [...(!Array.isArray(node)&&predicate(node)?[node]:[]),...children.flatMap(child=>walk(child,predicate))];}
 function text(node){if(typeof node==="string"||typeof node==="number")return String(node);if(!node||typeof node!=="object")return "";return (Array.isArray(node)?node:[node.props?.children]).map(text).join(" ");}
 function content(Page,input=props()){const tree=Page(input);const boundary=tree.type===Suspense?tree:walk(tree,node=>node.type===Suspense)[0];return boundary.props.children.type(boundary.props.children.props);}
-beforeEach(()=>provider.configure({group:()=>group,item:()=>item,items:()=>({items:[],total:0}),reactions:()=>({want_count:0,not_now_count:0,my_reaction:null}),comments:()=>({comments:[],total:0}),invites:()=>[]}));
+beforeEach(()=>provider.configure({group:()=>group,item:()=>item,items:()=>({items:[],total:0}),reactions:()=>({want_count:0,not_now_count:0,my_reaction:null}),comments:()=>({comments:[],total:0}),lists:()=>({lists:[],total:0}),invites:()=>[]}));
 
 test("candidate metadata starts both authorized reads without waiting and has independent reaction/comment boundaries",async()=>{
   const groupRead=deferred(),itemRead=deferred();provider.configure({group:()=>groupRead.promise,item:()=>itemRead.promise});
@@ -60,8 +62,8 @@ test("candidate metadata starts both authorized reads without waiting and has in
   groupRead.resolve(group);itemRead.resolve(item);const body=await pending;
   assert.match(text(body),/テスト候補/);assert.match(text(body),/メモ/);
   const boundaries=walk(body,node=>node.type===Suspense);
-  assert.equal(boundaries.length,2);assert.match(text(boundaries[0].props.fallback),/反応/);assert.match(text(boundaries[1].props.fallback),/コメント/);
-  assert.equal(boundaries[0].props.children.type,ItemReactionSection);
+  assert.equal(boundaries.length,3);assert.match(text(boundaries[0].props.fallback),/リスト/);assert.match(text(boundaries[1].props.fallback),/反応/);assert.match(text(boundaries[2].props.fallback),/コメント/);
+  assert.equal(boundaries[0].props.children.type,ItemLists);assert.equal(boundaries[1].props.children.type,ItemReactionSection);
   assert.deepEqual(provider.calls.map(call=>call[0]),["auth","group","item"]);
 });
 test("list reads start together and keep the selected group and filters",async()=>{
@@ -88,4 +90,12 @@ test("non-member candidate reads fail closed and do not start auxiliary sections
 test("reaction failures stay in their section, with no raw provider detail or false zero count",async()=>{
   provider.configure({reactions:()=>{throw new Error("private provider detail");}});
   const section=await ItemReactionSection({client:{},groupId,itemId});assert.match(text(section),/反応を読み込めませんでした/);assert.ok(!text(section).includes("private"));assert.ok(!text(section).includes("0人"));
+});
+test("comment and list pages keep each other's URL state",async()=>{
+  const input=props();input.searchParams=Promise.resolve({q:"Cafe",list:"30000000-0000-4000-8000-000000000001",commentsPage:"2",listsPage:"3",listsQ:"旅"});
+  const body=await content(Detail,input),boundaries=walk(body,node=>node.type===Suspense);
+  assert.equal(boundaries.length,3);
+  const listParams=new URL(boundaries[0].props.children.props.detailHref,"https://example.invalid").searchParams;
+  const commentParams=new URL(boundaries[2].props.children.props.detailHref,"https://example.invalid").searchParams;
+  for(const params of [listParams,commentParams])assert.deepEqual([params.get("q"),params.get("list"),params.get("commentsPage"),params.get("listsPage"),params.get("listsQ")],["Cafe","30000000-0000-4000-8000-000000000001","2","3","旅"]);
 });
