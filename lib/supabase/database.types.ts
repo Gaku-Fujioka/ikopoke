@@ -1,4 +1,4 @@
-/** Types for the repository-owned group migration. Auth remains SDK-managed. */
+/** Types for repository-owned migrations. Auth remains SDK-managed. */
 export type GroupRow = {
   id: string;
   name: string;
@@ -9,6 +9,12 @@ export type GroupRow = {
 export type Database = {
   public: {
     Tables: {
+      items: {
+        Row: { id: string; group_id: string; title: string; kind: "spot" | "activity"; memo: string; created_by: string; created_at: string };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
       groups: {
         Row: GroupRow;
         Insert: never;
@@ -30,6 +36,7 @@ export type Database = {
     };
     Views: { [_ in never]: never };
     Functions: {
+      create_item: { Args: { p_group_id: string; p_title: string; p_kind: string; p_memo: string; p_request_id: string }; Returns: string };
       create_group: { Args: { p_name: string; p_request_id: string }; Returns: string };
       create_group_invite: { Args: { p_group_id: string; p_token_hash: string }; Returns: { id: string; expires_at: string }[] };
       preview_group_invite: { Args: { p_token: string }; Returns: { group_id: string; group_name: string; expires_at: string }[] };

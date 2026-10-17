@@ -32,7 +32,7 @@ export default function MockAppLayout({ children }: { children: ReactNode }) {
       <main id="main-content" tabIndex={-1} className="mx-auto w-full max-w-5xl px-5 pb-28 pt-9 outline-none sm:px-6 sm:pt-12 md:pb-16">
         {children}
         <p className="mt-12 border-t border-stone-200 pt-5 text-xs leading-6 text-stone-500">
-          グループ管理はアカウントに紐づく保存機能です。行きたい・おでかけ・思い出はP1画面モックで、このブラウザにだけ保存され、他の人とは共有されません。
+          グループ管理と、グループ内の「みんなの候補」はアカウントに紐づく保存機能です。下のナビの「行きたい・おでかけ・思い出」はデモで、このブラウザにだけ保存されます。
         </p>
       </main>
     </div>

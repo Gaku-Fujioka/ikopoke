@@ -21,5 +21,5 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npx tsc --noEmit
-      - run: node --experimental-strip-types --test tests/auth-redirect.test.mjs tests/auth-handlers.test.mjs tests/auth-proxy.test.mjs tests/sign-up-error.test.mjs tests/mock-repository.test.mjs tests/group-actions.test.mjs tests/group-database.test.mjs tests/group-invitations-database.test.mjs tests/group-invitation-actions.test.mjs
+      - run: node --experimental-strip-types --test tests/auth-redirect.test.mjs tests/auth-handlers.test.mjs tests/auth-proxy.test.mjs tests/sign-up-error.test.mjs tests/mock-repository.test.mjs tests/group-actions.test.mjs tests/group-database.test.mjs tests/group-invitations-database.test.mjs tests/group-invitation-actions.test.mjs tests/item-actions.test.mjs tests/item-database.test.mjs tests/item-repository.test.mjs
       - run: npm run build
