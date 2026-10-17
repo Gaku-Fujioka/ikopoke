@@ -1,6 +1,8 @@
 "use client";
 
-import { cn } from "@/lib/utils";
+import { cn, hasEnvVars } from "@/lib/utils";
+import { appNextPath } from "@/lib/auth/safe-next-path";
+import { AuthSetupNotice } from "@/components/auth-setup-notice";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,35 +16,40 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 export function LoginForm({
   className,
+  nextPath = "/app",
   ...props
-}: React.ComponentPropsWithoutRef<"div">) {
+}: React.ComponentPropsWithoutRef<"div"> & { nextPath?: string }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const submitting = useRef(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    const supabase = createClient();
+    if (!hasEnvVars || submitting.current) return;
+    submitting.current = true;
     setIsLoading(true);
     setError(null);
 
     try {
+      const supabase = createClient();
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
       if (error) throw error;
-      // Update this route to redirect to an authenticated route. The user already has an active session.
-      router.push("/protected");
-    } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : "An error occurred");
+      router.replace(appNextPath(nextPath));
+      router.refresh();
+    } catch {
+      setError("ログインできませんでした。メールアドレス・パスワードと、メール確認が済んでいるかをご確認ください。");
     } finally {
+      submitting.current = false;
       setIsLoading(false);
     }
   };
@@ -51,55 +58,60 @@ export function LoginForm({
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
         <CardHeader>
-          <CardTitle className="text-2xl">Login</CardTitle>
+          <CardTitle className="text-2xl">ここいこにログイン</CardTitle>
           <CardDescription>
-            Enter your email below to login to your account
+            メールアドレスとパスワードを入力してください。
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleLogin}>
-            <div className="flex flex-col gap-6">
-              <div className="grid gap-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="m@example.com"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-              </div>
-              <div className="grid gap-2">
-                <div className="flex items-center">
-                  <Label htmlFor="password">Password</Label>
-                  <Link
-                    href="/auth/forgot-password"
-                    className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
-                  >
-                    Forgot your password?
-                  </Link>
+          {!hasEnvVars && <AuthSetupNotice />}
+          <form onSubmit={handleLogin} aria-busy={isLoading} className="mt-4">
+            <fieldset className="min-w-0" disabled={!hasEnvVars || isLoading}>
+              <div className="flex flex-col gap-6">
+                <div className="grid gap-2">
+                  <Label htmlFor="email">メールアドレス</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    autoComplete="email"
+                    placeholder="m@example.com"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
                 </div>
-                <Input
-                  id="password"
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
+                <div className="grid gap-2">
+                  <div className="flex items-center">
+                    <Label htmlFor="password">パスワード</Label>
+                    <Link
+                      href="/auth/forgot-password"
+                      className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
+                    >
+                      パスワードを忘れた方
+                    </Link>
+                  </div>
+                  <Input
+                    id="password"
+                    type="password"
+                    autoComplete="current-password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
+                </div>
+                {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
+                <Button type="submit" className="min-h-11 w-full" disabled={isLoading}>
+                  {isLoading ? "ログイン中…" : "ログイン"}
+                </Button>
               </div>
-              {error && <p className="text-sm text-red-500">{error}</p>}
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Logging in..." : "Login"}
-              </Button>
-            </div>
+            </fieldset>
             <div className="mt-4 text-center text-sm">
-              Don&apos;t have an account?{" "}
+              初めての方は{" "}
               <Link
                 href="/auth/sign-up"
                 className="underline underline-offset-4"
               >
-                Sign up
+                アカウント作成
               </Link>
             </div>
           </form>

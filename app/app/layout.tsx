@@ -1,5 +1,6 @@
 import { Suspense, type ReactNode } from "react";
 import { AppNav } from "@/components/layout/app-nav";
+import { AppAccountMenu } from "@/components/app-account-menu";
 
 export default function MockAppLayout({ children }: { children: ReactNode }) {
   return (
@@ -16,8 +17,11 @@ export default function MockAppLayout({ children }: { children: ReactNode }) {
             <span aria-hidden="true" className="flex h-9 w-9 items-center justify-center rounded-full bg-orange-700 text-white">こ</span>
             <span>ここいこ</span>
           </div>
-          <div className="rounded-full bg-stone-100 px-4 py-2 text-sm font-medium text-stone-700">
-            デモグループ
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="rounded-full bg-stone-100 px-4 py-2 text-sm font-medium text-stone-700">
+              デモグループ
+            </div>
+            <Suspense fallback={<p role="status" className="text-sm text-stone-600">ログイン状態を確認中…</p>}><AppAccountMenu /></Suspense>
           </div>
         </div>
       </header>

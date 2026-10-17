@@ -1,6 +1,7 @@
 "use client";
 
-import { cn } from "@/lib/utils";
+import { cn, hasEnvVars } from "@/lib/utils";
+import { AuthSetupNotice } from "@/components/auth-setup-notice";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,7 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 export function ForgotPasswordForm({
   className,
@@ -23,23 +24,27 @@ export function ForgotPasswordForm({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const submitting = useRef(false);
 
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    const supabase = createClient();
+    if (!hasEnvVars || submitting.current) return;
+    submitting.current = true;
     setIsLoading(true);
     setError(null);
 
     try {
-      // The url which will be included in the email. This URL needs to be configured in your redirect URLs in the Supabase dashboard at https://supabase.com/dashboard/project/_/auth/url-configuration
+      const supabase = createClient();
+      // Exchange the PKCE code before rendering the password update form.
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/update-password`,
+        redirectTo: `${window.location.origin}/auth/callback?next=/auth/update-password`,
       });
       if (error) throw error;
       setSuccess(true);
-    } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : "An error occurred");
+    } catch {
+      setError("再設定メールを送信できませんでした。通信状態をご確認のうえ、時間をおいて再度お試しください。");
     } finally {
+      submitting.current = false;
       setIsLoading(false);
     }
   };
@@ -49,51 +54,54 @@ export function ForgotPasswordForm({
       {success ? (
         <Card>
           <CardHeader>
-            <CardTitle className="text-2xl">Check Your Email</CardTitle>
-            <CardDescription>Password reset instructions sent</CardDescription>
+            <CardTitle className="text-2xl">メールをご確認ください</CardTitle>
+            <CardDescription>パスワード再設定の受付が完了しました</CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground">
-              If you registered using your email and password, you will receive
-              a password reset email.
+            <p role="status" className="text-sm text-muted-foreground">
+              このメールアドレスで登録されている場合は、再設定の案内が届きます。メール内のリンクを開いてください。
             </p>
+            <Link href="/auth/login" className="mt-4 inline-flex min-h-11 items-center text-sm underline underline-offset-4">ログインへ戻る</Link>
           </CardContent>
         </Card>
       ) : (
         <Card>
           <CardHeader>
-            <CardTitle className="text-2xl">Reset Your Password</CardTitle>
+            <CardTitle className="text-2xl">パスワードを再設定</CardTitle>
             <CardDescription>
-              Type in your email and we&apos;ll send you a link to reset your
-              password
+              登録したメールアドレスに、再設定用のリンクを送ります。
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleForgotPassword}>
-              <div className="flex flex-col gap-6">
-                <div className="grid gap-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="m@example.com"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                  />
+            {!hasEnvVars && <AuthSetupNotice />}
+            <form onSubmit={handleForgotPassword} aria-busy={isLoading} className="mt-4">
+              <fieldset className="min-w-0" disabled={!hasEnvVars || isLoading}>
+                <div className="flex flex-col gap-6">
+                  <div className="grid gap-2">
+                    <Label htmlFor="email">メールアドレス</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      autoComplete="email"
+                      placeholder="m@example.com"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                    />
+                  </div>
+                  {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
+                  <Button type="submit" className="min-h-11 w-full" disabled={isLoading}>
+                    {isLoading ? "送信中…" : "再設定メールを送る"}
+                  </Button>
                 </div>
-                {error && <p className="text-sm text-red-500">{error}</p>}
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? "Sending..." : "Send reset email"}
-                </Button>
-              </div>
+              </fieldset>
               <div className="mt-4 text-center text-sm">
-                Already have an account?{" "}
+                パスワードが分かる方は{" "}
                 <Link
                   href="/auth/login"
                   className="underline underline-offset-4"
                 >
-                  Login
+                  ログイン
                 </Link>
               </div>
             </form>

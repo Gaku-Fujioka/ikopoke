@@ -1,6 +1,7 @@
 "use client";
 
-import { cn } from "@/lib/utils";
+import { cn, hasEnvVars } from "@/lib/utils";
+import { AuthSetupNotice } from "@/components/auth-setup-notice";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 export function SignUpForm({
   className,
@@ -26,32 +27,37 @@ export function SignUpForm({
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const submitting = useRef(false);
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    const supabase = createClient();
-    setIsLoading(true);
+    if (!hasEnvVars || submitting.current) return;
     setError(null);
 
     if (password !== repeatPassword) {
-      setError("Passwords do not match");
-      setIsLoading(false);
+      setError("確認用パスワードが一致しません。");
       return;
     }
 
+    submitting.current = true;
+    setIsLoading(true);
     try {
-      const { error } = await supabase.auth.signUp({
+      const supabase = createClient();
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/protected`,
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
         },
       });
       if (error) throw error;
-      router.push("/auth/sign-up-success");
-    } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : "An error occurred");
+      // Local Supabase can disable email confirmation and return a session.
+      router.replace(data.session ? "/app" : "/auth/sign-up-success");
+      router.refresh();
+    } catch {
+      setError("登録できませんでした。入力内容や通信状態をご確認のうえ、時間をおいて再度お試しください。");
     } finally {
+      submitting.current = false;
       setIsLoading(false);
     }
   };
@@ -60,56 +66,62 @@ export function SignUpForm({
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
         <CardHeader>
-          <CardTitle className="text-2xl">Sign up</CardTitle>
-          <CardDescription>Create a new account</CardDescription>
+          <CardTitle className="text-2xl">アカウントを作成</CardTitle>
+          <CardDescription>メールで本人確認をして、ここいこを始めましょう。</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSignUp}>
-            <div className="flex flex-col gap-6">
-              <div className="grid gap-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="m@example.com"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-              </div>
-              <div className="grid gap-2">
-                <div className="flex items-center">
-                  <Label htmlFor="password">Password</Label>
+          {!hasEnvVars && <AuthSetupNotice />}
+          <form onSubmit={handleSignUp} aria-busy={isLoading} className="mt-4">
+            <fieldset className="min-w-0" disabled={!hasEnvVars || isLoading}>
+              <div className="flex flex-col gap-6">
+                <div className="grid gap-2">
+                  <Label htmlFor="email">メールアドレス</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    autoComplete="email"
+                    placeholder="m@example.com"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
                 </div>
-                <Input
-                  id="password"
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-              </div>
-              <div className="grid gap-2">
-                <div className="flex items-center">
-                  <Label htmlFor="repeat-password">Repeat Password</Label>
+                <div className="grid gap-2">
+                  <div className="flex items-center">
+                    <Label htmlFor="password">パスワード</Label>
+                  </div>
+                  <Input
+                    id="password"
+                    type="password"
+                    autoComplete="new-password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
                 </div>
-                <Input
-                  id="repeat-password"
-                  type="password"
-                  required
-                  value={repeatPassword}
-                  onChange={(e) => setRepeatPassword(e.target.value)}
-                />
+                <div className="grid gap-2">
+                  <div className="flex items-center">
+                    <Label htmlFor="repeat-password">パスワード（確認）</Label>
+                  </div>
+                  <Input
+                    id="repeat-password"
+                    type="password"
+                    autoComplete="new-password"
+                    required
+                    value={repeatPassword}
+                    onChange={(e) => setRepeatPassword(e.target.value)}
+                  />
+                </div>
+                {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
+                <Button type="submit" className="min-h-11 w-full" disabled={isLoading}>
+                  {isLoading ? "作成中…" : "アカウントを作成"}
+                </Button>
               </div>
-              {error && <p className="text-sm text-red-500">{error}</p>}
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Creating an account..." : "Sign up"}
-              </Button>
-            </div>
+            </fieldset>
             <div className="mt-4 text-center text-sm">
-              Already have an account?{" "}
+              アカウントをお持ちの方は{" "}
               <Link href="/auth/login" className="underline underline-offset-4">
-                Login
+                ログイン
               </Link>
             </div>
           </form>
