@@ -27,7 +27,7 @@ before(async () => {
     grant usage on schema auth to anon, authenticated;
     insert into auth.users(id) values ('${alice}'), ('${bob}'), ('${charlie}');
   `);
-  await db.exec(await readFile(new URL("../supabase/migrations/20261017000100_create_groups.sql", import.meta.url), "utf8"));
+  await db.exec(await readFile(new URL("../supabase/migrations/20261017091513_create_groups.sql", import.meta.url), "utf8"));
 });
 after(async () => { await db?.close(); });
 

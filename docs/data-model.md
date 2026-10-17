@@ -8,7 +8,8 @@
 
 2026-10-17追記：Authの基本正常系（メール確認、再ログイン、再読込、再設定と新パスワード）はユーザーが確認済み。
 GROUP-02ではグループと初期所属のmigration・型・RPC・RLS・画面をリポジトリへ追加した。
-PostgreSQLでのローカル検証は成功したが、実Supabaseのスキーマ・migration履歴は管理接続前で未確認、migrationは未適用。
+PostgreSQLでのローカル検証は成功。ユーザーが別の接続先チャットで調査・適用し、`create_groups`の実適用version `20261017091513`、2テーブル・関数・RLS・権限・履歴の確認成功を報告した。
+ローカルのmigration名は実適用versionへ揃え、SQL本文は維持する。本Agentの実DB直接検証および実ユーザーでの保存・再取得・所属別REST操作は未実施。
 [GROUP-02](tasks/GROUP-02.md)とD-008が現在の範囲。以下の箇条書きは2026-10-03の初回調査として残す。
 
 - [lib/supabase/](../lib/supabase/)はAuth用クライアントとCookie連携。
