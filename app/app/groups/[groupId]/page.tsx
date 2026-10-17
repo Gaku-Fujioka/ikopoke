@@ -8,6 +8,7 @@ import { isGroupId } from "@/lib/groups/validation";
 import { AuthSetupNotice } from "@/components/auth-setup-notice";
 import { InviteManagement } from "@/components/groups/invite-management";
 import { listInvites, InviteError } from "@/lib/groups/invitations";
+import { RenameGroupForm } from "@/components/groups/rename-group-form";
 
 async function GroupContent({ params }: { params: Promise<{ groupId: string }> }) {
   const { groupId } = await params;
@@ -38,6 +39,7 @@ async function GroupContent({ params }: { params: Promise<{ groupId: string }> }
       <Link href={`/app/groups/${groupId}/items`} className="inline-flex min-h-12 items-center rounded-full bg-orange-700 px-6 font-semibold text-white hover:bg-orange-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-700 focus-visible:ring-offset-2">みんなの候補へ</Link>
       <p className="text-sm leading-6 text-stone-500">「みんなの候補」で、このグループの候補を共有できます。下のナビの「行きたい・おでかけ・思い出」は、これまでのデモ画面です。</p>
     </section>
+    <RenameGroupForm groupId={groupId} name={group.name} />
     {invitationContent}
     </div>
   );
