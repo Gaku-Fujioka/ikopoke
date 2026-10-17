@@ -20,6 +20,13 @@
 
 ## AUTH-01：実接続前のコード棚卸し（2026-10-03）
 
+**以下は当時の履歴**。2026-10-17のAUTH-03でログイン・パスワード更新後を`/app`へ接続し、
+PKCE callback・日本語UI・未設定時の案内・ログアウト導線を追加する。
+登録メールは`/auth/callback`、再設定メールは`/auth/callback?next=/auth/update-password`へ進み、codeを交換してから画面へ移る。
+token hash方式も継続するが、遷移先はアプリ画面または再設定画面に限定し、失敗理由は固定値にする。
+初期の認証方式は[D-007](decisions.md)でメール＋パスワードに決定。開発用Supabaseは未作成とユーザーから確認した。
+[設定と実接続の検証](auth-setup.md)はAUTH-04。DB・グループ・RLS・Storageは未実装のまま。
+
 これはローカルコードの読み取り結果で、Auth方式の採用や接続成功ではない。
 
 - `components/login-form.tsx`はメール・パスワードで`signInWithPassword()`を呼び、成功時に`/protected`へ遷移する。

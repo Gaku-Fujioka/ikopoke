@@ -3,6 +3,21 @@
 更新日：2026-10-05。コマンドの存在、実行、成功を別々に記録する。
 以下の「初期文書整備」は2026-10-03時点の記録。統合後の確認結果は次節に記す。
 
+## AUTH-03の確認（2026-10-17）
+
+`feat/auth-app-entry`で認証導線の実装を検証する。開発用Supabaseはユーザー回答で未作成。
+実メール・実Auth・複数ユーザー・業務DBの動作は未確認で、[設定手順](auth-setup.md)の後にAUTH-04で確認する。
+
+- Nodeテストは次の3ファイル。計19件成功。`auth-handlers`はRoute Handler本体を実行し、SupabaseとNextのredirectだけを試験用に置き換える。外部接続成功の証拠ではない。
+  `node --experimental-strip-types --test tests/auth-redirect.test.mjs tests/auth-handlers.test.mjs tests/mock-repository.test.mjs`
+- lint、型検査、buildは実施して結果を個別タスクへ記録する。
+- ローカルproductionサーバーへのHTTP確認は9件成功：未設定時の4フォーム（日本語・送信不可）、callback/confirmの3リクエスト、固定のエラー表示、デモホーム。
+- ブラウザ操作は未実施。利用可能なブラウザ一覧が空のため、360/390/1280px・フォーカス・実クリックの確認は後続へ残す。HTTP確認をブラウザ検証と扱わない。
+- 最初のsandbox内lint/型検査は既存node_modulesの読み取り権限で失敗し、権限付きで再実行した。
+  型検査で古い`.next/types`が削除済み`app/page`を参照していたため、buildで生成し直した後の型検査は成功した。
+- 現在のnode_modulesはNext 16.4.2で、下の2026-10-05のlockfile調査値と異なる。今回依存やlockfileは変更せず、CIでは`npm ci`による検証を別に確認する。
+- CIに`auth-handlers.test.mjs`を追加した。GitHubの実行結果は個別タスクとPRで記録する。
+
 ## 統合後の確認とCI
 
 `integration/kokoiko-mvp`の`3aa6c84`で`npm run lint`、`npx tsc --noEmit`、

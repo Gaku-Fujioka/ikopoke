@@ -1,31 +1,30 @@
 import { createClient } from "@/lib/supabase/server";
-import { safeNextPath } from "@/lib/auth/safe-next-path";
-import { type EmailOtpType } from "@supabase/supabase-js";
+import { confirmationNextPath } from "@/lib/auth/safe-next-path";
+import { hasEnvVars } from "@/lib/utils";
+import type { EmailOtpType } from "@supabase/supabase-js";
 import { redirect } from "next/navigation";
-import { type NextRequest } from "next/server";
+import type { NextRequest } from "next/server";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const token_hash = searchParams.get("token_hash");
   const type = searchParams.get("type") as EmailOtpType | null;
-  const next = safeNextPath(searchParams.get("next"));
+  const next = confirmationNextPath(searchParams.get("next"), type);
 
-  if (token_hash && type) {
-    const supabase = await createClient();
+  if (!hasEnvVars) redirect("/auth/error?reason=configuration");
 
-    const { error } = await supabase.auth.verifyOtp({
-      type,
-      token_hash,
-    });
-    if (!error) {
-      // redirect user to specified redirect URL or root of app
-      redirect(next);
-    } else {
-      // redirect the user to an error page with some instructions
-      redirect(`/auth/error?error=${error?.message}`);
-    }
+  if (!token_hash || !type || !["email", "signup", "recovery"].includes(type)) {
+    redirect("/auth/error?reason=confirmation");
   }
 
-  // redirect the user to an error page with some instructions
-  redirect(`/auth/error?error=No token hash or type`);
+  let verified = false;
+  try {
+    const supabase = await createClient();
+    const { error } = await supabase.auth.verifyOtp({ type, token_hash });
+    verified = !error;
+  } catch {
+    // Do not expose tokens, provider messages, or request details in a URL.
+  }
+  // Next.js redirect throws; keep it outside the provider error handler.
+  redirect(verified ? next : "/auth/error?reason=confirmation");
 }

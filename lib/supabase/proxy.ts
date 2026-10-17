@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { hasEnvVars } from "../utils";
+import { appNextPath } from "../auth/safe-next-path";
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
@@ -51,12 +52,19 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname !== "/" &&
     !user &&
     !request.nextUrl.pathname.startsWith("/login") &&
-    !request.nextUrl.pathname.startsWith("/auth")
+    (!request.nextUrl.pathname.startsWith("/auth/") ||
+      request.nextUrl.pathname === "/auth/update-password")
   ) {
     // no user, potentially respond by redirecting the user to the login page
     const url = request.nextUrl.clone();
     url.pathname = "/auth/login";
-    return NextResponse.redirect(url);
+    // Keep app navigation, while excluding authorization codes and other
+    // callback parameters from the login URL.
+    url.search = "";
+    url.searchParams.set("next", appNextPath(`${request.nextUrl.pathname}${request.nextUrl.search}`));
+    const response = NextResponse.redirect(url);
+    supabaseResponse.cookies.getAll().forEach((cookie) => response.cookies.set(cookie));
+    return response;
   }
 
   // IMPORTANT: You *must* return the supabaseResponse object as it is.

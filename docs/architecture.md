@@ -1,7 +1,7 @@
 # 構成と責務
 
 初回調査日：2026-10-03。統合後の更新日：2026-10-05。
-P1ローカルモックは起動・操作確認済み。実Auth・業務APIの動作は未確認。
+P1ローカルモックは起動・操作確認済み。2026-10-17のAUTH-03で認証画面・遷移を整備した。実Auth・業務APIの動作は未確認。
 機能の目標は[要件](kokoiko-requirements.md)、採用判断は[decisions](decisions.md)を参照。
 
 ## 現在の構成
@@ -37,14 +37,15 @@ P1では`app/app/`のClient Componentが`lib/kokoiko/mock-repository.ts`を呼�
 以下は別に残るSupabaseスターターのAuth処理。
 
 1. Browserの認証フォームが`lib/supabase/client.ts`を通してSupabase Authを呼ぶ。
-2. ログイン成功時は`/protected`へ移動するコードがある。登録・再設定もAuthを呼ぶ。
+2. ログイン成功時は`/app`または元のアプリ画面へ移動する。登録・再設定もAuthを呼ぶ。
 3. `proxy.ts`から`updateSession()`を呼び、Cookieを読み書きして`getClaims()`で確認する。
 4. Server側のAuth表示とprotectedページも`getClaims()`を呼ぶ。
-5. [メール確認Route Handler](../app/auth/confirm/route.ts)が`verifyOtp()`を呼び、成功時に遷移する。
+5. [callback](../app/auth/callback/route.ts)がPKCEコードをセッションに交換する。token hash方式の[メール確認](../app/auth/confirm/route.ts)は`verifyOtp()`を呼ぶ。
 
 これは実APIを呼ぶコードで、動作成功の証拠ではない。メールテンプレート、redirect設定、
 接続先、外部Auth設定は未確認。環境変数未設定時はproxyの確認をスキップする。
 protectedページ自身の確認は別にある。グループ所属の確認はどちらにもない。
+開発用Supabaseはユーザー回答で未作成。[設定手順](auth-setup.md)の実施と実メールの検証は後続。
 
 [fetch-data-steps.tsx](../components/tutorial/fetch-data-steps.tsx)の`notes` SQL・取得例・RLSは
 画面へ表示する文字列であり、実行する業務処理ではない。チャット追加の案内も機能ではない。
