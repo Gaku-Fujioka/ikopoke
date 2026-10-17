@@ -8,6 +8,7 @@ import { useMockSnapshot } from "@/components/flow/use-mock-snapshot";
 import type { ItemKind } from "@/lib/kokoiko/contracts";
 import { itemDetailHref, itemKindFromQuery, itemListHref, reactionFromQuery, type ReactionFilter } from "@/lib/kokoiko/item-list-query";
 import { MOCK_MEMBER_ID } from "@/lib/kokoiko/mock-repository";
+import { REACTION_OPTIONS, reactionLabel as savedReactionLabel } from "@/lib/items/reaction-values";
 
 const kinds: { label: string; value: ItemKind | null }[] = [
   { label: "すべて", value: null },
@@ -16,8 +17,7 @@ const kinds: { label: string; value: ItemKind | null }[] = [
 ];
 const reactions: { label: string; value: ReactionFilter | null }[] = [
   { label: "すべて", value: null },
-  { label: "行きたい", value: "want_to_go" },
-  { label: "あんまり", value: "not_now" },
+  ...REACTION_OPTIONS,
   { label: "未反応", value: "none" },
 ];
 
@@ -102,7 +102,7 @@ function ItemsContent() {
                 <Link href={itemDetailHref(item.id, query, kind, reaction)} className="group block h-full rounded-3xl border border-stone-200 bg-white p-6 shadow-sm hover:border-orange-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-700 focus-visible:ring-offset-2">
                   <span className="inline-block rounded-full bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-700">{item.kind === "spot" ? "場所" : "やりたいこと"}</span>
                   <h2 className="mt-4 text-xl font-semibold group-hover:text-orange-700">{item.title}</h2>
-                  <p className="mt-2 text-xs font-semibold text-stone-600">自分の反応：{item.reactions[MOCK_MEMBER_ID] === "want_to_go" ? "行きたい" : item.reactions[MOCK_MEMBER_ID] === "not_now" ? "あんまり" : "未反応"}</p>
+                  <p className="mt-2 text-xs font-semibold text-stone-600">自分の反応：{savedReactionLabel(item.reactions[MOCK_MEMBER_ID] ?? null)}</p>
                   <p className="mt-2 line-clamp-2 min-h-12 text-sm leading-6 text-stone-600">{item.note || "メモはまだありません"}</p>
                   <p className="mt-4 text-sm font-semibold text-orange-700">詳細を見る →</p>
                 </Link>
