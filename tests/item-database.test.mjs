@@ -2,7 +2,12 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { after, before, test } from "node:test";
-import { literalTitlePattern } from "../lib/items/search.ts";
+import { registerHooks } from "node:module";
+import { createClient } from "@supabase/supabase-js";
+import { titleSearchFilter } from "../lib/items/search.ts";
+
+registerHooks({resolve(specifier,context,next){return specifier==="@/lib/items/search"?{url:new URL("../lib/items/search.ts",import.meta.url).href,shortCircuit:true}:next(specifier,context);}});
+const {listItems}=await import("../lib/items/repository.ts");
 
 const { PGlite } = await import(process.env.KOKOIKO_PGLITE_MODULE_URL ?? "@electric-sql/pglite");
 let db;
@@ -127,9 +132,45 @@ test("membership removal revokes reads and even retries of previously saved inpu
 });
 
 test("PostgreSQL title patterns preserve literal punctuation, Japanese and case-insensitive matching",async()=>{
-  for(const query of [".*+?^${}()|[]\\%_", "カフェ（海）", "O'Reilly, (sample)", '"quote", name:(x).*']){
-    const result=await db.query("select $1::text ~* $2 as matches, 'unrelated' ~* $2 as other",[`before${query}after`,literalTitlePattern(query)]);
+  for(const query of ["カフェ", ".*+?^${}()|[]\\%_", "カフェ（海）", "O'Reilly, (sample)", '"quote", name:(x).*']){
+    const result=await db.query("select $1::text ~* $2 as matches, 'unrelated' ~* $2 as other",[`before${query}after`,titleSearchFilter(query)]);
     assert.deepEqual(result.rows[0],{matches:true,other:false});
   }
-  assert.equal((await db.query("select 'Cafe BLUE' ~* $1 as matches",[literalTitlePattern("cafe")])).rows[0].matches,true);
+  assert.equal((await db.query("select 'Cafe BLUE' ~* $1 as matches",[titleSearchFilter("cafe")])).rows[0].matches,true);
+});
+
+test("actual SDK request values find a partial title when passed unchanged to PostgreSQL",async()=>{
+  const punctuationTitle='Cafe "blue", 100%_* (sea)\\path';
+  await asUser(alice,()=>create(groupA,punctuationTitle,"spot","","20000000-0000-4000-8000-000000000006"));
+  const requests=[];
+  const client=createClient("https://sdk-regression.invalid","synthetic-test-key",{
+    auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false},
+    global:{fetch:async(input)=>{
+      const url=new URL(input instanceof Request?input.url:String(input));
+      assert.equal(url.origin,"https://sdk-regression.invalid");
+      const group=url.searchParams.get("group_id");
+      const filter=url.searchParams.get("title");
+      assert.ok(group.startsWith("eq."));assert.ok(filter.startsWith("imatch."));
+      requests.push(filter);
+      // PostgREST individual filters consume the text after the operator as-is
+      // (pSingleVal). Do not strip quotes or unescape it like an IN/OR operand.
+      const pattern=filter.slice("imatch.".length),groupId=group.slice(3);
+      const start=Number(url.searchParams.get("offset")??0),limit=Number(url.searchParams.get("limit")??20);
+      const rows=(await db.query("select id,group_id,title,kind,memo,created_at from public.items where group_id=$1 and title ~* $2 order by created_at desc,id desc offset $3 limit $4",[groupId,pattern,start,limit])).rows;
+      const total=(await db.query("select count(*)::int as n from public.items where group_id=$1 and title ~* $2",[groupId,pattern])).rows[0].n;
+      return new Response(JSON.stringify(rows),{status:200,headers:{"Content-Type":"application/json","Content-Range":rows.length?`${start}-${start+rows.length-1}/${total}`:`*/${total}`}});
+    }},
+  });
+  try{
+    const result=await asUser(alice,()=>listItems(client,groupA,1,"フェ"));
+    assert.deepEqual(result.items.map(item=>item.title),["カフェ"]);assert.equal(result.total,1);
+    assert.equal(requests[0],"imatch.フェ");
+    for(const query of ['"blue"','100%_*','(sea)','\\path','cafe']){
+      const literal=await asUser(alice,()=>listItems(client,groupA,1,query));
+      assert.deepEqual(literal.items.map(item=>item.title),[punctuationTitle]);assert.equal(literal.total,1);
+    }
+    assert.deepEqual(await asUser(alice,()=>listItems(client,groupA,1,".*")),{items:[],total:0});
+    const unrelated=await asUser(alice,()=>listItems(client,groupA,1,"散歩"));
+    assert.deepEqual(unrelated,{items:[],total:0});
+  }finally{client.auth.stopAutoRefresh();}
 });

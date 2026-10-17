@@ -17,12 +17,13 @@ test("search metacharacters are literal rather than executable patterns",()=>{
   assert.ok(regex.test(`before${value}after`));assert.ok(!regex.test("unrelated"));
 });
 
-test("REST filter quoting preserves leading quotes, backslashes and reserved punctuation",()=>{
+test("individual REST filters carry the regex unchanged without IN/OR quoting",()=>{
   for(const query of ['"quoted", name:(x).*','back\\slash','%_*',"カフェ"]){
     const filter=titleSearchFilter(query);
-    assert.ok(filter.startsWith('"')&&filter.endsWith('"'));
-    assert.equal(filter.slice(1,-1).replace(/\\(["\\])/g,"$1"),literalTitlePattern(query));
+    assert.equal(filter,literalTitlePattern(query));
+    assert.ok(new RegExp(filter,"i").test(`before${query}after`));
   }
+  assert.equal(titleSearchFilter("フェ"),"フェ");
 });
 
 test("detail and pagination links keep the same literal search without query or fragment injection",()=>{

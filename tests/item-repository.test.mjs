@@ -17,7 +17,7 @@ function client(error=null){return {from(table){
   const query={
     select(){return query;},
     eq(key,value){filtered=filtered.filter(row=>row[key]===value);return query;},
-    filter(key,operator,value){assert.equal(operator,"imatch");assert.ok(value.startsWith('"')&&value.endsWith('"'));const pattern=value.slice(1,-1).replace(/\\(["\\])/g,"$1");filtered=filtered.filter(row=>new RegExp(pattern,"i").test(row[key]));return query;},
+    filter(key,operator,pattern){assert.equal(operator,"imatch");filtered=filtered.filter(row=>new RegExp(pattern,"i").test(row[key]));return query;},
     order(key,{ascending}){orders.push({key,ascending});return query;},
     range(first,last){
       start=first;end=last;

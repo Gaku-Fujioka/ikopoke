@@ -14,8 +14,9 @@ export function literalTitlePattern(query: string): string {
 }
 
 export function titleSearchFilter(query: string): string {
-  // Quote the PostgREST value as well as escaping the PostgreSQL pattern.
-  return `"${literalTitlePattern(query).replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
+  // Individual PostgREST filters keep this value verbatim. IN/OR quoting rules
+  // do not apply here: extra quotes would become part of the regex itself.
+  return literalTitlePattern(query);
 }
 
 export function sharedItemListHref(groupId: string, query = "", page = 1): string {
