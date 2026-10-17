@@ -3,6 +3,7 @@
 import { cn, hasEnvVars } from "@/lib/utils";
 import { appNextPath, authEntryPath } from "@/lib/auth/safe-next-path";
 import { signUpErrorMessage } from "@/lib/auth/sign-up-error";
+import { DISPLAY_NAME_LIMIT, parseDisplayName } from "@/lib/profiles/validation";
 import { AuthSetupNotice } from "@/components/auth-setup-notice";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -25,6 +26,7 @@ export function SignUpForm({
   ...props
 }: React.ComponentPropsWithoutRef<"div"> & { nextPath?: string }) {
   const [email, setEmail] = useState("");
+  const [displayName, setDisplayName] = useState("");
   const [password, setPassword] = useState("");
   const [repeatPassword, setRepeatPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -36,6 +38,14 @@ export function SignUpForm({
     e.preventDefault();
     if (!hasEnvVars || submitting.current) return;
     setError(null);
+
+    let name: string;
+    try {
+      name = parseDisplayName(displayName);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "表示名を確認してください。");
+      return;
+    }
 
     if (password !== repeatPassword) {
       setError("確認用パスワードが一致しません。");
@@ -53,6 +63,7 @@ export function SignUpForm({
         password,
         options: {
           emailRedirectTo: callback.href,
+          data: { display_name: name },
         },
       });
       if (error) throw error;
@@ -79,6 +90,12 @@ export function SignUpForm({
           <form onSubmit={handleSignUp} aria-busy={isLoading} className="mt-4">
             <fieldset className="min-w-0" disabled={!hasEnvVars || isLoading}>
               <div className="flex flex-col gap-6">
+                <div className="grid gap-2">
+                  <Label htmlFor="display-name">表示名</Label>
+                  <Input id="display-name" type="text" autoComplete="nickname" required value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
+                  <p className="text-sm text-stone-600">{DISPLAY_NAME_LIMIT}文字以内。</p>
+                  <p className="text-sm text-stone-600">同じグループの参加者に表示されます。メールアドレスは表示しません。</p>
+                </div>
                 <div className="grid gap-2">
                   <Label htmlFor="email">メールアドレス</Label>
                   <Input
