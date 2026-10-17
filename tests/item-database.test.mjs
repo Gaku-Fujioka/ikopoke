@@ -18,7 +18,7 @@ before(async () => {
     grant usage on schema auth to anon, authenticated;
     insert into auth.users(id) values ('${alice}'),('${bob}'),('${charlie}');
   `);
-  for (const name of ["20261017091513_create_groups.sql", "20261017094719_create_group_invites.sql", "20261017110000_create_items.sql"]) {
+  for (const name of ["20261017091513_create_groups.sql", "20261017094719_create_group_invites.sql", "20261017112451_create_items.sql"]) {
     await db.exec(await readFile(new URL(`../supabase/migrations/${name}`, import.meta.url), "utf8"));
   }
   await asUser(alice, () => db.query("select public.create_group('A',$1)", [groupA]));
