@@ -6,7 +6,7 @@
 
 ## 確認できた現状
 
-LIST-02（D-015）：開発用Supabaseで`create_lists`を実適用version `20261017230707`として確認。`lists`と`item_list_memberships`は所属RLS、列権限、候補・リスト双方への同一グループ複合外部キーを持つ。1候補を複数リストへ分類でき、リスト削除は分類行だけを消し、候補・コメント・反応を保持する。新規6関数は`SECURITY INVOKER`。ローカルPostgreSQL検証と定義・履歴の読取確認は成功し、実ユーザーによるリスト操作は確認待ち。詳細は[LIST-02](tasks/LIST-02.md)。
+LIST-02（D-015）：開発用Supabaseで`create_lists`を実適用version `20261017230707`として確認。`lists`と`item_list_memberships`は所属RLS、列権限、候補・リスト双方への同一グループ複合外部キーを持つ。1候補を複数リストへ分類でき、リスト削除は分類行だけを消し、候補・コメント・反応を保持する。新規6関数は`SECURITY INVOKER`。ローカルPostgreSQL検証と定義・履歴の読取確認、実アカウントでのリスト操作は成功した。別アカウントでの共有表示は未確認。詳細は[LIST-02](tasks/LIST-02.md)。
 
 2026-10-18の追加実装（ユーザーが4件の実DB適用・定義検証成功を報告）：`update_item`は所属と候補をロックし、名前・メモの比較で古い入力による上書きを防ぐ。種類・所属先・作成者を変更する権限は追加しない。
 `shared_item_feed`はPostgreSQL 15以上の`security_invoker=true`で元テーブルのRLSを適用し、本人の反応と未反応で候補を絞り込む。
