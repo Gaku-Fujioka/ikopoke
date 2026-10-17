@@ -9,11 +9,11 @@ import type { GroupMember } from "@/lib/profiles/repository";
 
 type DraftSlot = { item_id: string; planned_time: string; period: OutingPeriod | "" };
 
-export function OutingForm({ groupId, outingId, current, candidates, members, actorId, initialItemId }: {
-  groupId: string; outingId: string; current: OutingDetail | null; candidates: CandidateOption[]; members: GroupMember[]; actorId: string; initialItemId?: string;
+export function OutingForm({ groupId, outingId, current, candidates, members, actorId, initialItemId, initialDate }: {
+  groupId: string; outingId: string; current: OutingDetail | null; candidates: CandidateOption[]; members: GroupMember[]; actorId: string; initialItemId?: string; initialDate?: string;
 }) {
   const [title, setTitle] = useState(current?.outing.title ?? "");
-  const [date, setDate] = useState(current?.outing.outing_date ?? "");
+  const [date, setDate] = useState(current?.outing.outing_date ?? initialDate ?? "");
   const [memo, setMemo] = useState(current?.outing.memo ?? "");
   const [mode, setMode] = useState<OutingMode>(current?.outing.mode ?? "order");
   const initialSlots: DraftSlot[] = current?.items.map(item => ({ item_id: item.item_id, planned_time: item.planned_time?.slice(0,5) ?? "", period: item.period ?? "" })) ??

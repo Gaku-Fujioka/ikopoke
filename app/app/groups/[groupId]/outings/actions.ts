@@ -23,6 +23,7 @@ export async function saveOutingAction(_previous: OutingActionState, form: FormD
     return { error: cause instanceof OutingStoreError ? cause.message : "計画を保存できませんでした。もう一度お試しください。" };
   }
   revalidatePath(`/app/groups/${input.groupId}/outings`);
+  revalidatePath(`/app/groups/${input.groupId}/outings/calendar`);
   revalidatePath(`/app/groups/${input.groupId}/outings/${input.outingId}`);
   redirect(`/app/groups/${input.groupId}/outings/${input.outingId}`);
 }
