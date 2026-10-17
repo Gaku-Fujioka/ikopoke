@@ -38,6 +38,14 @@ test('signup and callback remain public while password updates require a session
   assert.equal((await updateSession(request('/auth/update-password'))).status,307);
   provider.configure(true);assert.equal((await updateSession(request('/auth/update-password'))).status,200);
 });
+
+test('shared candidate list and detail require login and preserve their return path',async()=>{
+  for(const path of ['/app/groups/10000000-0000-4000-8000-000000000001/items?page=2','/app/groups/10000000-0000-4000-8000-000000000001/items/20000000-0000-4000-8000-000000000001']){
+    const response=await updateSession(request(path));
+    assert.equal(response.status,307);assert.equal(new URL(response.location).searchParams.get('next'),path);
+    provider.configure(true);assert.equal((await updateSession(request(path))).status,200);provider.configure(false);
+  }
+});
 test('session refresh cookies survive a login redirect with app query retained',async()=>{
   provider.configure(false,true);
   const response=await updateSession(request('/app/items?q=cafe'));

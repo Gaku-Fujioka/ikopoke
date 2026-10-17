@@ -35,7 +35,8 @@ async function GroupContent({ params }: { params: Promise<{ groupId: string }> }
       <p className="text-sm font-semibold tracking-widest text-orange-700">参加中のグループ</p>
       <h1 className="break-words text-3xl font-bold tracking-tight sm:text-4xl">{group.name}</h1>
       <p className="leading-7 text-stone-600">このグループに参加しています。別の端末でログインしても、グループ一覧から開けます。</p>
-      <p className="text-sm leading-6 text-stone-500">候補の共有は、これから追加します。現在の「行きたい・おでかけ・思い出」は共通のデモで、このグループの共有データには含まれません。</p>
+      <Link href={`/app/groups/${groupId}/items`} className="inline-flex min-h-12 items-center rounded-full bg-orange-700 px-6 font-semibold text-white hover:bg-orange-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-700 focus-visible:ring-offset-2">みんなの候補へ</Link>
+      <p className="text-sm leading-6 text-stone-500">「みんなの候補」で、このグループの候補を共有できます。下のナビの「行きたい・おでかけ・思い出」は、これまでのデモ画面です。</p>
     </section>
     {invitationContent}
     </div>
