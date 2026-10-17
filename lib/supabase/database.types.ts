@@ -9,6 +9,12 @@ export type GroupRow = {
 export type Database = {
   public: {
     Tables: {
+      profiles: {
+        Row: { user_id: string; display_name: string; updated_at: string };
+        Insert: { user_id: string; display_name: string };
+        Update: { display_name?: string; updated_at?: string };
+        Relationships: [];
+      };
       lists: {
         Row: { id: string; group_id: string; name: string; created_by: string; created_at: string };
         Insert: { id: string; group_id: string; name: string };
@@ -65,6 +71,8 @@ export type Database = {
       };
     };
     Functions: {
+      set_my_display_name: { Args: { p_name: string }; Returns: string };
+      get_group_members: { Args: { p_group_id: string }; Returns: { user_id: string; display_name: string | null }[] };
       create_list: { Args: { p_group_id: string; p_name: string; p_request_id: string }; Returns: string };
       rename_list: { Args: { p_group_id: string; p_list_id: string; p_name: string; p_expected_name: string }; Returns: undefined };
       delete_list: { Args: { p_group_id: string; p_list_id: string; p_expected_name: string }; Returns: undefined };
