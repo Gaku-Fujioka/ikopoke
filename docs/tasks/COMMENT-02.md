@@ -1,6 +1,6 @@
 # COMMENT-02：候補へのコメント投稿・閲覧
 
-作成日：2026-10-18。状態：ローカル検証・自己レビュー完了、CI待ち。担当：本Agent単独。
+作成日：2026-10-18。状態：実装・ローカル検証・自己レビュー完了、実DB・画面確認待ち。CI・統合は[PR #13](https://github.com/Gaku-Fujioka/kokoiko/pull/13)。担当：本Agent単独。
 branch：`feat/shared-candidate-tools`。基準：`3b202a8`。F-06、N-02/03/04/06/07。D-014の範囲。
 
 ## Goal・範囲・Done

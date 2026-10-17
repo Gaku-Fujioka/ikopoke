@@ -1,6 +1,6 @@
 # SHARED-TOOLS-01：追加APIなしの共有機能をまとめて検証する
 
-作成日：2026-10-18。状態：ローカル検証・自己レビュー完了。GitHub CI・統合待ち。
+作成日：2026-10-18。状態：実装・ローカル検証・自己レビュー完了。実DB適用・実画面確認待ち。CI・統合状態は[PR #13](https://github.com/Gaku-Fujioka/kokoiko/pull/13)を参照。
 担当：本Agent単独。branch：`feat/shared-candidate-tools`。基準：`3b202a8`。
 
 ## 今回の実装
@@ -34,6 +34,7 @@ Agentが利用可能な認証済みブラウザがないため、実画面・複
 
 ## 検証結果
 
-最終差分で全148件のNodeテスト・lint・型検査・本番build成功。自己レビューで4つのmigrationの実行権限・RLS・viewの実行主体・全員編集の範囲、Clientへ返すデータ、エラーと成功の区別、URL保持とページ、編集開始時の比較元保持、コメント再送時のUUIDと成功後の更新を確認した。独立レビューはD-009に従い未実施。GitHub CI・統合はPRで確認後に記録する。
+最終差分で全148件のNodeテスト・lint・型検査・本番build成功。自己レビューで4つのmigrationの実行権限・RLS・viewの実行主体・全員編集の範囲、Clientへ返すデータ、エラーと成功の区別、URL保持とページ、編集開始時の比較元保持、コメント再送時のUUIDと成功後の更新を確認した。独立レビューはD-009に従い未実施。関連10文書のローカルリンク73件を確認した。
+候補機能は`0f76ee5`、グループ名変更とCI登録は`e75b7ea`。GitHub CI・最新headと統合の正本は[PR #13](https://github.com/Gaku-Fujioka/kokoiko/pull/13)。必要なCI成功後にD-009に従ってAgentが統合する。
 DBでRLSとviewの実行主体・別グループ・他者の反応・権限・再送・衝突拒否・ページと件数を確認。実SDKの合成transportは実際のHTTP条件をSQLへ渡して確認し、実PostgRESTとして扱わない。
 既存のNext partialPrefetching警告とNode module形式警告は今回の範囲外。
