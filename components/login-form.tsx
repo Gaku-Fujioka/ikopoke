@@ -1,7 +1,7 @@
 "use client";
 
 import { cn, hasEnvVars } from "@/lib/utils";
-import { appNextPath } from "@/lib/auth/safe-next-path";
+import { appNextPath, authEntryPath } from "@/lib/auth/safe-next-path";
 import { AuthSetupNotice } from "@/components/auth-setup-notice";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -108,7 +108,7 @@ export function LoginForm({
             <div className="mt-4 text-center text-sm">
               初めての方は{" "}
               <Link
-                href="/auth/sign-up"
+                href={authEntryPath("sign-up", nextPath)}
                 className="underline underline-offset-4"
               >
                 アカウント作成
