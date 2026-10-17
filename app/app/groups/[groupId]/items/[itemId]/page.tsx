@@ -11,18 +11,21 @@ import { AuthSetupNotice } from "@/components/auth-setup-notice";
 import { RetryItems } from "@/components/items/retry-items";
 import { getReactions, ReactionError } from "@/lib/items/reactions";
 import { ItemReactions } from "@/components/items/item-reactions";
+import { itemSearchQuery, sharedItemListHref, sharedItemDetailHref } from "@/lib/items/search";
 
-type Props = { params: Promise<{ groupId: string; itemId: string }>; searchParams: Promise<{ page?: string | string[] }> };
+type Props = { params: Promise<{ groupId: string; itemId: string }>; searchParams: Promise<{ page?: string | string[]; q?: string | string[] }> };
 
 async function ItemContent({ params, searchParams }: Props) {
   const { groupId, itemId } = await params;
   if (!isGroupId(groupId) || !isGroupId(itemId)) notFound();
   if (!hasEnvVars) return <AuthSetupNotice />;
-  const listPath = `/app/groups/${groupId}/items`;
-  const page = itemPage((await searchParams).page);
+  const search = await searchParams;
+  const page = itemPage(search.page);
+  const query = itemSearchQuery(search.q);
+  const listPath = sharedItemListHref(groupId, query, page);
   const client = await createClient();
   const { data, error } = await client.auth.getClaims();
-  if (error || !data?.claims?.sub) redirect(`/auth/login?next=${encodeURIComponent(`${listPath}/${itemId}?page=${page}`)}`);
+  if (error || !data?.claims?.sub) redirect(`/auth/login?next=${encodeURIComponent(sharedItemDetailHref(groupId, itemId, query, page))}`);
   let group;
   let item;
   try {
@@ -51,7 +54,7 @@ async function ItemContent({ params, searchParams }: Props) {
   }
   return (
     <div className="mx-auto max-w-3xl space-y-6">
-      <Link href={`${listPath}?page=${page}`} className="inline-flex min-h-11 items-center text-sm font-semibold text-stone-600 underline underline-offset-4">← みんなの候補へ</Link>
+      <Link href={listPath} className="inline-flex min-h-11 items-center text-sm font-semibold text-stone-600 underline underline-offset-4">← みんなの候補へ</Link>
       <article className="space-y-5 rounded-3xl border border-stone-200 bg-white p-6 sm:p-8">
         <p className="break-words text-sm font-semibold text-orange-700">{group.name} / {item.kind === "spot" ? "スポット" : "やりたいこと"}</p>
         <h1 className="break-words text-3xl font-bold tracking-tight sm:text-4xl">{item.title}</h1>
