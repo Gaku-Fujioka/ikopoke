@@ -2,7 +2,7 @@
 
 初回調査日：2026-10-03。統合後の更新日：2026-10-05。
 P1ローカルモックは起動・操作確認済み。2026-10-17のAUTH-03で認証画面・遷移を整備し、AUTH-04の基本正常系はユーザー確認済み。
-GROUP-02はmain統合済み。実DB適用と実ユーザーの作成・再読込後の保持はユーザー確認済み。GROUP-03の招待はローカル検証済み、実DB適用は待ち。候補・予定・思い出の業務データはモックのまま。
+GROUP-02はmain統合済みで、実DB適用と実ユーザーの作成・再読込後の保持はユーザー確認済み。GROUP-03もmain統合済み、接続先チャットでの実DB適用成功をユーザーが報告し、招待参加の実操作は確認待ち。候補・予定・思い出の業務データはモックのまま。
 機能の目標は[要件](kokoiko-requirements.md)、採用判断は[decisions](decisions.md)を参照。
 
 ## 現在の構成
@@ -15,7 +15,7 @@ Next.js App Router、TypeScript、Tailwind CSS、Supabaseのスターターが�
 | [app/app/](../app/app/) | P1モックのホーム、候補、計画、思い出と共通枠 |
 | [app/app/groups/](../app/app/groups/) | 実グループの一覧・作成・詳細。招待入口と発行・確認・参加・無効化のServer Action |
 | [lib/groups/](../lib/groups/) | 実グループの入力検証とSupabaseアクセス。所属による分離はDBのRLSが担当 |
-| [supabase/migrations/](../supabase/migrations/) | グループ・所属と招待のmigration。グループは実適用成功の報告済み、招待は未適用 |
+| [supabase/migrations/](../supabase/migrations/) | グループ・所属と招待のmigration。両方の実適用成功がユーザー報告済み。ローカルのversionを実履歴に合わせる |
 | [app/layout.tsx](../app/layout.tsx) | フォント、ここいこのメタデータ、ThemeProvider |
 | [app/globals.css](../app/globals.css) | Tailwindと明暗テーマ用CSS変数 |
 | [app/protected/page.tsx](../app/protected/page.tsx) | `/protected`。claims確認・未認証時リダイレクト・利用者情報の表示 |
