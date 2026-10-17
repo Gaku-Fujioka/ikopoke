@@ -18,7 +18,7 @@ before(async()=>{
     create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;
     grant usage on schema auth to anon,authenticated;
     insert into auth.users(id) values('${alice}'),('${bob}'),('${outsider}');`);
-  for(const name of ["20261017091513_create_groups.sql","20261017112451_create_items.sql","20261017153040_create_item_reactions.sql","20261018010000_edit_items.sql","20261018011000_shared_item_feed.sql","20261018012000_create_item_comments.sql"]){
+  for(const name of ["20261017091513_create_groups.sql","20261017112451_create_items.sql","20261017153040_create_item_reactions.sql","20261017162832_edit_items.sql","20261017162907_shared_item_feed.sql","20261017162931_create_item_comments.sql"]){
     await db.exec(await readFile(new URL(`../supabase/migrations/${name}`,import.meta.url),"utf8"));
   }
   await asUser(alice,()=>db.query("select public.create_group('A',$1)",[groupA]));
