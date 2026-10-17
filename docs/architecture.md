@@ -8,7 +8,7 @@ GROUP-02はmain統合済みで、実DB適用と実ユーザーの作成・再読
 ## 現在の構成
 
 ITEM-02で`lib/items/`に候補の検証・Supabaseアクセス、`app/app/groups/[groupId]/items/`に実データ用のServer Componentと保存Action、`components/items/`に入力操作だけのClient Componentを追加した。
-グループ内の候補作成・閲覧のmigrationはローカル検証済み、外部適用は未実施。以下のP1モックと並行して段階的に導入する。
+グループ内の候補作成・閲覧のmigrationはローカル検証済み、ユーザーから実適用version `20261017112451`と実アカウントでの候補追加・再読込後の保持の成功報告を受領。別アカウントの共有は未確認。以下のP1モックと並行して段階的に導入する。
 
 Next.js App Router、TypeScript、Tailwind CSS、Supabaseのスターターが実在する。
 版・環境・パッケージ管理は[verification](verification.md)へ集約する。
