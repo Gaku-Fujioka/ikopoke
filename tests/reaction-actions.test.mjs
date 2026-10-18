@@ -54,7 +54,7 @@ test("saving ignores forged user IDs and refreshes the candidate and reaction-fi
   const result=await setReactionAction({error:null},form({userId:"forged",user_id:"forged"}));
   assert.deepEqual(result,{error:null,saved:true});
   assert.deepEqual(provider.calls,[{name:"set_item_reaction",input:{p_group_id:groupId,p_item_id:itemId,p_value:"want_to_go"}}]);
-  assert.deepEqual(cache.paths,[`/app/groups/${groupId}/items/${itemId}`,`/app/groups/${groupId}/items`,"/app","/app/activity",`/app/groups/${groupId}`,`/app/groups/${groupId}/activity`]);
+  assert.deepEqual(cache.paths,[`/app/groups/${groupId}/items/${itemId}`,`/app/groups/${groupId}/items`,"/app","/app/activity",`/app/groups/${groupId}`,`/app/groups/${groupId}/activity`,"/app/items"]);
 });
 
 test("an explicit cancellation is sent as null rather than a toggle",async()=>{

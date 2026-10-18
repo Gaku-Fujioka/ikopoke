@@ -34,6 +34,10 @@ export async function manageItemAction(_previous: ManageState, form: FormData): 
     revalidatePath(`/app/groups/${group}/items`);
     revalidatePath(`/app/groups/${group}/items/${item}`);
     revalidateSharedHome(group, "items");
+    if (operation === "attributes") {
+      revalidatePath(`/app/groups/${group}/outings/new`);
+      revalidatePath("/app/groups/[groupId]/outings/[outingId]", "page");
+    }
     return { error: null, saved: true };
   } catch { return { error: "保存できませんでした。もう一度お試しください。" }; }
 }

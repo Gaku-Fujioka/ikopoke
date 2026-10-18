@@ -24,6 +24,6 @@ export async function setReactionAction(_previous: ReactionState, form: FormData
   }
   revalidatePath(`/app/groups/${groupId}/items/${itemId}`);
   revalidatePath(`/app/groups/${groupId}/items`);
-  revalidateSharedHome(groupId);
+  revalidateSharedHome(groupId, "items");
   return { error: null, saved: true };
 }

@@ -6,7 +6,7 @@ import { revalidateSharedHome } from "@/lib/home/revalidate";
 import { parseTrip } from "@/lib/outings/trips";
 import { isGroupId } from "@/lib/groups/validation";
 type State={error:string|null;saved?:boolean};
-function refresh(group:string,id:string){revalidatePath(`/app/groups/${group}/outings`);revalidatePath(`/app/groups/${group}/outings/calendar`);revalidatePath(`/app/groups/${group}/outings/${id}`);revalidateSharedHome(group,"outings");}
+function refresh(group:string,id:string){revalidatePath(`/app/groups/${group}/outings`);revalidatePath(`/app/groups/${group}/outings/calendar`);revalidatePath(`/app/groups/${group}/outings/${id}`);revalidatePath("/app/groups/[groupId]/memories/[memoryId]","page");revalidateSharedHome(group,"outings");}
 export async function saveTripAction(_previous:State,form:FormData):Promise<State>{
   let input;try{input=parseTrip(form);}catch(cause){return {error:cause instanceof Error?cause.message:"入力をご確認ください。"};}
   try{

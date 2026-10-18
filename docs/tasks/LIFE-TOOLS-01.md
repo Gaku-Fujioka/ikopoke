@@ -1,6 +1,6 @@
 # LIFE-TOOLS-01：共有の整理・旅行・アルバムを仕上げる
 
-2026-10-18。状態：実装中。担当：本Agent単独。branch `feat/shared-life-tools`、基準 `c08602f`。
+2026-10-18。状態：実装・開発DB反映済み、実画面確認待ち。担当：本Agent単独。branch `feat/shared-life-tools`、基準 `c08602f`。
 F-01/02/04/05/06/08/09/10/11、N-01/02/03/04/05/06/07/09/10。Q-02/05/07/09/12の今回の回答範囲を採用。
 
 ## Goal / 採用済み
@@ -31,10 +31,10 @@ C：日別旅行・中止とカレンダー/訪問連携。D：退出/アカウ�
 実ユーザーの破壊的テストは行わない。削除/退出の動作テストは合成データで実施する。
 README・旧スターター削除・pnpm・work/・環境変数は既存変更として保護する。
 
-- [ ] 各要件のコードとDB/Storageの所属・本人制限・競合・再送・途中失敗を検証。
-- [ ] 既存データの変換と旧APIからの抜け道を検証。
-- [ ] lint・型・全Nodeテスト・build、固定差分の自己レビュー。
-- [ ] 開発DB適用/定義/権限、PRとmainのCI、D-009に従う統合を別々に記録。
+- [x] 各要件のコードとDB/Storageの所属・本人制限・競合・再送・途中失敗を検証。
+- [x] 既存データの変換と旧APIからの抜け道を検証。
+- [x] lint・型・全Nodeテスト・build、固定差分の自己レビュー。
+- [x] 開発DB適用/定義/権限を記録。PR/mainのCIと統合状態は下のGitHub記録を正本とする。
 - [ ] ユーザー確認と必要な操作は最後のチャットに集約する。
 
 ## 結果 / 小さい仮定
@@ -68,4 +68,9 @@ Edge Function delete-account v1 ACTIVE、verify_jwt=true。実行時にgetUser�
 Advisorでは新しい匿名実行・RLS欠落・外部キー索引不足を検出しなかった。認証済みSECURITY DEFINERは今回の限定RPC構成による指摘。既存のrls_auto_enable匿名実行、漏えいパスワード保護無効、groups.created_byとitem_list_membershipsの索引不足2件は残る。今回の対象外として設定は変更しない。
 参照：[SECURITY DEFINER](https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable)、[既存の匿名実行](https://supabase.com/docs/guides/database/database-linter?lint=0028_anon_security_definer_function_executable)、[パスワード保護](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection)。
 
-254件全Nodeテスト・lint・Next型検査・Edge handler型検査・production build成功。独立レビューと実ブラウザ操作は未実施。自己レビューでは権限の直接経路、本人と退出者、旧APIの保護、削除途中、改訂衝突、既存単日データの移行、HTMLの入れ子と写真読み込み量を確認し修正した。PR/CI/main統合は次の更新で記録する。
+254件全Nodeテスト・lint・Next型検査・Edge handler型検査・production build成功。独立レビューと実ブラウザ操作は未実施。自己レビューでは権限の直接経路、本人と退出者、旧APIの保護、削除途中、改訂衝突、既存単日データの移行、HTMLの入れ子と写真読み込み量を確認し修正した。GitHubの最新状態は下記の記録を参照する。
+
+## GitHubと最終差分
+
+[PR #26](https://github.com/Gaku-Fujioka/kokoiko/pull/26)。初回head 1ee6f1aの[CI](https://github.com/Gaku-Fujioka/kokoiko/actions/runs/39096486548)は成功。最終レビューで、反応→全グループおすすめ順、訪問作成/削除→訪問済みフィルター、写真削除→表紙一覧、旅行編集→アルバムの更新対象を追加し、255件の全テスト・lint・型・buildが成功した。SQL/Edgeの再変更はない。
+最新headのCIとmain統合はPRのchecks/merge状態を正本とし、D-009の自己レビュー・必要な検証・最新CI成功・競合なしを確認してAgentが統合する。結果は完了時のチャットへ記載する。実ブラウザの幅/クリック/ログイン後操作はユーザー確認待ち。最後の1人の退出とアカウント削除の実操作は、テスト用グループ/アカウントだけで確認する。

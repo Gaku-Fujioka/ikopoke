@@ -43,6 +43,8 @@ export async function manageVisitAction(_previous: PhotoManageState, form: FormD
     revalidatePath("/app/groups/[groupId]/memories/[memoryId]", "page");
     revalidatePath("/app/groups/[groupId]/items/[itemId]", "page");
     revalidatePath("/app/groups/[groupId]/outings/[outingId]", "page");
+    revalidatePath(`/app/groups/${group}/memories`); revalidatePath("/app/memories");
+    revalidatePath(`/app/groups/${group}/items`); revalidatePath("/app/items");
     revalidateSharedHome(group);
   }
   if (removedVisit) redirect(`/app/groups/${group}/visits`);
