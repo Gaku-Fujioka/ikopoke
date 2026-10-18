@@ -26,5 +26,6 @@ export async function createGroupAction(_previous: { error: string | null }, for
     return { error: error instanceof GroupStoreError ? error.message : "グループを保存できませんでした。もう一度お試しください。" };
   }
   revalidatePath("/app/groups");
+  revalidatePath("/app");
   redirect(`/app/groups/${encodeURIComponent(groupId)}`);
 }

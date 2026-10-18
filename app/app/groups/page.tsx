@@ -30,7 +30,7 @@ async function GroupsContent() {
           </ul>
         )}
       </section>
-      <CreateGroupForm requestId={randomUUID()} />
+      <div id="new-group" className="scroll-mt-24"><CreateGroupForm requestId={randomUUID()} /></div>
       <Link href="/app/profile" className="inline-flex min-h-11 items-center font-semibold text-orange-700 underline underline-offset-4">自分の表示名を設定・変更</Link>
     </div>
   );

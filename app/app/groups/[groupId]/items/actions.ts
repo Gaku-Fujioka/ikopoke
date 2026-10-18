@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { revalidateSharedHome } from "@/lib/home/revalidate";
 import { createClient } from "@/lib/supabase/server";
 import { hasEnvVars } from "@/lib/utils";
 import { createItem, ItemStoreError } from "@/lib/items/repository";
@@ -23,5 +24,6 @@ export async function createItemAction(_previous: { error: string | null }, form
   }
   const listPath = `/app/groups/${input.groupId}/items`;
   revalidatePath(listPath);
+  revalidateSharedHome(input.groupId, "items");
   redirect(`${listPath}/${encodeURIComponent(itemId)}`);
 }

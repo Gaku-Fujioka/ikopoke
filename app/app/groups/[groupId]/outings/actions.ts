@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { revalidateSharedHome } from "@/lib/home/revalidate";
 import { createClient } from "@/lib/supabase/server";
 import { hasEnvVars } from "@/lib/utils";
 import { parseOutingInput } from "@/lib/outings/validation";
@@ -25,5 +26,6 @@ export async function saveOutingAction(_previous: OutingActionState, form: FormD
   revalidatePath(`/app/groups/${input.groupId}/outings`);
   revalidatePath(`/app/groups/${input.groupId}/outings/calendar`);
   revalidatePath(`/app/groups/${input.groupId}/outings/${input.outingId}`);
+  revalidateSharedHome(input.groupId, "outings");
   redirect(`/app/groups/${input.groupId}/outings/${input.outingId}`);
 }

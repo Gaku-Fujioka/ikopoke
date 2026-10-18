@@ -1,4 +1,3 @@
-import { randomUUID } from "node:crypto";
 import { Suspense } from "react";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
@@ -9,7 +8,7 @@ import { isGroupId } from "@/lib/groups/validation";
 import { listItems, ITEM_PAGE_SIZE, ItemStoreError } from "@/lib/items/repository";
 import { itemPage } from "@/lib/items/validation";
 import { AuthSetupNotice } from "@/components/auth-setup-notice";
-import { CreateItemForm } from "@/components/items/create-item-form";
+import { CandidateCard } from "@/components/home/collection-cards";
 import { RetryItems } from "@/components/items/retry-items";
 import { itemSearchQuery, itemFilters, validItemSearch, sharedItemListHref, sharedItemDetailHref } from "@/lib/items/search";
 
@@ -55,9 +54,9 @@ async function ItemsContent({ params, searchParams }: Props) {
         <div className="min-w-0">
           <p className="break-words text-sm font-semibold text-orange-700">{group.name}</p>
           <h1 className="mt-2 text-3xl font-bold tracking-tight">みんなの候補</h1>
-          <p className="mt-3 text-sm leading-6 text-stone-600">このグループのメンバーに共有されます。新しい順に表示しています。</p>
+          <p className="mt-3 text-sm leading-6 text-stone-600">気になる場所も、やってみたいことも。一緒にためよう。</p>
         </div>
-        <div className="flex flex-wrap items-center gap-3"><Link href={`/app/groups/${groupId}/lists`} className="inline-flex min-h-11 items-center font-semibold text-orange-700 underline underline-offset-4">リストを管理</Link><a href="#add-item" className="inline-flex min-h-11 items-center rounded-full bg-orange-700 px-6 text-sm font-semibold text-white hover:bg-orange-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-700 focus-visible:ring-offset-2">候補を追加</a></div>
+        <div className="flex flex-wrap items-center gap-3"><Link href={`/app/groups/${groupId}/lists`} className="kk-text-link">リストで整理</Link><Link href={`/app/groups/${groupId}/items/new`} className="kk-primary-link">＋ 候補を追加</Link></div>
       </div>
       <div className="flex flex-wrap gap-3 text-sm"><Link href={sharedItemListHref(groupId,"",1,{list:"unclassified"})} className="inline-flex min-h-11 items-center font-semibold text-orange-700 underline underline-offset-4">未分類の候補を見る</Link>{filters.list && <span className="inline-flex min-h-11 items-center rounded-full bg-orange-50 px-4 font-semibold text-orange-800">{filters.list === "unclassified" ? "未分類" : "リストで絞り込み中"}</span>}</div>
       <form action={listPath} method="get" role="search" className="flex flex-wrap items-end gap-3 rounded-3xl border border-stone-200 bg-white p-5">
@@ -85,14 +84,10 @@ async function ItemsContent({ params, searchParams }: Props) {
       {!searchError && <section aria-label="保存した候補" className="space-y-4">
         <p role="status" className="break-words text-sm text-stone-600">{query ? `「${query}」の検索結果：${saved.total}件` : hasConditions ? `条件に合う候補：${saved.total}件` : `全${saved.total}件`}</p>
         {saved.items.length ? (
-          <ul className="grid gap-4 sm:grid-cols-2">
+          <ul className="kk-collection-grid">
             {saved.items.map((item) => (
               <li key={item.id} className="min-w-0">
-                <Link href={sharedItemDetailHref(groupId, item.id, query, page, filters)} className="block h-full rounded-3xl border border-stone-200 bg-white p-6 hover:border-orange-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-700">
-                  <span className="text-xs font-semibold text-orange-700">{item.kind === "spot" ? "スポット" : "やりたいこと"}</span>
-                  <h2 className="mt-3 break-words text-xl font-semibold">{item.title}</h2>
-                  <p className="mt-3 line-clamp-3 whitespace-pre-wrap break-words text-sm leading-6 text-stone-600">{item.memo || "メモはまだありません。"}</p>
-                </Link>
+                <CandidateCard item={item} groupName={group.name} href={sharedItemDetailHref(groupId, item.id, query, page, filters)} />
               </li>
             ))}
           </ul>
@@ -111,7 +106,6 @@ async function ItemsContent({ params, searchParams }: Props) {
           </nav>
         )}
       </section>}
-      <CreateItemForm groupId={groupId} groupName={group.name} requestId={randomUUID()} />
     </div>
   );
 }

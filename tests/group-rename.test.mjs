@@ -54,7 +54,7 @@ test("rename Action validates inputs before RPC, ignores actor fields and refres
   assert.deepEqual(provider.calls,[]);
   assert.deepEqual(await renameGroupAction({error:null},form({userId:"forged"})),{error:null,savedName:"新しい名前"});
   assert.deepEqual(provider.calls,[{name:"rename_group",input:{p_group_id:group,p_name:"新しい名前",p_expected_name:"元の名前"}}]);
-  assert.equal(cache.paths.length,4);assert.deepEqual(cache.paths.at(-1),{path:`/app/groups/${group}/items/[itemId]`,type:"page"});
+  assert.equal(cache.paths.length,11);assert.deepEqual(cache.paths.at(-1),{path:`/app/groups/${group}/items/[itemId]`,type:"page"});
 });
 test("signed-out submissions and failed renames never return success or raw provider details",async()=>{
   provider.configure(null,false);cache.paths.length=0;assert.ok((await renameGroupAction({error:null},form())).error);assert.deepEqual(provider.calls,[]);

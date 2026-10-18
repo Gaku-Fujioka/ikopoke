@@ -44,7 +44,7 @@ test("edit ignores forged creator and kind, checks snapshot and refreshes list/d
   const result=await updateItemAction(initial,form({created_by:"forged",userId:"forged",kind:"activity"}));
   assert.deepEqual(result,{error:null,saved:{title:"カフェ改",memo:"メモ"}});
   assert.deepEqual(provider.calls,[{name:"update_item",input:{p_group_id:groupId,p_item_id:itemId,p_title:"カフェ改",p_memo:"メモ",p_expected_title:"カフェ",p_expected_memo:""}}]);
-  assert.deepEqual(cache.paths,[`/app/groups/${groupId}/items`,`/app/groups/${groupId}/items/${itemId}`]);
+  assert.deepEqual(cache.paths,[`/app/groups/${groupId}/items`,`/app/groups/${groupId}/items/${itemId}`,"/app","/app/activity",`/app/groups/${groupId}`,`/app/groups/${groupId}/activity`,"/app/items"]);
 });
 test("conflicts and missing migrations never report a successful edit or expose raw errors",async()=>{
   for(const code of ["40001","42501","PGRST202","XX000"]){
@@ -58,7 +58,7 @@ test("comments derive the actor, reuse the request ID for saving and rotate only
   const result=await createCommentAction(initial,form({created_by:"forged",userId:"forged"}));
   assert.equal(result.error,null);assert.match(result.nextRequestId,/^[0-9a-f-]{36}$/);assert.notEqual(result.nextRequestId,requestId);
   assert.deepEqual(provider.calls,[{name:"create_item_comment",input:{p_group_id:groupId,p_item_id:itemId,p_body:"コメント",p_request_id:requestId}}]);
-  assert.deepEqual(cache.paths,[`/app/groups/${groupId}/items/${itemId}`]);
+  assert.deepEqual(cache.paths,[`/app/groups/${groupId}/items/${itemId}`,"/app","/app/activity",`/app/groups/${groupId}`,`/app/groups/${groupId}/activity`]);
 });
 test("comment failures preserve the request ID and never invalidate as if successful",async()=>{
   for(const code of ["23505","42501","PGRST202","XX000"]){

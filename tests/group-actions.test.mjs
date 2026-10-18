@@ -61,7 +61,7 @@ test("creation uses the session identity and preserves the request ID for retrie
   const data = form(); data.set("userId","forged-user");
   await assert.rejects(createGroupAction(initial,data),(error)=>error.location === `/app/groups/${requestId}`);
   assert.deepEqual(provider.calls,[{name:"create_group",input:{p_name:"週末",p_request_id:requestId}}]);
-  assert.deepEqual(cache.paths,["/app/groups"]);
+  assert.deepEqual(cache.paths,["/app/groups","/app"]);
 });
 
 test("a database failure stays on the form without a success redirect or raw details", async () => {
