@@ -9,8 +9,12 @@ export type GroupRow = {
 export type Database = {
   public: {
     Tables: {
+      memories: {
+        Row: { id: string; group_id: string; outing_id: string; title: string; memory_date: string; note: string; revision: number; created_at: string };
+        Insert: never; Update: never; Relationships: [];
+      };
       visits: {
-        Row: { id: string; group_id: string; item_id: string; outing_id: string | null; item_title: string; visited_on: string; note: string; revision: number; created_by: string; created_at: string };
+        Row: { id: string; group_id: string; item_id: string; outing_id: string | null; item_title: string; visited_on: string; visited_time: string | null; visited_period: "morning" | "noon" | "afternoon" | "night" | null; note: string; revision: number; created_by: string; created_at: string };
         Insert: never; Update: never; Relationships: [];
       };
       visit_ratings: {
@@ -22,7 +26,7 @@ export type Database = {
         Insert: never; Update: never; Relationships: [];
       };
       outings: {
-        Row: { id: string; group_id: string; title: string; outing_date: string; mode: "exact" | "period" | "order"; memo: string; revision: number; created_by: string; created_at: string; updated_at: string };
+        Row: { id: string; group_id: string; title: string; outing_date: string; mode: "exact" | "period" | "order"; memo: string; revision: number; completed_at: string | null; created_by: string; created_at: string; updated_at: string };
         Insert: never; Update: never; Relationships: [];
       };
       outing_items: {
@@ -95,6 +99,10 @@ export type Database = {
       };
     };
     Functions: {
+      record_timed_visit: { Args: { p_group_id: string; p_item_id: string; p_outing_id: string | null; p_visited_on: string; p_note: string; p_rating: number | null; p_request_id: string; p_time: string | null; p_period: string | null }; Returns: string };
+      update_timed_visit: { Args: { p_group_id: string; p_visit_id: string; p_visited_on: string; p_note: string; p_expected_revision: number; p_time: string | null; p_period: string | null }; Returns: number };
+      set_outing_completed: { Args: { p_group_id: string; p_outing_id: string; p_completed: boolean; p_expected_revision: number }; Returns: string | null };
+      update_memory: { Args: { p_group_id: string; p_memory_id: string; p_title: string; p_note: string; p_expected_revision: number }; Returns: number };
       record_visit: { Args: { p_group_id: string; p_item_id: string; p_outing_id: string | null; p_visited_on: string; p_note: string; p_rating: number | null; p_request_id: string }; Returns: string };
       update_visit: { Args: { p_group_id: string; p_visit_id: string; p_visited_on: string; p_note: string; p_expected_revision: number }; Returns: number };
       set_visit_rating: { Args: { p_group_id: string; p_visit_id: string; p_value: number | null }; Returns: undefined };

@@ -16,7 +16,7 @@ export function AppNav() {
   const pathname = usePathname();
   const matchedGroupId = /^\/app\/groups\/([^/]+)/.exec(pathname)?.[1];
   const groupId = isGroupId(matchedGroupId) ? matchedGroupId : null;
-  const destinations = groupId ? tabs.map(tab => tab.href === "/app/items" ? { ...tab, href: `/app/groups/${groupId}/items` } : tab.href === "/app/outings" ? { ...tab, href: `/app/groups/${groupId}/outings` } : tab) : tabs;
+  const destinations = groupId ? tabs.map(tab => tab.href === "/app/items" ? { ...tab, href: `/app/groups/${groupId}/items` } : tab.href === "/app/outings" ? { ...tab, href: `/app/groups/${groupId}/outings` } : tab.href === "/app/memories" ? { ...tab, href: `/app/groups/${groupId}/memories` } : tab) : tabs;
 
   return (
     <nav

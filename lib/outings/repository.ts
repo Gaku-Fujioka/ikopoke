@@ -2,7 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/database.types";
 import type { OutingInput, OutingMode, OutingPeriod } from "./validation";
 
-export type SavedOuting = { id: string; group_id: string; title: string; outing_date: string; mode: OutingMode; memo: string; revision: number; created_at: string; updated_at: string };
+export type SavedOuting = { id: string; group_id: string; title: string; outing_date: string; mode: OutingMode; memo: string; revision: number; completed_at: string | null; created_at: string; updated_at: string };
 export type SavedOutingItem = { item_id: string; position: number; planned_time: string | null; period: OutingPeriod | null };
 export type CandidateOption = { id: string; title: string; kind: "spot" | "activity" };
 export type OutingDetail = { outing: SavedOuting; items: SavedOutingItem[]; participants: string[] };
@@ -19,7 +19,7 @@ export class OutingStoreError extends Error {
 export async function listOutings(client: SupabaseClient<Database>, groupId: string): Promise<SavedOuting[]> {
   const result: SavedOuting[] = [];
   for (let start = 0; start < 10000; start += 1000) {
-    const { data, error } = await client.from("outings").select("id,group_id,title,outing_date,mode,memo,revision,created_at,updated_at").eq("group_id",groupId).order("outing_date",{ascending:true}).order("id").range(start,start+999);
+    const { data, error } = await client.from("outings").select("id,group_id,title,outing_date,mode,memo,revision,completed_at,created_at,updated_at").eq("group_id",groupId).order("outing_date",{ascending:true}).order("id").range(start,start+999);
     if (error) throw new OutingStoreError(error.code);
     result.push(...(data ?? []));
     if ((data?.length ?? 0) < 1000) return result;
@@ -28,7 +28,7 @@ export async function listOutings(client: SupabaseClient<Database>, groupId: str
 }
 
 export async function getOuting(client: SupabaseClient<Database>, groupId: string, outingId: string): Promise<OutingDetail | null> {
-  const { data: outing, error } = await client.from("outings").select("id,group_id,title,outing_date,mode,memo,revision,created_at,updated_at").eq("group_id",groupId).eq("id",outingId).maybeSingle();
+  const { data: outing, error } = await client.from("outings").select("id,group_id,title,outing_date,mode,memo,revision,completed_at,created_at,updated_at").eq("group_id",groupId).eq("id",outingId).maybeSingle();
   if (error) throw new OutingStoreError(error.code);
   if (!outing) return null;
   const [items, participants] = await Promise.all([

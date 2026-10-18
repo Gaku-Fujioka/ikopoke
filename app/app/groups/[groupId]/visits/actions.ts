@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { hasEnvVars } from "@/lib/utils";
 import { photoFileInput,photoInput,recordVisitInput,visitFields,visitIds,visitRating,PHOTO_BUCKET } from "@/lib/visits/validation";
 import { recordVisit,VisitStoreError } from "@/lib/visits/repository";
-export type VisitActionState={error:string|null;saved?:boolean;savedRevision?:number;savedDate?:string;savedNote?:string;savedRating?:number|null};
+export type VisitActionState={error:string|null;saved?:boolean;savedRevision?:number;savedDate?:string;savedNote?:string;savedTime?:string|null;savedPeriod?:string|null;savedRating?:number|null};
 const message=(cause:unknown)=>cause instanceof VisitStoreError?cause.message:"保存できませんでした。通信状態をご確認のうえ、もう一度お試しください。";
 async function clientForAction(){
   if(!hasEnvVars)throw new VisitStoreError();
@@ -15,6 +15,7 @@ async function clientForAction(){
 function refreshVisit(groupId:string,visitId:string){
   revalidatePath(`/app/groups/${groupId}/visits`);
   revalidatePath(`/app/groups/${groupId}/visits/${visitId}`);
+  revalidatePath("/app/groups/[groupId]/memories/[memoryId]","page");
 }
 export async function recordVisitAction(_previous:VisitActionState,form:FormData):Promise<VisitActionState>{
   let input;
@@ -34,9 +35,9 @@ export async function updateVisitAction(_previous:VisitActionState,form:FormData
     input={...visitIds(form),...visitFields(form),revision};
   }catch(cause){return {error:cause instanceof Error?cause.message:"入力内容をご確認ください。"};}
   try{
-    const client=await clientForAction();const {data,error}=await client.rpc("update_visit",{p_group_id:input.groupId,p_visit_id:input.visitId,p_visited_on:input.date,p_note:input.note,p_expected_revision:input.revision});
+    const client=await clientForAction();const {data,error}=await client.rpc("update_timed_visit",{p_group_id:input.groupId,p_visit_id:input.visitId,p_visited_on:input.date,p_note:input.note,p_expected_revision:input.revision,p_time:input.time,p_period:input.period});
     if(error||typeof data!=="number")throw new VisitStoreError(error?.code);
-    refreshVisit(input.groupId,input.visitId);return {error:null,saved:true,savedRevision:data,savedDate:input.date,savedNote:input.note};
+    refreshVisit(input.groupId,input.visitId);return {error:null,saved:true,savedRevision:data,savedDate:input.date,savedNote:input.note,savedTime:input.time,savedPeriod:input.period};
   }catch(cause){return {error:message(cause)};}
 }
 export async function rateVisitAction(_previous:VisitActionState,form:FormData):Promise<VisitActionState>{
