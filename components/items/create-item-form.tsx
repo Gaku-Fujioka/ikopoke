@@ -28,6 +28,7 @@ export function CreateItemForm({ groupId, groupName, requestId, lists = [], list
       <form ref={formRef} action={action} aria-busy={pending} className="mt-5 space-y-5">
         <input type="hidden" name="groupId" value={groupId} />
         <input type="hidden" name="requestId" value={requestId} />
+        <fieldset disabled={pending || Boolean(state.createdItemId)} className="space-y-5">
         <div className="space-y-2">
           <label htmlFor="item-title" className="block text-sm font-semibold">名前 <span className="text-orange-700">必須</span></label>
           <input id="item-title" name="title" required value={title} onChange={(event) => setTitle(event.target.value)} disabled={pending} aria-invalid={state.field === "title"} aria-describedby={description("title", "item-title-help")} className={inputClass} placeholder="例：海辺のカフェに行く" />
@@ -45,9 +46,10 @@ export function CreateItemForm({ groupId, groupName, requestId, lists = [], list
           <p id="item-memo-help" className="text-xs text-stone-500">{ITEM_MEMO_LIMIT.toLocaleString("ja-JP")}文字以内（現在 {Array.from(memo).length}文字）</p>
         </div>
         <fieldset className="mt-5 space-y-3"><legend className="font-semibold">リストに分類（複数選択できます）</legend>{lists.map(list => <label key={list.id} className="flex min-h-11 items-center gap-3 text-sm"><input type="checkbox" name="listIds" value={list.id} disabled={pending} /><span>{list.name}</span></label>)}{!lists.length && <p className="kk-muted">{listsUnavailable ? "リストを読み込めませんでした。候補は分類せずに保存できます。" : "リストはまだありません。保存後にも分類できます。"}</p>}{moreLists && <p className="kk-muted">最近の20件を表示しています。ほかのリストには保存後の候補詳細から分類できます。</p>}</fieldset></details>
-        {state.createdItemId && <p role="status" className="kk-notice">候補本体は保存されています。分類だけを再試行するか、<Link className="underline" href={`/app/groups/${groupId}/items/${state.createdItemId}`}>保存した候補を開く</Link>ことができます。</p>}
+        </fieldset>
+        {state.createdItemId && <div role="status" className="kk-notice space-y-3"><p>候補本体は保存されています。分類の一部も反映されている場合があります。保存した候補でリストを確認・変更してください。</p><Link className="kk-primary-link" href={`/app/groups/${groupId}/items/${state.createdItemId}`}>保存した候補で分類を確認 →</Link></div>}
         {state.error && <p id="item-error" role="alert" className="text-sm font-medium leading-6 text-red-700">{state.error}</p>}
-        <button type="submit" disabled={pending} className="min-h-12 rounded-full bg-orange-700 px-6 font-semibold text-white hover:bg-orange-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-700 focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60">{pending ? "共有しています…" : "みんなの行きたいに追加 →"}</button>
+        {!state.createdItemId && <button type="submit" disabled={pending} className="min-h-12 rounded-full bg-orange-700 px-6 font-semibold text-white hover:bg-orange-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-700 focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60">{pending ? "共有しています…" : "みんなの行きたいに追加 →"}</button>}
       </form>
     </section>
   );

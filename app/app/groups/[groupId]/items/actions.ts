@@ -25,7 +25,7 @@ export async function createItemAction(_previous: { error: string | null }, form
     itemId = await createItem(client, input);
     for (const listId of listIds) await setItemList(client, input.groupId, itemId, listId as string, true);
   } catch (error) {
-    if (itemId) { revalidatePath(`/app/groups/${input.groupId}/items`); revalidateSharedHome(input.groupId, "items"); return { error: "候補は保存しましたが、リストの分類を完了できませんでした。選択を確認して再試行してください。", createdItemId: itemId }; }
+    if (itemId) { revalidatePath(`/app/groups/${input.groupId}/items`); revalidateSharedHome(input.groupId, "items"); return { error: "候補は保存しましたが、リストの分類を完了できませんでした。保存した候補で分類をご確認ください。", createdItemId: itemId }; }
     return { error: error instanceof ItemStoreError ? error.message : "候補を保存できませんでした。もう一度お試しください。" };
   }
   const listPath = `/app/groups/${input.groupId}/items`;
