@@ -16,6 +16,7 @@ import { ItemComments } from "@/components/items/item-comments";
 import { ItemLists } from "@/components/lists/item-lists";
 import { VisitHistory } from "@/components/visits/visit-sections";
 import { listQuery } from "@/lib/lists/validation";
+import { googleMapsSearchHref } from "@/lib/maps/explorer";
 import { itemSearchQuery, itemFilters, allItemListHref, sharedItemListHref, sharedItemDetailHref, sharedItemCommentsHref, sharedItemListsHref } from "@/lib/items/search";
 
 type ExtraSearch = { archived?: string; visited?: string; priority?: string; sort?: string };
@@ -60,6 +61,7 @@ async function ItemContent({ params, searchParams }: Props) {
       <article className="kk-item-hero">
         <p className="break-words text-sm font-semibold text-orange-700">{group.name} / {item.kind === "spot" ? "スポット" : "やりたいこと"}</p>
         <div className="kk-item-title"><span aria-hidden="true" className="kk-item-doodle">{item.kind === "spot" ? "✦" : "☀"}</span><h1 className="break-words text-3xl font-bold tracking-tight sm:text-4xl">{item.title}</h1><EditItemForm groupId={groupId} itemId={itemId} title={item.title} memo={item.memo} field="title" /></div>
+        {item.kind === "spot" && <p className="flex flex-wrap items-center gap-x-3 text-xs text-stone-500"><a href={googleMapsSearchHref(item.title)} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center font-semibold text-stone-600 underline underline-offset-4">Googleマップで探す ↗<span className="sr-only">（新しいタブ）</span></a><span>この名前で検索します</span></p>}
         <div className="kk-spot-actions">{!item.archived_at && <Link href={`/app/groups/${groupId}/outings/new?item=${itemId}`} className="kk-primary-link">この行き先で計画する →</Link>}{!item.archived_at && <Link href={`/app/groups/${groupId}/outings/add?items=${itemId}`} className="kk-secondary-link">予定に追加</Link>}<Link href="#item-lists" className="kk-secondary-link">リストにまとめる ↓</Link><Link href={`/app/groups/${groupId}/visits/new?item=${itemId}`} className="kk-text-link">行った！を記録する</Link></div>
 
       </article>

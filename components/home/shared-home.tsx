@@ -3,7 +3,8 @@ import { listItems } from "@/lib/items/repository";
 import { Suspense } from "react";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ArrowRight, BookmarkPlus, CalendarDays, Map, MapPin, Search, Sparkles } from "lucide-react";
+import { ArrowRight, CalendarDays, MapPin, Search, Sparkles } from "lucide-react";
+import { PlaceExplorer } from "@/components/maps/place-explorer";
 import { createClient } from "@/lib/supabase/server";
 import { hasEnvVars } from "@/lib/utils";
 import { listGroups, type SavedGroup } from "@/lib/groups/repository";
@@ -41,9 +42,14 @@ async function SavedPeek({ client, groupId }: { client: HomeClient; groupId: str
 }
 function MapSpace({ client, groupId }: { client: HomeClient; groupId: string | null }) {
   return <section className="kk-map-card" aria-labelledby="home-map-title">
-    <div className="kk-map-top"><h2 id="home-map-title"><MapPin aria-hidden="true" size={17} />行きたいが、ひろがる</h2><span className="kk-label">地図は準備中</span></div>
+    <div className="kk-map-top"><h2 id="home-map-title"><MapPin aria-hidden="true" size={17} />行きたいが、ひろがる</h2><span className="kk-label">ここから、次の行き先へ</span></div>
     <form action={collectionHref("items", groupId)} role="search" className="kk-map-search"><Search aria-hidden="true" size={18} /><label htmlFor="home-candidate-search" className="sr-only">保存した候補を名前で検索</label><input id="home-candidate-search" type="search" name="q" maxLength={100} placeholder="保存した候補を探す" /><button type="submit">探す</button></form>
-    <div className="kk-map-unconnected"><span className="kk-map-doodle" aria-hidden="true"><Map size={48} strokeWidth={1.3} /><Sparkles size={20} /></span><strong>次の行き先、少しずつ。</strong><p>地図と新しい場所の検索は、これから。<br />いまは候補をためて、一緒に選ぼう。</p><Link href={addHref("item", groupId)} className="kk-primary-link"><BookmarkPlus aria-hidden="true" size={17} />行きたいを追加</Link></div>
+    <PlaceExplorer addHref={addHref("item", groupId)} config={{
+      enabled: process.env.NEXT_PUBLIC_GOOGLE_MAPS_ENABLED === "true",
+      placesEnabled: process.env.NEXT_PUBLIC_GOOGLE_PLACES_ENABLED === "true",
+      apiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "",
+      mapId: process.env.NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID ?? "",
+    }} />
     <Suspense fallback={<HomeLoading>保存した候補を読み込んでいます…</HomeLoading>}><SavedPeek client={client} groupId={groupId} /></Suspense>
   </section>;
 }
