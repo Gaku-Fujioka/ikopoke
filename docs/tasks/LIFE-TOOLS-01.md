@@ -74,3 +74,7 @@ Advisorでは新しい匿名実行・RLS欠落・外部キー索引不足を検�
 
 [PR #26](https://github.com/Gaku-Fujioka/kokoiko/pull/26)。初回head 1ee6f1aの[CI](https://github.com/Gaku-Fujioka/kokoiko/actions/runs/39096486548)は成功。最終レビューで、反応→全グループおすすめ順、訪問作成/削除→訪問済みフィルター、写真削除→表紙一覧、旅行編集→アルバムの更新対象を追加し、255件の全テスト・lint・型・buildが成功した。SQL/Edgeの再変更はない。
 最新headのCIとmain統合はPRのchecks/merge状態を正本とし、D-009の自己レビュー・必要な検証・最新CI成功・競合なしを確認してAgentが統合する。結果は完了時のチャットへ記載する。実ブラウザの幅/クリック/ログイン後操作はユーザー確認待ち。最後の1人の退出とアカウント削除の実操作は、テスト用グループ/アカウントだけで確認する。
+
+### 中止アルバムの表示の追補
+
+PR #26はmain a62df3043732a370f855966adc1c9a49da3ce9d9へマージされ、[main CI](https://github.com/Gaku-Fujioka/kokoiko/actions/runs/39097006380)も成功。その後の画面照合で、中止計画のアルバムにも終了操作が残ることを見つけたため、fix/cancelled-album-controlsで中止中の案内と再開リンクへ揃えた。表紙・本・訪問記録はそのまま利用できる。中止/通常2ケースを追加し、全257件・lint・型検査成功。SQLとEdgeは変更しない。追補のPR/main CIと統合結果はGitHubの同branchのPRと完了チャットへ記録する。
