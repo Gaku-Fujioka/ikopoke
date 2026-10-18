@@ -2,9 +2,9 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/database.types";
 import type { recordVisitInput } from "./validation";
 export type SavedVisit = Omit<Database["public"]["Tables"]["visits"]["Row"],"created_by">;
-export type VisitPhoto = Omit<Database["public"]["Tables"]["visit_photos"]["Row"],"created_by">;
+export type VisitPhoto = Omit<Database["public"]["Tables"]["visit_photos"]["Row"],"created_by" | "deletion_actor">;
 export type VisitRatings = { rating_count: number; average_rating: number | null; my_rating: number | null };
-const columns="id,group_id,item_id,outing_id,item_title,visited_on,visited_time,visited_period,note,revision,created_at";
+const columns="id,group_id,item_id,outing_id,item_title,visited_on,visited_time,visited_period,note,revision,created_at,deleting";
 export class VisitStoreError extends Error {
   constructor(code?: string) {
     super(code==="40001" ? "この記録は別の画面で変更されました。入力を控えてから再読み込みしてください。" : code==="54000" ? "写真は1回の訪問につき10枚までです。未完了の送信がある場合は、確認か中断をしてください。" : "訪問記録を読み書きできませんでした。所属や通信状態をご確認のうえ、もう一度お試しください。");
@@ -36,6 +36,6 @@ export async function getVisitRatings(client: SupabaseClient<Database>,groupId:s
   return row;
 }
 export async function listVisitPhotos(client:SupabaseClient<Database>,groupId:string,visitId:string):Promise<VisitPhoto[]>{
-  const {data,error}=await client.from("visit_photos").select("id,group_id,visit_id,slot,object_path,content_type,byte_size,status,created_at").eq("group_id",groupId).eq("visit_id",visitId).order("slot");
+  const {data,error}=await client.from("visit_photos").select("id,group_id,visit_id,slot,display_order,object_path,content_type,byte_size,status,created_at").eq("group_id",groupId).eq("visit_id",visitId).order("display_order").order("id");
   if(error)throw new VisitStoreError(error.code);return data??[];
 }

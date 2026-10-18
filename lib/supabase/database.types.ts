@@ -10,11 +10,11 @@ export type Database = {
   public: {
     Tables: {
       memories: {
-        Row: { id: string; group_id: string; outing_id: string; title: string; memory_date: string; note: string; revision: number; created_at: string };
+        Row: { id: string; group_id: string; outing_id: string; title: string; memory_date: string; note: string; revision: number; created_at: string; cover_photo_id: string | null };
         Insert: never; Update: never; Relationships: [];
       };
       visits: {
-        Row: { id: string; group_id: string; item_id: string; outing_id: string | null; item_title: string; visited_on: string; visited_time: string | null; visited_period: "morning" | "noon" | "afternoon" | "night" | null; note: string; revision: number; created_by: string; created_at: string };
+        Row: { id: string; group_id: string; item_id: string; outing_id: string | null; item_title: string; visited_on: string; visited_time: string | null; visited_period: "morning" | "noon" | "afternoon" | "night" | null; deleting: boolean; note: string; revision: number; created_by: string; created_at: string };
         Insert: never; Update: never; Relationships: [];
       };
       visit_ratings: {
@@ -22,7 +22,7 @@ export type Database = {
         Insert: never; Update: never; Relationships: [];
       };
       visit_photos: {
-        Row: { id: string; group_id: string; visit_id: string; slot: number; object_path: string; content_type: string; byte_size: number; status: "pending" | "ready" | "cancelling"; created_by: string; created_at: string };
+        Row: { id: string; group_id: string; visit_id: string; slot: number; display_order: number; deletion_actor: string | null; object_path: string; content_type: string; byte_size: number; status: "pending" | "ready" | "cancelling"; created_by: string; created_at: string };
         Insert: never; Update: never; Relationships: [];
       };
       outings: {
@@ -56,7 +56,7 @@ export type Database = {
         Relationships: [];
       };
       item_comments: {
-        Row: { id: string; item_id: string; body: string; created_by: string; created_at: string };
+        Row: { id: string; item_id: string; body: string; created_by: string; created_at: string; revision: number };
         Insert: never;
         Update: never;
         Relationships: [];
@@ -68,7 +68,7 @@ export type Database = {
         Relationships: [];
       };
       items: {
-        Row: { id: string; group_id: string; title: string; kind: "spot" | "activity"; memo: string; created_by: string; created_at: string };
+        Row: { id: string; group_id: string; title: string; kind: "spot" | "activity"; memo: string; created_by: string; created_at: string; priority: number; archived_at: string | null };
         Insert: never;
         Update: never;
         Relationships: [];
@@ -99,6 +99,19 @@ export type Database = {
       };
     };
     Functions: {
+      get_visit_permissions: { Args: { p_group_id: string; p_visit_id: string }; Returns: { can_delete: boolean; photo_ids: string[] }[] };
+      reorder_visit_photos: { Args: { p_group_id: string; p_visit_id: string; p_ids: string[]; p_expected_ids: string[] }; Returns: undefined };
+      set_memory_cover: { Args: { p_group_id: string; p_memory_id: string; p_photo_id: string | null; p_expected_revision: number }; Returns: number };
+      begin_remove_photo: { Args: { p_group_id: string; p_visit_id: string; p_photo_id: string }; Returns: string | null };
+      finish_remove_photo: { Args: { p_group_id: string; p_visit_id: string; p_photo_id: string }; Returns: undefined };
+      begin_remove_visit: { Args: { p_group_id: string; p_visit_id: string; p_expected_revision: number }; Returns: { object_path: string }[] };
+      finish_remove_visit: { Args: { p_group_id: string; p_visit_id: string }; Returns: undefined };
+      browse_items: { Args: { p_group_id: string | null; p_query: string; p_kind: string | null; p_reaction: string | null; p_list_id: string | null; p_unclassified: boolean; p_archived: boolean; p_visited: string | null; p_priority: number | null; p_sort: string; p_page: number }; Returns: { items: { id: string; group_id: string; title: string; kind: "spot" | "activity"; memo: string; created_at: string; priority: number; archived_at: string | null; want_count: number; visited: boolean; score: number; my_reaction: string | null }[]; total_count: number }[] };
+      set_item_attributes: { Args: { p_group_id: string; p_item_id: string; p_priority: number; p_expected_priority: number; p_archived: boolean; p_expected_archived: boolean }; Returns: undefined };
+      get_named_item_reactions: { Args: { p_group_id: string; p_item_id: string }; Returns: { value: string; display_name: string; is_mine: boolean; total_count: number }[] };
+      get_named_item_comments: { Args: { p_group_id: string; p_item_id: string; p_page: number }; Returns: { comments: { id: string; body: string; created_at: string; is_mine: boolean; display_name: string; revision: number; can_delete: boolean }[]; total_count: number }[] };
+      edit_item_comment: { Args: { p_group_id: string; p_item_id: string; p_comment_id: string; p_body: string; p_expected_revision: number }; Returns: number };
+      delete_item_comment: { Args: { p_group_id: string; p_item_id: string; p_comment_id: string; p_expected_revision: number }; Returns: undefined };
       get_home_activity: { Args: { p_group_id: string | null; p_limit: number; p_before_at: string | null; p_before_key: string | null }; Returns: { event_key: string; group_id: string; kind: string; subject_id: string; title: string; actor_name: string | null; is_mine: boolean; occurred_at: string }[] };
       record_timed_visit: { Args: { p_group_id: string; p_item_id: string; p_outing_id: string | null; p_visited_on: string; p_note: string; p_rating: number | null; p_request_id: string; p_time: string | null; p_period: string | null }; Returns: string };
       update_timed_visit: { Args: { p_group_id: string; p_visit_id: string; p_visited_on: string; p_note: string; p_expected_revision: number; p_time: string | null; p_period: string | null }; Returns: number };

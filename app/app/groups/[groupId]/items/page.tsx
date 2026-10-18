@@ -1,3 +1,4 @@
+import { ItemExtraFilters } from "@/components/items/item-extra-filters";
 import { Suspense } from "react";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
@@ -12,7 +13,8 @@ import { CandidateCard } from "@/components/home/collection-cards";
 import { RetryItems } from "@/components/items/retry-items";
 import { itemSearchQuery, itemFilters, validItemSearch, sharedItemListHref, sharedItemDetailHref } from "@/lib/items/search";
 
-type Props = { params: Promise<{ groupId: string }>; searchParams: Promise<{ page?: string | string[]; q?: string | string[]; kind?: string | string[]; reaction?: string | string[]; list?: string | string[] }> };
+type ExtraSearch = { archived?: string; visited?: string; priority?: string; sort?: string };
+type Props = { params: Promise<{ groupId: string }>; searchParams: Promise<ExtraSearch & { page?: string | string[]; q?: string | string[]; kind?: string | string[]; reaction?: string | string[]; list?: string | string[] }> };
 
 async function ItemsContent({ params, searchParams }: Props) {
   const { groupId } = await params;
@@ -22,7 +24,7 @@ async function ItemsContent({ params, searchParams }: Props) {
   const page = itemPage(search.page);
   const query = itemSearchQuery(search.q);
   const filters = itemFilters(search);
-  const hasConditions = Boolean(query || filters.kind || filters.reaction || filters.list);
+  const hasConditions = Boolean(query || filters.kind || filters.reaction || filters.list || filters.archived || filters.visited || filters.priority !== undefined || filters.sort === "recommended");
   const searchError = !validItemSearch(query);
   const listPath = `/app/groups/${groupId}/items`;
   const client = await createClient();
@@ -77,6 +79,7 @@ async function ItemsContent({ params, searchParams }: Props) {
             <option value="">すべて</option><option value="want_to_go">行きたい！</option><option value="not_now">そこまで</option><option value="unreacted">未反応</option>
           </select>
         </div>
+        <ItemExtraFilters filters={filters} />
         <button type="submit" className="min-h-12 rounded-full bg-stone-900 px-6 text-sm font-semibold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-stone-900 focus-visible:ring-offset-2">検索・絞り込み</button>
         {hasConditions && <Link href={listPath} className="inline-flex min-h-12 items-center px-3 font-semibold text-orange-700 underline underline-offset-4">条件を解除</Link>}
         {searchError && <p id="shared-search-error" role="alert" className="w-full text-sm text-red-700">検索語は100文字以内で入力してください。</p>}

@@ -1,12 +1,12 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../supabase/database.types";
 import type { ItemInput } from "./validation";
-import { titleSearchFilter, validItemSearch, type ItemFilters } from "@/lib/items/search";
+import { validItemSearch, type ItemFilters } from "@/lib/items/search";
 import type { ItemEditInput } from "./edit";
 
-export type SavedItem = Pick<Database["public"]["Tables"]["items"]["Row"], "id" | "group_id" | "title" | "kind" | "memo" | "created_at">;
+export type SavedItem = Pick<Database["public"]["Tables"]["items"]["Row"], "id" | "group_id" | "title" | "kind" | "memo" | "created_at"> & { priority?: number; archived_at?: string | null; want_count?: number; visited?: boolean; score?: number };
 export const ITEM_PAGE_SIZE = 20;
-const columns = "id,group_id,title,kind,memo,created_at";
+const columns = "id,group_id,title,kind,memo,created_at,priority,archived_at";
 
 export class ItemStoreError extends Error {
   constructor(error: { code?: string } | null) {
@@ -23,32 +23,7 @@ export class ItemStoreError extends Error {
 
 export async function listItems(client: SupabaseClient<Database>, groupId: string, page: number, query = "", filters: ItemFilters = {}): Promise<{ items: SavedItem[]; total: number }> {
   if (!validItemSearch(query)) throw new ItemStoreError(null);
-  if (filters.list) {
-    const { data, error } = await client.rpc("get_group_items", {
-      p_group_id: groupId, p_query: query, p_kind: filters.kind ?? null, p_reaction: filters.reaction ?? null,
-      p_list_id: filters.list === "unclassified" ? null : filters.list,
-      p_unclassified: filters.list === "unclassified", p_page: page,
-    });
-    if (error) throw new ItemStoreError(error);
-    const row = data?.[0];
-    const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    if (!row || !Array.isArray(row.items) || row.items.length > ITEM_PAGE_SIZE || !Number.isSafeInteger(row.total_count) || row.total_count < 0 || row.items.some(item =>
-      !uuid.test(item.id) || item.group_id !== groupId || typeof item.title !== "string" || !["spot", "activity"].includes(item.kind) || typeof item.memo !== "string" || typeof item.created_at !== "string"
-    )) throw new ItemStoreError(null);
-    return { items: row.items.map(item => ({ id: item.id, group_id: item.group_id, title: item.title, kind: item.kind, memo: item.memo, created_at: item.created_at })), total: row.total_count };
-  }
-  const start = (page - 1) * ITEM_PAGE_SIZE;
-  const reactionRequest = (reaction: NonNullable<ItemFilters["reaction"]>) => {
-    const feed = client.from("shared_item_feed").select(columns, { count: "exact" });
-    return reaction === "unreacted" ? feed.is("my_reaction", null) : feed.eq("my_reaction", reaction);
-  };
-  let request = (filters.reaction ? reactionRequest(filters.reaction) : client.from("items").select(columns, { count: "exact" })).eq("group_id", groupId);
-  if (filters.kind) request = request.eq("kind", filters.kind);
-  if (query) request = request.filter("title", "imatch", titleSearchFilter(query));
-  const { data, error, count } = await request
-    .order("created_at", { ascending: false }).order("id", { ascending: false }).range(start, start + ITEM_PAGE_SIZE - 1);
-  if (error) throw new ItemStoreError(error);
-  return { items: data ?? [], total: count ?? 0 };
+  return browseItems(client, groupId, page, query, filters);
 }
 
 export async function getItem(client: SupabaseClient<Database>, groupId: string, itemId: string): Promise<SavedItem | null> {
@@ -71,4 +46,20 @@ export async function updateItem(client: SupabaseClient<Database>, input: ItemEd
     p_expected_title: input.expectedTitle, p_expected_memo: input.expectedMemo,
   });
   if (error || data !== input.itemId) throw new ItemStoreError(error);
+}
+
+
+export async function browseItems(client: SupabaseClient<Database>, groupId: string | null, page: number, query = "", filters: ItemFilters = {}): Promise<{ items: SavedItem[]; total: number }> {
+  if (!validItemSearch(query)) throw new ItemStoreError(null);
+  const { data, error } = await client.rpc("browse_items", {
+    p_group_id: groupId, p_query: query, p_kind: filters.kind ?? null, p_reaction: filters.reaction ?? null,
+    p_list_id: filters.list && filters.list !== "unclassified" ? filters.list : null, p_unclassified: filters.list === "unclassified",
+    p_archived: filters.archived ?? false, p_visited: filters.visited ?? null, p_priority: filters.priority ?? null,
+    p_sort: filters.sort ?? "newest", p_page: page,
+  });
+  const row = data?.[0];
+  if (error || !row || !Array.isArray(row.items) || row.items.length > ITEM_PAGE_SIZE || !Number.isSafeInteger(row.total_count) || row.total_count < 0 || row.items.some(i =>
+    !/^[0-9a-f-]{36}$/i.test(i.id) || !/^[0-9a-f-]{36}$/i.test(i.group_id) || (groupId && i.group_id !== groupId) || typeof i.title !== "string" || !["spot", "activity"].includes(i.kind) || typeof i.memo !== "string" || typeof i.created_at !== "string" || !Number.isInteger(i.priority) || i.priority < 0 || i.priority > 3 || typeof i.visited !== "boolean" || !Number.isSafeInteger(i.want_count) || i.want_count < 0
+  )) throw new ItemStoreError(error);
+  return { items: row.items.map(i => ({ id:i.id,group_id:i.group_id,title:i.title,kind:i.kind,memo:i.memo,created_at:i.created_at,priority:i.priority,archived_at:i.archived_at,want_count:i.want_count,visited:i.visited,score:i.score })), total:row.total_count };
 }

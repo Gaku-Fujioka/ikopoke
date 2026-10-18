@@ -1,3 +1,4 @@
+import { CoverEditor } from "@/components/memories/cover-editor";
 import {Suspense} from "react";
 import Link from "next/link";
 import {notFound,redirect} from "next/navigation";
@@ -14,7 +15,7 @@ async function BookContent({memory}:{memory:SavedMemory}){
   try{
     const client=await createClient();const [content,outing]=await Promise.all([getMemoryContent(client,memory),getOuting(client,memory.group_id,memory.outing_id)]);
     if(!outing)return <p role="alert">関連する計画を読み込めませんでした。もう一度お試しください。</p>;
-    return <><p className="rounded-2xl bg-orange-50 p-4 text-sm leading-6 text-stone-700">{outing.outing.completed_at?"終了したおでかけの思い出です。":"終了を取り消し、計画に戻しています。この一冊と記録は残っています。"}</p><MemoryBook memory={memory} visits={orderMemoryVisits(content.visits,outing.items)} photos={content.photos}/><CompletionForm groupId={memory.group_id} outingId={memory.outing_id} revision={outing.outing.revision} completed={!!outing.outing.completed_at}/></>;
+    return <><p className="rounded-2xl bg-orange-50 p-4 text-sm leading-6 text-stone-700">{outing.outing.completed_at?"終了したおでかけの思い出です。":"終了を取り消し、計画に戻しています。この一冊と記録は残っています。"}</p><MemoryBook memory={memory} visits={orderMemoryVisits(content.visits,outing.items)} photos={content.photos}/><CoverEditor memory={memory} photos={content.photos}/><CompletionForm groupId={memory.group_id} outingId={memory.outing_id} revision={outing.outing.revision} completed={!!outing.outing.completed_at}/></>;
   }catch{return <p role="alert">訪問や写真の情報を読み込めませんでした。思い出を開き直してください。</p>;}
 }
 async function Content({params}:{params:Promise<{groupId:string;memoryId:string}>}){

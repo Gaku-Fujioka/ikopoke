@@ -1,9 +1,10 @@
+import { PhotoManagement, DeleteVisitContent } from "@/components/visits/photo-management";
 import Link from "next/link";
 import type {createClient} from "@/lib/supabase/server";
 import {getVisitRatings,listVisitPhotos,listVisits,VisitStoreError} from "@/lib/visits/repository";
 import {VisitRatingForm} from "@/components/visits/visit-forms";
 import {PhotoUpload,PendingPhoto} from "@/components/visits/photo-upload";
-import {PrivateVisitImage} from "@/components/visits/private-visit-image";
+
 type Client=Awaited<ReturnType<typeof createClient>>;
 export async function VisitRatingSection({client,groupId,visitId}:{client:Client;groupId:string;visitId:string}){
   try{return <VisitRatingForm groupId={groupId} visitId={visitId} ratings={await getVisitRatings(client,groupId,visitId)}/>;}
@@ -11,10 +12,12 @@ export async function VisitRatingSection({client,groupId,visitId}:{client:Client
 }
 export async function VisitPhotos({client,groupId,visitId,title}:{client:Client;groupId:string;visitId:string;title:string}){
   try{
-    const photos=await listVisitPhotos(client,groupId,visitId),ready=photos.filter(photo=>photo.status==="ready"),pending=photos.filter(photo=>photo.status!=="ready");
+    const [photos, permissions] = await Promise.all([listVisitPhotos(client,groupId,visitId), client.rpc("get_visit_permissions", {p_group_id:groupId,p_visit_id:visitId})]);
+    if(permissions.error) throw new Error();
+    const ready=photos.filter(photo=>photo.status==="ready"),pending=photos.filter(photo=>photo.status!=="ready");
     return <section className="space-y-5 rounded-3xl border border-stone-200 bg-white p-6"><h2 className="text-xl font-bold">訪問写真（{ready.length}枚）</h2>
-      {ready.length?<ul className="grid gap-4 sm:grid-cols-2">{ready.map((photo,index)=><li key={photo.id}><PrivateVisitImage path={photo.object_path} contentType={photo.content_type} alt={`${title}の訪問写真 ${index+1}`}/></li>)}</ul>:<p className="text-sm text-stone-600">写真はまだありません。</p>}
-      {pending.length>0&&<ul className="space-y-3">{pending.map(photo=><PendingPhoto key={photo.id} groupId={groupId} visitId={visitId} photoId={photo.id} cancelling={photo.status==="cancelling"}/>)}</ul>}
+      {ready.length?<PhotoManagement key={ready.map(p=>p.id+":"+p.display_order).join(",")} groupId={groupId} visitId={visitId} photos={ready} deletable={permissions.data?.[0]?.photo_ids??[]} title={title}/>:<p className="text-sm text-stone-600">写真はまだありません。</p>}
+      {pending.length>0&&<ul className="space-y-3">{pending.map(photo=><div key={photo.id}><PendingPhoto groupId={groupId} visitId={visitId} photoId={photo.id} cancelling={photo.status==="cancelling"}/>{permissions.data?.[0]?.photo_ids.includes(photo.id) && <DeleteVisitContent groupId={groupId} visitId={visitId} photoId={photo.id}/>}</div>)}</ul>}
       <PhotoUpload groupId={groupId} visitId={visitId}/>
     </section>;
   }catch{return <p role="alert" className="rounded-3xl border bg-white p-6">写真を読み込めませんでした。訪問記録を開き直してください。</p>;}

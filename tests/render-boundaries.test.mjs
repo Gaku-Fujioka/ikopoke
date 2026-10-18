@@ -19,11 +19,11 @@ export async function getGroup(client,id){calls.push(['group',id]);return plan.g
 export async function getItem(client,group,item){calls.push(['item',group,item]);return plan.item();}
 export async function listItems(client,...args){calls.push(['items',...args]);return plan.items();}
 export async function getReactions(client,...args){calls.push(['reactions',...args]);return plan.reactions();}
-export async function getComments(client,...args){calls.push(['comments',...args]);return plan.comments();}
+export async function getNamedComments(client,...args){calls.push(['comments',...args]);return plan.comments();}
 export async function listInvites(client,...args){calls.push(['invites',...args]);return plan.invites();}
 export async function getItemLists(client,...args){calls.push(['lists',...args]);return plan.lists();}
 `);
-const leafURL=moduleURL("export function AuthSetupNotice(){return null;}export function CreateItemForm(){return null;}export function RetryItems(){return null;}export function EditItemForm(){return null;}export function ItemReactions(){return null;}export function CommentForm(){return null;}export function InviteManagement(){return null;}export function RenameGroupForm(){return null;}export function ItemListButton(){return null;}export function VisitHistory(){return null;}export default function Link(){return null;}");
+const leafURL=moduleURL("export function CommentManagement(){return null;}export function ItemManagement(){return null;}export function ItemExtraFilters(){return null;}export function PrivateVisitImage(){return null;}export function AuthSetupNotice(){return null;}export function CreateItemForm(){return null;}export function RetryItems(){return null;}export function EditItemForm(){return null;}export function ItemReactions(){return null;}export function CommentForm(){return null;}export function InviteManagement(){return null;}export function RenameGroupForm(){return null;}export function ItemListButton(){return null;}export function VisitHistory(){return null;}export default function Link(){return null;}");
 const navigationURL=moduleURL("export function notFound(){const error=new Error('not found');error.navigation='not-found';throw error;}export function redirect(path){const error=new Error('redirect');error.location=path;throw error;}");
 registerHooks({
   resolve(specifier,context,next){

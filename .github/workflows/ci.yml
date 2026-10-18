@@ -27,4 +27,5 @@ jobs:
       - run: node --experimental-strip-types --test tests/visits-database.test.mjs tests/visit-actions.test.mjs
       - run: node --experimental-strip-types --test tests/memories-database.test.mjs tests/memories.test.mjs
       - run: node --experimental-strip-types --test tests/home-database.test.mjs tests/home-ui.test.mjs tests/home-repository.test.mjs
+      - run: node --experimental-strip-types --test tests/shared-candidate-tools.test.mjs tests/shared-album-tools.test.mjs
       - run: npm run build

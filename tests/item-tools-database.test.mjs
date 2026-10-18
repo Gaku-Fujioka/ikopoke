@@ -1,5 +1,6 @@
+import {createStorageFixture} from "./storage-fixture.mjs";
 import assert from "node:assert/strict";
-import {readFile} from "node:fs/promises";
+import {readFile,readdir} from "node:fs/promises";
 import {registerHooks} from "node:module";
 import {after,before,test} from "node:test";
 import {createClient} from "@supabase/supabase-js";
@@ -18,9 +19,8 @@ before(async()=>{
     create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;
     grant usage on schema auth to anon,authenticated;
     insert into auth.users(id) values('${alice}'),('${bob}'),('${outsider}');`);
-  for(const name of ["20261017091513_create_groups.sql","20261017112451_create_items.sql","20261017153040_create_item_reactions.sql","20261017162832_edit_items.sql","20261017162907_shared_item_feed.sql","20261017162931_create_item_comments.sql"]){
-    await db.exec(await readFile(new URL(`../supabase/migrations/${name}`,import.meta.url),"utf8"));
-  }
+  await createStorageFixture(db);
+  for(const name of (await readdir(new URL("../supabase/migrations/",import.meta.url))).filter(n=>n.endsWith(".sql")).sort())await db.exec(await readFile(new URL(`../supabase/migrations/${name}`,import.meta.url),"utf8"));
   await asUser(alice,()=>db.query("select public.create_group('A',$1)",[groupA]));
   await asUser(bob,()=>db.query("select public.create_group('B',$1)",[groupB]));
   await db.query("insert into public.group_members(group_id,user_id) values($1,$2)",[groupA,bob]);
@@ -83,20 +83,13 @@ test("the feed applies caller RLS and never treats another user's reaction as th
 });
 test("actual SDK combines name, kind, reaction and pagination before computing result counts",async()=>{
   // Synthetic transport, real SDK URL generation and PostgreSQL filters/RLS.
-  const client=createClient("https://tools-test.invalid","synthetic-test-key",{auth:{persistSession:false,autoRefreshToken:false},global:{fetch:async(input)=>{
-    const url=new URL(input instanceof Request?input.url:String(input));
-    const table=url.pathname.endsWith("/shared_item_feed")?"shared_item_feed":"items";
-    const clauses=[],values=[];
-    for(const key of ["group_id","kind","my_reaction","title"]){
-      const value=url.searchParams.get(key);if(!value)continue;
-      if(value==="is.null"){clauses.push(`${key} is null`);continue;}
-      const dot=value.indexOf("."),op=value.slice(0,dot),operand=value.slice(dot+1);
-      assert.ok(["eq","imatch"].includes(op));values.push(operand);clauses.push(`${key} ${op==="eq"?"=":"~*"} $${values.length}`);
-    }
-    const where=clauses.length?`where ${clauses.join(" and ")}`:"";
-    const rows=(await db.query(`select id,group_id,title,kind,memo,created_at from public.${table} ${where} order by created_at desc,id desc offset ${Number(url.searchParams.get("offset")??0)} limit ${Number(url.searchParams.get("limit")??20)}`,values)).rows;
-    const total=(await db.query(`select count(*)::int as n from public.${table} ${where}`,values)).rows[0].n;
-    return new Response(JSON.stringify(rows),{status:200,headers:{"Content-Type":"application/json","Content-Range":rows.length?`${Number(url.searchParams.get("offset")??0)}-${Number(url.searchParams.get("offset")??0)+rows.length-1}/${total}`:`*/${total}`}});
+  const client=createClient("https://tools-test.invalid","synthetic-test-key",{auth:{persistSession:false,autoRefreshToken:false},global:{fetch:async(input,init)=>{
+      const request=new Request(input,init),url=new URL(request.url),args=await request.json();
+      assert.ok(url.pathname.endsWith("/rpc/browse_items"));
+
+      const keys=["p_group_id","p_query","p_kind","p_reaction","p_list_id","p_unclassified","p_archived","p_visited","p_priority","p_sort","p_page"];
+      const result=await db.query("select * from public.browse_items($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)",keys.map(k=>args[k]));
+      return new Response(JSON.stringify(result.rows.map(r=>({...r,total_count:Number(r.total_count)}))),{status:200,headers:{"Content-Type":"application/json"}});
   }}});
   try{
     for(const [query,filters,ids] of [["フェ",{kind:"spot",reaction:"want_to_go"},[itemA]],["",{reaction:"unreacted"},[itemC]],["",{kind:"activity",reaction:"not_now"},[]]]){

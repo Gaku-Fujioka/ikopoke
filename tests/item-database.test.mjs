@@ -1,6 +1,7 @@
+import {createStorageFixture} from "./storage-fixture.mjs";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { readFile } from "node:fs/promises";
+import { readFile, readdir } from "node:fs/promises";
 import { after, before, test } from "node:test";
 import { registerHooks } from "node:module";
 import { createClient } from "@supabase/supabase-js";
@@ -24,9 +25,8 @@ before(async () => {
     grant usage on schema auth to anon, authenticated;
     insert into auth.users(id) values ('${alice}'),('${bob}'),('${charlie}');
   `);
-  for (const name of ["20261017091513_create_groups.sql", "20261017094719_create_group_invites.sql", "20261017112451_create_items.sql"]) {
-    await db.exec(await readFile(new URL(`../supabase/migrations/${name}`, import.meta.url), "utf8"));
-  }
+  await createStorageFixture(db);
+  for(const name of (await readdir(new URL("../supabase/migrations/",import.meta.url))).filter(n=>n.endsWith(".sql")).sort())await db.exec(await readFile(new URL(`../supabase/migrations/${name}`,import.meta.url),"utf8"));
   await asUser(alice, () => db.query("select public.create_group('A',$1)", [groupA]));
   await asUser(bob, () => db.query("select public.create_group('B',$1)", [groupB]));
 });
@@ -145,26 +145,19 @@ test("actual SDK request values find a partial title when passed unchanged to Po
   const requests=[];
   const client=createClient("https://sdk-regression.invalid","synthetic-test-key",{
     auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false},
-    global:{fetch:async(input)=>{
-      const url=new URL(input instanceof Request?input.url:String(input));
-      assert.equal(url.origin,"https://sdk-regression.invalid");
-      const group=url.searchParams.get("group_id");
-      const filter=url.searchParams.get("title");
-      assert.ok(group.startsWith("eq."));assert.ok(filter.startsWith("imatch."));
-      requests.push(filter);
-      // PostgREST individual filters consume the text after the operator as-is
-      // (pSingleVal). Do not strip quotes or unescape it like an IN/OR operand.
-      const pattern=filter.slice("imatch.".length),groupId=group.slice(3);
-      const start=Number(url.searchParams.get("offset")??0),limit=Number(url.searchParams.get("limit")??20);
-      const rows=(await db.query("select id,group_id,title,kind,memo,created_at from public.items where group_id=$1 and title ~* $2 order by created_at desc,id desc offset $3 limit $4",[groupId,pattern,start,limit])).rows;
-      const total=(await db.query("select count(*)::int as n from public.items where group_id=$1 and title ~* $2",[groupId,pattern])).rows[0].n;
-      return new Response(JSON.stringify(rows),{status:200,headers:{"Content-Type":"application/json","Content-Range":rows.length?`${start}-${start+rows.length-1}/${total}`:`*/${total}`}});
+    global:{fetch:async(input,init)=>{
+      const request=new Request(input,init),url=new URL(request.url),args=await request.json();
+      assert.ok(url.pathname.endsWith("/rpc/browse_items"));
+      requests.push(args.p_query);
+      const keys=["p_group_id","p_query","p_kind","p_reaction","p_list_id","p_unclassified","p_archived","p_visited","p_priority","p_sort","p_page"];
+      const result=await db.query("select * from public.browse_items($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)",keys.map(k=>args[k]));
+      return new Response(JSON.stringify(result.rows.map(r=>({...r,total_count:Number(r.total_count)}))),{status:200,headers:{"Content-Type":"application/json"}});
     }},
   });
   try{
     const result=await asUser(alice,()=>listItems(client,groupA,1,"フェ"));
     assert.deepEqual(result.items.map(item=>item.title),["カフェ"]);assert.equal(result.total,1);
-    assert.equal(requests[0],"imatch.フェ");
+    assert.equal(requests[0],"フェ");
     for(const query of ['"blue"','100%_*','(sea)','\\path','cafe']){
       const literal=await asUser(alice,()=>listItems(client,groupA,1,query));
       assert.deepEqual(literal.items.map(item=>item.title),[punctuationTitle]);assert.equal(literal.total,1);

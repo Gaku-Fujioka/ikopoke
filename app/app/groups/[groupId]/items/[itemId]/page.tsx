@@ -1,3 +1,4 @@
+import { ItemManagement } from "@/components/items/item-management";
 import { Suspense } from "react";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
@@ -17,7 +18,8 @@ import { VisitHistory } from "@/components/visits/visit-sections";
 import { listQuery } from "@/lib/lists/validation";
 import { itemSearchQuery, itemFilters, allItemListHref, sharedItemListHref, sharedItemDetailHref, sharedItemCommentsHref, sharedItemListsHref } from "@/lib/items/search";
 
-type Props = { params: Promise<{ groupId: string; itemId: string }>; searchParams: Promise<{ origin?: string | string[]; page?: string | string[]; q?: string | string[]; kind?: string | string[]; reaction?: string | string[]; list?: string | string[]; commentsPage?: string | string[]; listsPage?: string | string[]; listsQ?: string | string[] }> };
+type ExtraSearch = { archived?: string; visited?: string; priority?: string; sort?: string };
+type Props = { params: Promise<{ groupId: string; itemId: string }>; searchParams: Promise<ExtraSearch & { origin?: string | string[]; page?: string | string[]; q?: string | string[]; kind?: string | string[]; reaction?: string | string[]; list?: string | string[]; commentsPage?: string | string[]; listsPage?: string | string[]; listsQ?: string | string[] }> };
 
 async function ItemContent({ params, searchParams }: Props) {
   const { groupId, itemId } = await params;
@@ -27,7 +29,7 @@ async function ItemContent({ params, searchParams }: Props) {
   const page = itemPage(search.page);
   const query = itemSearchQuery(search.q);
   const filters = itemFilters(search);
-  const listPath = search.origin === "all" ? allItemListHref(query, page, filters.kind) : sharedItemListHref(groupId, query, page, filters);
+  const listPath = search.origin === "all" ? allItemListHref(query, page, filters.kind, filters) : sharedItemListHref(groupId, query, page, filters);
   const client = await createClient();
   const { data, error } = await client.auth.getClaims();
   const localHref = sharedItemDetailHref(groupId, itemId, query, page, filters);
@@ -58,12 +60,14 @@ async function ItemContent({ params, searchParams }: Props) {
       <article className="space-y-5 rounded-3xl border border-stone-200 bg-white p-6 sm:p-8">
         <p className="break-words text-sm font-semibold text-orange-700">{group.name} / {item.kind === "spot" ? "スポット" : "やりたいこと"}</p>
         <h1 className="break-words text-3xl font-bold tracking-tight sm:text-4xl">{item.title}</h1>
-        <div className="flex flex-wrap gap-3"><Link href={`/app/groups/${groupId}/outings/new?item=${itemId}`} className="kk-primary-link">この候補から計画を作る →</Link><Link href={`/app/groups/${groupId}/visits/new?item=${itemId}`} className="kk-text-link">行った！を記録する</Link></div>
+        <div className="flex flex-wrap gap-3">{!item.archived_at && <Link href={`/app/groups/${groupId}/outings/new?item=${itemId}`} className="kk-primary-link">この候補から計画を作る →</Link>}<Link href={`/app/groups/${groupId}/visits/new?item=${itemId}`} className="kk-text-link">行った！を記録する</Link></div>
         <section aria-labelledby="item-memo-heading" className="border-t border-stone-200 pt-5">
           <h2 id="item-memo-heading" className="font-semibold">メモ</h2>
           <p className="mt-3 whitespace-pre-wrap break-words leading-7 text-stone-700">{item.memo || "メモはまだありません。"}</p>
         </section>
       </article>
+      {item.archived_at && <p className="kk-notice">アーカイブ中です。既存の計画・訪問記録は残っています。</p>}
+      <ItemManagement groupId={groupId} itemId={itemId} priority={item.priority} archived={Boolean(item.archived_at)} />
       <details className="kk-surface"><summary className="cursor-pointer text-sm font-semibold">名前・メモを編集</summary><div className="mt-4"><EditItemForm groupId={groupId} itemId={itemId} title={item.title} memo={item.memo} /></div></details>
       <Suspense fallback={<section role="status" aria-label="リスト" className="rounded-3xl border border-stone-200 bg-white p-6">リストを読み込んでいます…</section>}>
         <ItemLists client={client} groupId={groupId} itemId={itemId} page={listsPage} query={listsQ} detailHref={currentHref} />

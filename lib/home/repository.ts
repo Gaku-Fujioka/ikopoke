@@ -1,6 +1,8 @@
+import { withMemoryCovers } from "@/lib/memories/repository";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../supabase/database.types";
-import { titleSearchFilter } from "@/lib/items/search";
+import type { ItemFilters } from "@/lib/items/search";
+import { browseItems } from "@/lib/items/repository";
 import { isGroupId } from "@/lib/groups/validation";
 
 export type Activity = {
@@ -37,20 +39,16 @@ export async function nextOuting(client: HomeClient, groupId: string | null, tod
 }
 
 export async function recentCandidates(client: HomeClient, groupId: string | null) {
-  let query = client.from("items").select("id,group_id,title,kind");
+  let query = client.from("items").select("id,group_id,title,kind").is("archived_at", null);
   if (groupId) query = query.eq("group_id", groupId);
   const { data, error } = await query.order("created_at", { ascending: false }).order("id").limit(3);
   if (error) throw new HomeStoreError(error.code);
   return data ?? [];
 }
 
-export async function globalItems(client: HomeClient, page: number, text: string, kind: string) {
-  let query = client.from("items").select("id,group_id,title,kind,memo,created_at", { count: "exact" });
-  if (text) query = query.filter("title", "imatch", titleSearchFilter(text));
-  if (kind === "spot" || kind === "activity") query = query.eq("kind", kind);
-  const { data, error, count } = await query.order("created_at", { ascending: false }).order("id", { ascending: false }).range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
-  if (error) throw new HomeStoreError(error.code);
-  return { rows: data ?? [], total: count ?? 0 };
+export async function globalItems(client: HomeClient, page: number, text: string, kind: string, filters: ItemFilters = {}) {
+  const result = await browseItems(client, null, page, text, { ...filters, kind: kind === "spot" || kind === "activity" ? kind : undefined });
+  return { rows: result.items, total: result.total };
 }
 export async function globalOutings(client: HomeClient, page: number, completed: boolean) {
   let query = client.from("outings").select("id,group_id,title,outing_date,completed_at", { count: "exact" });
@@ -60,7 +58,7 @@ export async function globalOutings(client: HomeClient, page: number, completed:
   return { rows: data ?? [], total: count ?? 0 };
 }
 export async function globalMemories(client: HomeClient, page: number) {
-  const { data, error, count } = await client.from("memories").select("id,group_id,title,memory_date,note", { count: "exact" }).order("memory_date", { ascending: false }).order("id").range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
+  const { data, error, count } = await client.from("memories").select("id,group_id,title,memory_date,note,cover_photo_id", { count: "exact" }).order("memory_date", { ascending: false }).order("id").range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
   if (error) throw new HomeStoreError(error.code);
-  return { rows: data ?? [], total: count ?? 0 };
+  return { rows: await withMemoryCovers(client, data ?? []), total: count ?? 0 };
 }

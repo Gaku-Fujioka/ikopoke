@@ -31,10 +31,10 @@ test("selected list filtering sends all conditions to one bounded RPC and expose
   const requests=[];
   const client={rpc:async(name,args)=>{
     requests.push([name,args]);
-    return {data:[{items:[{id:item,group_id:group,title:"Cafe",kind:"spot",memo:"memo",created_at:"2026-10-18T00:00:00Z",created_by:"private"}],total_count:1}],error:null};
+    return {data:[{items:[{id:item,group_id:group,title:"Cafe",kind:"spot",memo:"memo",created_at:"2026-10-18T00:00:00Z",created_by:"private",priority:0,archived_at:null,want_count:0,visited:false,score:0}],total_count:1}],error:null};
   }};
   const result=await listItems(client,group,2,"Cafe",{kind:"spot",reaction:"unreacted",list});
-  assert.deepEqual(requests,[["get_group_items",{p_group_id:group,p_query:"Cafe",p_kind:"spot",p_reaction:"unreacted",p_list_id:list,p_unclassified:false,p_page:2}]]);
+  assert.deepEqual(requests,[["browse_items",{p_group_id:group,p_query:"Cafe",p_kind:"spot",p_reaction:"unreacted",p_list_id:list,p_unclassified:false,p_archived:false,p_visited:null,p_priority:null,p_sort:"newest",p_page:2}]]);
   assert.equal(result.total,1);assert.equal(result.items[0].created_by,undefined);
   await listItems(client,group,1,"",{list:"unclassified"});
   assert.equal(requests[1][1].p_unclassified,true);assert.equal(requests[1][1].p_list_id,null);
