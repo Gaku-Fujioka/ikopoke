@@ -3,6 +3,7 @@ export type GroupRow = {
   id: string;
   name: string;
   created_by: string;
+  deleting: boolean;
   created_at: string;
 };
 
@@ -100,6 +101,11 @@ export type Database = {
       };
     };
     Functions: {
+      get_my_group_departures:{Args:Record<string,never>;Returns:{group_id:string;name:string;member_count:number;deleting:boolean}[]};
+      get_my_account_deletion:{Args:Record<string,never>;Returns:{request_id:string;state:string;group_ids:string[];delete_group_ids:string[]}[]};
+      begin_leave_group:{Args:{p_group_id:string;p_expected_members:number;p_delete_last:boolean};Returns:boolean};
+      get_group_cleanup_paths:{Args:{p_group_id:string};Returns:{object_path:string}[]};
+      finish_leave_group:{Args:{p_group_id:string};Returns:undefined};
       save_trip: { Args: {p_group_id:string;p_outing_id:string;p_expected_revision:number;p_title:string;p_start:string;p_end:string;p_memo:string;p_days:{mode:string;participants:string[];items:{id:string;item_id:string;planned_time:string|null;period:string|null}[]}[];p_participants:string[];p_removed_ids:string[]}; Returns:number };
       set_outing_cancelled: { Args: {p_group_id:string;p_outing_id:string;p_cancelled:boolean;p_expected_revision:number}; Returns:number };
       record_stop_visit: { Args: {p_group_id:string;p_item_id:string;p_outing_id:string|null;p_stop_id:string|null;p_visited_on:string;p_note:string;p_rating:number|null;p_request_id:string;p_time:string|null;p_period:string|null}; Returns:string };

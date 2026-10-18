@@ -1,3 +1,4 @@
+import { AccountDeletionSection } from "@/components/groups/departure-sections";
 import { Suspense } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -14,7 +15,7 @@ async function ProfileContent() {
   const { data, error } = await client.auth.getClaims();
   if (error || !data?.claims?.sub) redirect("/auth/login?next=/app/profile");
   try {
-    return <DisplayNameForm initialName={(await getMyProfile(client, data.claims.sub)) ?? ""} />;
+    return <><DisplayNameForm initialName={(await getMyProfile(client, data.claims.sub)) ?? ""} /><Suspense fallback={<p role="status">アカウント削除の情報を読み込んでいます…</p>}><AccountDeletionSection client={client}/></Suspense></>;
   } catch (cause) {
     return <p role="alert" className="rounded-3xl border bg-white p-6">{cause instanceof ProfileStoreError ? cause.message : "表示名を読み込めませんでした。"}</p>;
   }
