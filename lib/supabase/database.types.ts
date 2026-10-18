@@ -165,6 +165,7 @@ export type Database = {
       set_item_reaction: { Args: { p_group_id: string; p_item_id: string; p_value: string | null }; Returns: undefined };
       create_item: { Args: { p_group_id: string; p_title: string; p_kind: string; p_memo: string; p_request_id: string }; Returns: string };
       create_group: { Args: { p_name: string; p_request_id: string }; Returns: string };
+      create_group_with_profile: {Args:{p_name:string;p_request_id:string;p_description:string};Returns:string};
       create_group_invite: { Args: { p_group_id: string; p_token_hash: string }; Returns: { id: string; expires_at: string }[] };
       preview_group_invite: { Args: { p_token: string }; Returns: { group_id: string; group_name: string; expires_at: string }[] };
       accept_group_invite: { Args: { p_token: string; p_group_id: string }; Returns: string };

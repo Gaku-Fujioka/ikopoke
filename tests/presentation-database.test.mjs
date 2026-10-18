@@ -10,6 +10,29 @@ async function upload(f,user,row){await f.as(user,()=>f.db.query("insert into st
 async function ready(f,user,kind,gid,id,expected=null){const row=await edit(f,user,'reserve',kind,gid,id,expected);await upload(f,user,row);await edit(f,user,'publish',kind,gid,id);return row;}
 async function visible(f,user,path,role='authenticated'){return (await f.as(user,()=>f.db.query('select name from storage.objects where name=$1',[path]),role)).rows.length;}
 
+test('creation commits name, description, membership and personal color together; retries preserve later shared edits',async()=>{
+ const f=await fixture();try{
+  const id=picture(50),empty=picture(51),invalid=picture(52);
+  const create=(user,name,gid,description,role='authenticated')=>f.as(user,()=>f.db.query('select public.create_group_with_profile($1,$2,$3) id',[name,gid,description]),role);
+  await assert.rejects(create(null,'侵入',id,'','anon'),e=>e.code==='42501');await assert.rejects(create(null,'侵入',id,''),e=>e.code==='28000');
+  await assert.rejects(create(alice,'無効',invalid,'x'.repeat(501)),e=>e.code==='22023');
+  assert.equal((await f.db.query('select * from public.groups where id=$1',[invalid])).rows.length,0);
+  assert.equal((await create(alice,' 新しい仲間 ',id,' 海も山も ')).rows[0].id,id);
+  assert.equal((await f.db.query('select description from public.groups where id=$1',[id])).rows[0].description,'海も山も');
+  assert.equal((await f.as(alice,()=>f.db.query('select * from public.get_group_presentations($1)',[[id]]))).rows[0].color,'lemon');
+  await f.as(alice,()=>f.db.query("select public.save_group_presentation($1,'あとから編集',1,null)",[id]));
+  await create(alice,'新しい仲間',id,'元の説明');
+  assert.equal((await f.db.query('select description from public.groups where id=$1',[id])).rows[0].description,'あとから編集');
+  await assert.rejects(create(bob,'新しい仲間',id,'横取り'),e=>e.code==='42501');
+  const cover=await ready(f,alice,'cover',id,picture(53));
+  const presentation=(await f.as(alice,()=>f.db.query('select * from public.get_group_presentations($1)',[[id]]))).rows[0];
+  assert.equal(presentation.cover_path,cover.path);assert.equal(presentation.description,'あとから編集');
+  await create(alice,'説明なし',empty,'');assert.equal((await f.db.query('select description from public.groups where id=$1',[empty])).rows[0].description,'');
+  await f.as(alice,()=>f.db.query('select public.begin_leave_group($1,1,true)',[empty]));
+  await assert.rejects(create(alice,'説明なし',empty,''),e=>e.code==='55000');
+ }finally{await f.db.close();}
+});
+
 test('personal group colors, shared description and optimistic revision are separate and protected',async()=>{
  const f=await fixture();try{
   await f.as(alice,()=>f.db.query("select public.save_group_presentation($1,'週末のおでかけ',1,null)",[group]));

@@ -35,5 +35,7 @@
 .kk-app .kk-chat-avatar.kk-profile-image{width:28px;height:28px}
 .kk-app .kk-candidate-card .kk-card-group{color:var(--kk-ink);border-left:3px solid var(--kk-group-mark);padding-left:6px}
 .kk-app .kk-personal-chip{border-left:4px solid var(--kk-group-mark);color:var(--kk-ink)}
+.kk-app .kk-album-card{border-color:var(--kk-group-mark);border-left-color:var(--kk-group-mark)}
+.kk-app .kk-album-card .kk-card-body>svg{color:var(--kk-group-mark)}
 @media(min-width:640px){.kk-app .kk-profile-group-card .kk-group-cover{height:88px}.kk-app .kk-collage-busy .kk-social-bubble{padding:16px 12px;min-height:150px}.kk-app .kk-collage-busy .kk-social-bubble .kk-activity-title{font-size:14px}}
 @media(max-width:359px){.kk-color-choices{grid-template-columns:repeat(2,minmax(0,1fr))}}

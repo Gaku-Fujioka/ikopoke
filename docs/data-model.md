@@ -1,5 +1,7 @@
 # データモデル：現状と設計案
 
+SOCIAL-02：公開SECURITY INVOKERのcreate_group_with_profileは非公開処理へ委譲し、既存の本人確認・削除ガードを再利用して名前/説明/所属/初期表示色を原子的に保存する。再送はUUIDと作成者/名前を確認し、保存済みの説明を上書きしない。写真は既存の予約/送信/完了確認と非公開Storageを使い、同じ写真UUIDで再試行する。開発DBの実適用versionは20261018122340。[SOCIAL-02](tasks/SOCIAL-02.md)。
+
 SOCIAL-01（D-028）：`group_display_preferences`は所属を参照する本人用の色、`profile_media`は予約/公開/取消状態の画像メタデータ、`groups`は説明/表紙/改訂番号、`profiles`は共通アバター参照を保持する。画像は既存の非公開`visit-photos` bucket内の`profile-avatar/`と`profile-cover/`名前空間を使用し、訪問写真とは衝突させない。公開RPCはSECURITY INVOKERで、非公開schema内の処理が所属・本人・有効な招待・競合とStorageの実体を検証する。`profile_media`と招待閲覧許可表は直接アクセスを許さないためRLS有効・ポリシーなし。最後のグループ削除/アカウント削除も実体を先に削除する。開発DB適用versionは`20261018115447`、削除Edge Functionはversion 2へ反映。実ユーザーの写真操作は未確認。詳細は[SOCIAL-01](tasks/SOCIAL-01.md)。
 
 MAP-03（2026-10-18）：`item_places(item_id,group_id,place_id)`にGoogleの場所IDのみを保存。候補/グループの複合FKとグループ内の場所一意制約、所属SELECTのRLS、直接書込の拒否を持つ。公開SECURITY INVOKERの`save_place_item`/`set_item_place`は非公開スキーマの検証付き処理へ委譲し、保存/分類の原子性、重複防止、変更時の期待値照合と既存の削除ガードを適用。候補の削除でリンクもCASCADEする。Googleの名称・住所・位置・写真・口コミは永続化しない。既存候補は無変更。[MAP-03](tasks/MAP-03.md)。

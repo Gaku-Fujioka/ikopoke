@@ -1,3 +1,5 @@
+import type {CSSProperties} from "react";
+import {groupColorStyle} from "@/lib/presentation/colors";
 import { CandidateBoard } from "@/components/items/candidate-board";
 import { listItems } from "@/lib/items/repository";
 import { Suspense } from "react";
@@ -6,7 +8,7 @@ import { notFound, redirect } from "next/navigation";
 import { ArrowRight, CalendarDays, MapPin, Search, Sparkles } from "lucide-react";
 import { SearchWorkspace } from "@/components/maps/search-workspace";
 import { SavedMapSection } from "@/components/maps/map-sections";
-import { mapsConfig, type PlaceGroup } from "@/lib/maps/saved";
+import { mapsConfig } from "@/lib/maps/saved";
 import { createClient } from "@/lib/supabase/server";
 import { hasEnvVars } from "@/lib/utils";
 import { listGroups, type SavedGroup } from "@/lib/groups/repository";
@@ -37,20 +39,20 @@ async function NextEnjoyment({ client, groupId, groups }: { client: HomeClient; 
     <div><p className="kk-next-label">{days < 0 ? "旅のまっただ中！" : days === 0 ? "今日のおでかけ！" : days === 1 ? "明日が、たのしみ！" : days <= 3 ? `あと${days}日、もうすぐ！` : "次の楽しみ"}</p><h2 id="next-enjoyment">{outing.title}</h2><p className="kk-next-meta">{groups.find(group => group.id === outing.group_id)?.name} · <time dateTime={outing.outing_date}>{prettyDate(outing.outing_date)}</time>{outing.end_date && outing.end_date !== outing.outing_date && <>〜<time dateTime={outing.end_date}>{prettyDate(outing.end_date)}</time></>}</p></div><ArrowRight aria-hidden="true" size={20} />
   </Link></section>;
 }
-async function SavedPeek({ client, groupId }: { client: HomeClient; groupId: string | null }) {
+async function SavedPeek({ client, groupId, groups }: { client: HomeClient; groupId: string | null; groups: SavedGroup[] }) {
   let items;
   try { items = await recentCandidates(client, groupId); } catch { return <p role="alert" className="kk-map-note">候補を読み込めませんでした。「行きたい」タブから開き直してください。</p>; }
   if (!items.length) return <p className="kk-map-note">気になる場所を見つけたら、まずは名前だけでも。</p>;
-  return <ul className="kk-saved-peek">{items.map(item => <li key={item.id}><Link href={`/app/groups/${item.group_id}/items/${item.id}`} data-tone={groupTone(item.group_id)}><MapPin aria-hidden="true" size={15} /><span>{item.title}</span><ArrowRight aria-hidden="true" size={14} /></Link></li>)}</ul>;
+  return <ul className="kk-saved-peek">{items.map(item => <li key={item.id}><Link href={`/app/groups/${item.group_id}/items/${item.id}`} style={groupColorStyle(groups.find(group=>group.id===item.group_id)?.presentation?.color) as CSSProperties} data-tone={groupTone(item.group_id)}><MapPin aria-hidden="true" size={15} /><span>{item.title}</span><ArrowRight aria-hidden="true" size={14} /></Link></li>)}</ul>;
 }
-function MapSpace({ client, groupId, groups }: { client: HomeClient; groupId: string | null; groups: PlaceGroup[] }) {
+function MapSpace({ client, groupId, groups }: { client: HomeClient; groupId: string | null; groups: SavedGroup[] }) {
   return <section className="kk-map-card" aria-labelledby="home-map-title" data-home-section="map">
     <div className="kk-map-top"><h2 id="home-map-title"><MapPin aria-hidden="true" size={17} />行きたいが、ひろがる</h2><span className="kk-label">ここから、次の行き先へ</span></div>
     <SearchWorkspace groups={groups} groupId={groupId ?? undefined} config={mapsConfig()} />
     <Suspense fallback={<HomeLoading>保存した場所を読み込んでいます…</HomeLoading>}><SavedMapSection client={client} groupId={groupId} groups={groups} /></Suspense>
     <details className="kk-saved-search"><summary>保存した候補から探す</summary><p>みんなが追加した候補を、名前で絞り込みます。</p>
       <form action={collectionHref("items", groupId)} role="search" aria-label="保存した候補を検索" className="kk-map-search"><Search aria-hidden="true" size={18} /><label htmlFor="home-candidate-search" className="sr-only">保存した候補を名前で検索</label><input id="home-candidate-search" type="search" name="q" maxLength={100} placeholder="保存した候補の名前" /><button type="submit">候補を検索</button></form>
-      <Suspense fallback={<HomeLoading>保存した候補を読み込んでいます…</HomeLoading>}><SavedPeek client={client} groupId={groupId} /></Suspense>
+      <Suspense fallback={<HomeLoading>保存した候補を読み込んでいます…</HomeLoading>}><SavedPeek client={client} groupId={groupId} groups={groups} /></Suspense>
     </details>
   </section>;
 }

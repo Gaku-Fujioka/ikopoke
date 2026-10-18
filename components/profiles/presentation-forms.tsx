@@ -5,6 +5,7 @@ import {createClient} from "@/lib/supabase/client";
 import {GROUP_COLORS,type GroupColor} from "@/lib/presentation/colors";
 import type {GroupPresentation,MediaEditor} from "@/lib/presentation/repository";
 import {profileMediaAction,saveGroupPresentationAction,type PresentationState} from "@/app/app/profile/presentation-actions";
+import {normalizePhoto,publishPhoto} from "@/lib/presentation/photo";
 import {ProfileImage} from "./profile-image";
 
 export function GroupPresentationForm({groupId,presentation}:{groupId:string;presentation:GroupPresentation}){
@@ -33,16 +34,6 @@ export function GroupPresentationForm({groupId,presentation}:{groupId:string;pre
  </div>;
 }
 
-async function normalizePhoto(file:File):Promise<Blob>{
- if(!["image/jpeg","image/png","image/webp"].includes(file.type)||file.size>10*1024*1024)throw new Error("JPEG・PNG・WebPの10MB以内の写真を選んでください。");
- const bitmap=await createImageBitmap(file);try{
-  if(bitmap.width*bitmap.height>40000000)throw new Error("写真が大きすぎます。小さくしてから選んでください。");
-  const scale=Math.min(1,1600/Math.max(bitmap.width,bitmap.height)),canvas=document.createElement("canvas");canvas.width=Math.max(1,Math.round(bitmap.width*scale));canvas.height=Math.max(1,Math.round(bitmap.height*scale));
-  const context=canvas.getContext("2d");if(!context)throw new Error("写真を変換できませんでした。");context.fillStyle="#fff";context.fillRect(0,0,canvas.width,canvas.height);context.drawImage(bitmap,0,0,canvas.width,canvas.height);
-  const image=await new Promise<Blob>((resolve,reject)=>canvas.toBlob(blob=>blob?resolve(blob):reject(new Error("写真を変換できませんでした。")),"image/jpeg",.82));
-  if(image.size>2097152)throw new Error("写真を2MB以内に変換できませんでした。小さい写真を選んでください。");return image;
- }finally{bitmap.close();}
-}
 export function ProfilePhotoEditor({groupId,editor}:{groupId?:string;editor:MediaEditor}){
  const [busy,setBusy]=useState(false),[error,setError]=useState<string|null>(null),[message,setMessage]=useState("");
  const [selected,setSelected]=useState<File|null>(null),[reservation,setReservation]=useState<{id:string;file:Blob;expected:string|null}|null>(null);
@@ -54,10 +45,7 @@ export function ProfilePhotoEditor({groupId,editor}:{groupId?:string;editor:Medi
  async function run(work:()=>Promise<void|string>){if(inFlight.current)return;inFlight.current=true;setBusy(true);setError(null);setMessage("");try{const result=await work();setMessage(result??"写真の設定を更新しました。");}catch(cause){setError(cause instanceof Error?cause.message:"写真を更新できませんでした。");}finally{inFlight.current=false;setBusy(false);router.refresh();}}
  async function save(){await run(async()=>{
   const pending=reservation??(selected?{id:crypto.randomUUID(),file:await normalizePhoto(selected),expected:editor.id}:null);if(!pending)throw new Error("写真を選んでください。");setReservation(pending);
-  const reserved=await action("reserve",pending.id,pending.expected,pending.file.size);if(!reserved.path)throw new Error("写真を送信できませんでした。");
-  // A lost upload response may still mean success. The DB independently verifies bytes/metadata.
-  try{await createClient().storage.from("visit-photos").upload(reserved.path,pending.file,{contentType:"image/jpeg",upsert:false,cacheControl:"0"});}catch{}
-  await action("publish",pending.id);setReservation(null);setSelected(null);
+  await publishPhoto({...pending,groupId},profileMediaAction,(path,file)=>createClient().storage.from("visit-photos").upload(path,file,{contentType:"image/jpeg",upsert:false,cacheControl:"0"}));setReservation(null);setSelected(null);
   if(pending.expected)try{await discard(pending.expected);}catch{return "写真を保存しました。古い写真は未使用の写真から整理できます。";}
  });}
  return <section className="kk-surface space-y-4" aria-busy={busy}><div><h2 className="text-xl font-bold">{groupId?"グループの写真":"あなたの写真"}</h2><p className="mt-2 text-sm text-stone-600">{groupId?"ホームのグループカードにも表示します。":"参加しているすべてのグループで同じ写真を使います。"}</p></div>

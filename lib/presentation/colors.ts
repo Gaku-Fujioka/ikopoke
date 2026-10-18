@@ -1,12 +1,13 @@
 export const GROUP_COLORS = {
-  apricot: { label: "あんず", fill: "#ffe7c5", mark: "#b97825" },
-  lemon: { label: "レモン", fill: "#fff1b8", mark: "#9c8116" },
-  mint: { label: "ミント", fill: "#dff0df", mark: "#5e916a" },
-  sky: { label: "空色", fill: "#dfeeff", mark: "#668fbc" },
-  aqua: { label: "ソーダ", fill: "#d9f1ee", mark: "#408f88" },
-  rose: { label: "さくら", fill: "#fce3e6", mark: "#bb7383" },
-  lilac: { label: "ライラック", fill: "#eee5fa", mark: "#9776b3" },
-  sand: { label: "サンド", fill: "#ece9e2", mark: "#8b8271" },
+  // Persisted keys remain compatible; the old apricot slot is now berry, not orange.
+  apricot: { label: "ベリー", fill: "#fce0e4", mark: "#b72f42" },
+  lemon: { label: "レモン", fill: "#fff2aa", mark: "#927500" },
+  mint: { label: "ミント", fill: "#dcefdc", mark: "#2d8050" },
+  sky: { label: "空色", fill: "#dfebff", mark: "#3569b5" },
+  aqua: { label: "ソーダ", fill: "#d5f2f4", mark: "#007d8f" },
+  rose: { label: "さくら", fill: "#f8ddf1", mark: "#ac478e" },
+  lilac: { label: "ライラック", fill: "#eae1fb", mark: "#7957ad" },
+  sand: { label: "スレート", fill: "#e4e8ee", mark: "#5b6572" },
 } as const;
 export type GroupColor = keyof typeof GROUP_COLORS;
 export function isGroupColor(value: unknown): value is GroupColor {
@@ -14,7 +15,7 @@ export function isGroupColor(value: unknown): value is GroupColor {
 }
 export function groupColorStyle(color?: string | null) {
   const selected = GROUP_COLORS[isGroupColor(color) ? color : "sky"];
-  return { "--kk-group-fill": selected.fill, "--kk-group-mark": selected.mark };
+  return { "--kk-group-fill": selected.fill, "--kk-group-mark": selected.mark, "--kk-tone":selected.mark, "--kk-tint":selected.fill };
 }
 export function isProfilePath(value: unknown): value is string {
   return typeof value === "string" && /^profile-(avatar|cover)\/[0-9a-f-]{36}\/[0-9a-f-]{36}\.jpg$/i.test(value);
