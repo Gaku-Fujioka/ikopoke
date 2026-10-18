@@ -58,7 +58,7 @@ async function ItemsContent({ params, searchParams }: Props) {
           <h1 className="mt-2 text-3xl font-bold tracking-tight">みんなの行きたい</h1>
           <p className="mt-3 text-sm leading-6 text-stone-600">気になる場所も、やってみたいことも。一緒にためよう。</p>
         </div>
-        <div className="flex flex-wrap items-center gap-3"><Link href={`/app/groups/${groupId}/lists`} className="kk-text-link">リストで整理</Link><Link href={`/app/groups/${groupId}/items/new`} className="kk-primary-link">＋ 候補を追加</Link></div>
+        <div className="flex flex-wrap items-center gap-3"><Link href={`/app/groups/${groupId}/lists`} className="kk-secondary-link">▤ リストから探す</Link><Link href={`/app/groups/${groupId}/items/new`} className="kk-primary-link">＋ 候補を追加</Link></div>
       </div>
       <div className="flex flex-wrap gap-3 text-sm"><Link href={sharedItemListHref(groupId,"",1,{list:"unclassified"})} className="inline-flex min-h-11 items-center font-semibold text-orange-700 underline underline-offset-4">未分類の候補を見る</Link>{filters.list && <span className="inline-flex min-h-11 items-center rounded-full bg-orange-50 px-4 font-semibold text-orange-800">{filters.list === "unclassified" ? "未分類" : "リストで絞り込み中"}</span>}</div>
       <form action={listPath} method="get" role="search" className="kk-candidate-search">

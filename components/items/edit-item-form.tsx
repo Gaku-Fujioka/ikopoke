@@ -38,7 +38,7 @@ export function EditItemForm({ groupId, itemId, title: initialTitle, memo: initi
   }, [state]);
   return (
     <details className="kk-inline-editor">
-      <summary className="kk-edit-button">{field === "title" ? "名前を編集" : field === "memo" ? "メモを編集" : "名前・メモを編集"}</summary>
+      <summary className="kk-quiet-edit">{field === "title" ? "名前を編集" : field === "memo" ? "メモを編集" : "名前・メモを編集"}</summary>
       <p className="mt-2 text-sm leading-6 text-stone-600">変更はグループ全員に共有されます。種類は変更しません。</p>
       <form ref={formRef} action={action} aria-busy={pending} className="mt-5 space-y-5">
         <input type="hidden" name="groupId" value={groupId} /><input type="hidden" name="itemId" value={itemId} />
