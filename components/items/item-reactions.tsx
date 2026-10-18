@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { Heart, Minus } from "lucide-react";
 import { setReactionAction } from "@/app/app/groups/[groupId]/items/reaction-actions";
 import { REACTION_OPTIONS, reactionLabel, type ReactionSummary } from "@/lib/items/reaction-values";
 
@@ -21,7 +22,8 @@ export function ItemReactions({ groupId, itemId, summary }: { groupId: string; i
         <input type="hidden" name="itemId" value={itemId} />
         <div className="flex flex-wrap gap-3">
           {REACTION_OPTIONS.map((option) => (
-            <button key={option.value} type="submit" name="reaction" value={option.value} aria-pressed={summary.my_reaction === option.value} disabled={pending} className={`min-h-12 rounded-full border px-5 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-700 focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60 ${summary.my_reaction === option.value ? "border-orange-700 bg-orange-50 text-orange-800" : "border-stone-300 bg-white text-stone-700 hover:bg-stone-50"}`}>
+            <button key={option.value} type="submit" name="reaction" data-reaction={option.value} value={option.value} aria-pressed={summary.my_reaction === option.value} disabled={pending} className={`kk-reaction-button inline-flex items-center justify-center gap-2 min-h-12 rounded-full border px-5 text-sm font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-700 focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-60 ${summary.my_reaction === option.value ? "border-orange-700 bg-orange-50 text-orange-800" : "border-stone-300 bg-white text-stone-700 hover:bg-stone-50"}`}>
+              {option.value === "want_to_go" ? <Heart size={17} aria-hidden="true" fill={summary.my_reaction === option.value ? "currentColor" : "none"} /> : <Minus size={17} aria-hidden="true" />}
               {option.label}
             </button>
           ))}
