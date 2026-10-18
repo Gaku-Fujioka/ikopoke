@@ -1,6 +1,6 @@
 # VISIT-02・PHOTO-01：訪問記録、個人評価、非公開写真
 
-作成日：2026-10-18。状態：実装・自己検証・開発用DB適用済み。
+作成日：2026-10-18。状態：main統合・開発用DB適用・実アカウントの基本正常系確認済み。
 担当：本Agent単独。branch：`feat/shared-visits`、基準：`3479057`。
 
 ## Goalと範囲
@@ -30,5 +30,6 @@ F-10、N-02/03/04/06、D-018。計画からも候補から直接でも訪問を�
 - DB7件で再訪・冪等性・名前の保持・古い編集の拒否・個人評価・非所属/匿名拒否・写真の予約/完了/取消・10枠・容量/MIME入力・不一致メタデータを検証。
 - Actionと転送7件で入力前検証、認証、利用者IDのなりすまし防止、取消時のStorage APIと予約解放の順序、失敗時の情報保護、応答喪失とready再送を確認。既存の描画境界テストに訪問履歴の独立待機を追加した。
 - [認証済みSECURITY DEFINER実行](https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable)のAdvisor警告は、所属・本人確認付きの限定RPCで意図した構成。新規の外部キー索引不足はなし。[未使用索引INFO](https://supabase.com/docs/guides/database/database-linter?lint=0005_unused_index)は新規表のため保持する。既存の`rls_auto_enable`実行権限と漏えいパスワード保護の警告は今回の変更外。
-- 自己レビューで権限、再送、改訂番号の保持、アップロードと取消のロック順、公開URLなし、Blob解放、失敗を成功にしない経路を確認。独立レビューはD-009に従い未実施。CI・統合結果はこのbranchのPRを正本とする。
-- 実アカウントの訪問保存/再読込、写真転送・拡大、複数利用者、モバイル幅/キーボードは未確認。設定・確認手順はチャットで案内する。
+- 自己レビューで権限、再送、改訂番号の保持、アップロードと取消のロック順、公開URLなし、Blob解放、失敗を成功にしない経路を確認。独立レビューはD-009に従い未実施。[PR #22](https://github.com/Gaku-Fujioka/kokoiko/pull/22)の実装commit `b568a1f`で[CI成功](https://github.com/Gaku-Fujioka/kokoiko/actions/runs/39083588069)。mainへマージした`96e4dbc`の[CIも成功](https://github.com/Gaku-Fujioka/kokoiko/actions/runs/39083717585)。
+- ユーザーがチャットの確認項目に対して「できてた」と回答。訪問保存/再読込、日付/メモ編集、個人評価の変更/取消、写真保存/再読込/拡大、計画からの再訪後も両記録が残る基本正常系を確認した。
+- 複数利用者、モバイル幅/キーボード、送信中断/再試行、枚数/容量上限の実操作は未確認。自動検証と区別する。設定・確認手順はチャットで案内する。
