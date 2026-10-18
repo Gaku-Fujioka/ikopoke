@@ -4,10 +4,11 @@ import type { Database } from "../supabase/database.types";
 import type { ItemFilters } from "@/lib/items/search";
 import { browseItems } from "@/lib/items/repository";
 import { isGroupId } from "@/lib/groups/validation";
+import {socialAvatars} from "@/lib/presentation/repository";
 
 export type Activity = {
   event_key: string; group_id: string; kind: "item" | "want_to_go" | "not_now" | "comment" | "outing" | "visit" | "memory";
-  subject_id: string; title: string; actor_name: string | null; is_mine: boolean; occurred_at: string;
+  subject_id: string; title: string; actor_name: string | null; is_mine: boolean; occurred_at: string;avatar_path?:string;
 };
 export type ActivityCursor = { at: string; key: string };
 export type HomeClient = SupabaseClient<Database>;
@@ -24,10 +25,12 @@ export async function getActivity(client: HomeClient, groupId: string | null, li
   if (error) throw new HomeStoreError(error.code);
   if (!Array.isArray(data) || data.length > limit) throw new HomeStoreError();
   // Project only the UI contract: no user IDs, provider details or extra fields.
-  return data.map(row => {
+  const entries=data.map(row => {
     if (!/^[a-f0-9]{32}$/.test(row.event_key) || !isGroupId(row.group_id) || !isGroupId(row.subject_id) || typeof row.title !== "string" || (row.actor_name !== null && typeof row.actor_name !== "string") || typeof row.is_mine !== "boolean" || !["item", "want_to_go", "not_now", "comment", "outing", "visit", "memory"].includes(row.kind) || !Number.isFinite(Date.parse(row.occurred_at)) || (groupId && row.group_id !== groupId)) throw new HomeStoreError();
     return { event_key: row.event_key, group_id: row.group_id, kind: row.kind as Activity["kind"], subject_id: row.subject_id, title: row.title, actor_name: row.actor_name, is_mine: row.is_mine, occurred_at: row.occurred_at };
   });
+  const photos=Object.assign({},...await Promise.all([...new Set(entries.map(row=>row.group_id))].map(group=>socialAvatars(client,group,entries.filter(row=>row.group_id===group).map(row=>row.event_key))))) as Record<string,string>;
+  return entries.map(row=>photos[row.event_key]?{...row,avatar_path:photos[row.event_key]}:row);
 }
 
 export async function nextOuting(client: HomeClient, groupId: string | null, today: string) {

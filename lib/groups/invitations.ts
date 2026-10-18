@@ -2,7 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../supabase/database.types";
 
 export type InviteSummary = Pick<Database["public"]["Tables"]["group_invites"]["Row"], "id" | "created_at" | "expires_at" | "revoked_at">;
-export type InvitePreview = { group_id: string; group_name: string; expires_at: string };
+export type InvitePreview = { group_id: string; group_name: string; expires_at: string;description?:string;cover_path?:string|null };
 export type InviteState = { error: string | null; needLogin?: boolean; preview?: InvitePreview; token?: string; inviteId?: string; expiresAt?: string; success?: boolean };
 
 export class InviteError extends Error {
@@ -31,7 +31,9 @@ export async function issueInvite(client: SupabaseClient<Database>, groupId: str
 export async function previewInvite(client: SupabaseClient<Database>, token: string): Promise<InvitePreview> {
   const { data, error } = await client.rpc("preview_group_invite", { p_token: token });
   if (error || !data?.[0]) throw new InviteError(error);
-  return data[0];
+  const profile=await client.rpc("preview_group_profile",{p_token:token});
+  if(profile.error||!profile.data)throw new InviteError(profile.error);
+  return {...data[0],description:profile.data.description,cover_path:profile.data.cover_path};
 }
 
 export async function acceptInvite(client: SupabaseClient<Database>, token: string, groupId: string): Promise<string> {

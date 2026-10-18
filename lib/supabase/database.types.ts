@@ -5,6 +5,9 @@ export type GroupRow = {
   created_by: string;
   deleting: boolean;
   created_at: string;
+  description: string;
+  cover_media_id: string | null;
+  presentation_revision: number;
 };
 
 export type Database = {
@@ -41,7 +44,7 @@ export type Database = {
         Insert: never; Update: never; Relationships: [];
       };
       profiles: {
-        Row: { user_id: string; display_name: string; updated_at: string };
+        Row: { user_id: string; display_name: string; updated_at: string; avatar_media_id: string | null };
         Insert: { user_id: string; display_name: string };
         Update: { display_name?: string; updated_at?: string };
         Relationships: [];
@@ -102,6 +105,13 @@ export type Database = {
       };
     };
     Functions: {
+      get_group_presentations: {Args:{p_ids:string[]};Returns:{group_id:string;description:string;cover_id:string|null;cover_path:string|null;revision:number;color:string|null}[]};
+      save_group_presentation: {Args:{p_group:string;p_description:string|null;p_expected:number|null;p_color:string|null};Returns:undefined};
+      edit_profile_media: {Args:{p_action:string;p_kind:string;p_group:string|null;p_id:string|null;p_expected:string|null;p_size:number|null};Returns:{id?:string|null;path?:string;status?:string}};
+      get_profile_editor: {Args:{p_group:string|null};Returns:{id:string|null;path:string|null;unused:{id:string;status:string;can_publish:boolean}[]}};
+      preview_group_profile: {Args:{p_token:string};Returns:{group_id:string;group_name:string;expires_at:string;description:string;cover_path:string|null}};
+      get_member_avatars: {Args:{p_group:string};Returns:{user_id:string;path:string}[]};
+      get_social_avatars: {Args:{p_group:string;p_keys:string[];p_comments:boolean};Returns:{key:string;path:string}[]};
       save_place_item: { Args: { p_group_id: string; p_place_id: string; p_title: string; p_list_ids: string[]; p_request_id: string }; Returns: { item_id: string; reused: boolean; archived: boolean }[] };
       set_item_place: { Args: { p_group_id: string; p_item_id: string; p_place_id: string | null; p_expected_place_id: string | null }; Returns: undefined };
       get_my_group_departures:{Args:Record<string,never>;Returns:{group_id:string;name:string;member_count:number;deleting:boolean}[]};

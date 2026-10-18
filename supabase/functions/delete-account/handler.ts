@@ -40,7 +40,9 @@ export async function deleteAccount(request: Request, admin: RemovalClient, now 
       for (const row of paths.data) {
         if (!row || typeof row !== "object" || !("object_path" in row) || typeof row.object_path !== "string") return respond(503, { error: "retry_required" });
         const parts = row.object_path.split("/");
-        if (parts.length !== 3 || !uuid(parts[0]) || !uuid(parts[1]) || !/^[0-9a-f-]{36}\.(jpg|png|webp)$/i.test(parts[2]) || !deleteGroupIds.includes(parts[0])) return respond(503, { error: "retry_required" });
+        const visitPath = uuid(parts[0]) && uuid(parts[1]) && deleteGroupIds.includes(parts[0]);
+        const profilePath = (parts[0] === "profile-avatar" && parts[1] === user.id) || (parts[0] === "profile-cover" && deleteGroupIds.includes(parts[1]));
+        if (parts.length !== 3 || !/^[0-9a-f-]{36}\.(jpg|png|webp)$/i.test(parts[2]) || (!visitPath && !profilePath)) return respond(503, { error: "retry_required" });
         names.push(row.object_path);
       }
       if (!names.length) break;

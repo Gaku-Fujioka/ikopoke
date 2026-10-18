@@ -1,0 +1,39 @@
+/* SOCIAL-01: white speech bubbles, with personal group color only at the edges. */
+.kk-app .kk-profile-image{position:relative;display:inline-grid;place-items:center;overflow:hidden;flex-shrink:0;background:var(--kk-neutral,#f5f6f4);color:var(--kk-muted)}
+.kk-profile-image>span{display:grid;place-items:center;width:100%;height:100%;font-size:12px}
+.kk-app .kk-profile-group-card{position:relative;display:flex;gap:0;padding:0;overflow:hidden;border:1px solid var(--kk-line);border-radius:18px;color:var(--kk-ink);box-shadow:none}
+.kk-app .kk-profile-group-card .kk-group-cover{display:block;width:100%;height:76px;border-radius:0}
+.kk-profile-group-card .kk-group-cover-icon{position:absolute;top:26px;left:calc(50% - 11px);color:var(--kk-muted)}
+.kk-app .kk-profile-group-card .kk-group-name{display:block;width:100%;padding:11px 12px;background:var(--kk-group-fill);font-size:12px;font-weight:750;line-height:1.6;-webkit-line-clamp:unset}
+.kk-group-name small{display:block;font-size:10px;font-weight:400;color:var(--kk-muted);margin-top:5px}
+.kk-app .kk-profile-group-card[aria-current=page]{outline:2px solid var(--kk-group-mark);outline-offset:2px;box-shadow:none}
+.kk-app .kk-cover-preview{display:grid;width:100%;height:200px;border-radius:17px}
+.kk-app .kk-avatar-preview{display:grid;width:110px;height:110px;border-radius:50%}
+.kk-app .kk-member-avatar{width:36px;height:36px;border-radius:50%}
+.kk-app .kk-group-hero-photo{display:block;width:100%;height:170px;border-radius:20px;margin-bottom:20px}
+.kk-group-header>div{flex:1}
+.kk-color-choices{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.kk-color-choices label{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:6px;padding:10px 3px;min-height:72px;border:1px solid var(--kk-line);border-radius:13px;font-size:12px;cursor:pointer}
+.kk-color-choices label:has(:checked){border-color:var(--kk-ink);box-shadow:inset 0 0 0 1px var(--kk-ink)}
+.kk-color-choices label>span{display:block;flex-shrink:0;width:24px;height:24px;border:1px solid;border-radius:50%}
+.kk-color-choices input{accent-color:var(--kk-ink)}
+.kk-app .kk-social-bubble{--kk-bubble-edge:var(--kk-group-mark,#668fbc);position:relative;isolation:isolate;background:var(--kk-surface);border:1.5px solid var(--kk-bubble-edge);border-radius:19px;padding:16px;box-shadow:none;filter:drop-shadow(0 2px 2px #20212408) drop-shadow(0 5px 5px #2021240d);transform:rotate(-1deg)}
+.kk-app .kk-social-bubble::before,.kk-app .kk-social-bubble::after{content:"";position:absolute;z-index:-1;clip-path:polygon(0 0,100% 0,0 100%);pointer-events:none}
+.kk-app .kk-social-bubble::before{left:22px;bottom:-12px;width:17px;height:13px;background:var(--kk-bubble-edge)}
+.kk-app .kk-social-bubble::after{left:23.5px;bottom:-9px;width:13.5px;height:12px;background:var(--kk-surface)}
+.kk-app .kk-collage{gap:27px 12px;padding-bottom:15px}
+.kk-app .kk-collage li:nth-child(3n+2) .kk-social-bubble{transform:rotate(1deg);margin-top:5px}
+.kk-app .kk-collage li:nth-child(3n) .kk-social-bubble{transform:rotate(-.5deg)}
+.kk-app .kk-collage .kk-social-bubble:hover,.kk-app .kk-collage .kk-social-bubble:focus-visible{transform:rotate(0)}
+.kk-app .kk-social-bubble .kk-avatar{width:25px;height:25px;border-radius:50%;border:1px solid var(--kk-line);color:var(--kk-ink);background:var(--kk-surface)}
+.kk-app .kk-social-bubble .kk-activity-title{font-size:15px;font-weight:750}
+.kk-app .kk-social-bubble .kk-activity-action{color:var(--kk-ink)}
+.kk-app .kk-social-bubble .kk-activity-meta>span{align-self:flex-start;max-width:100%;padding:2px 6px;border-left:3px solid var(--kk-group-mark);color:var(--kk-muted)}
+.kk-app .kk-collage-busy .kk-social-bubble{padding:12px 9px;min-height:135px}
+.kk-app .kk-collage-busy .kk-social-bubble .kk-activity-title{font-size:12px}
+.kk-app .kk-activity-list .kk-social-bubble{transform:none;margin-bottom:10px}
+.kk-app .kk-chat-avatar.kk-profile-image{width:28px;height:28px}
+.kk-app .kk-candidate-card .kk-card-group{color:var(--kk-ink);border-left:3px solid var(--kk-group-mark);padding-left:6px}
+.kk-app .kk-personal-chip{border-left:4px solid var(--kk-group-mark);color:var(--kk-ink)}
+@media(min-width:640px){.kk-app .kk-profile-group-card .kk-group-cover{height:88px}.kk-app .kk-collage-busy .kk-social-bubble{padding:16px 12px;min-height:150px}.kk-app .kk-collage-busy .kk-social-bubble .kk-activity-title{font-size:14px}}
+@media(max-width:359px){.kk-color-choices{grid-template-columns:repeat(2,minmax(0,1fr))}}

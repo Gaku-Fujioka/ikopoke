@@ -32,3 +32,11 @@ test('all-group outing tabs keep finished and active plans separate',async()=>{
   const rows=[{id:'1',outing_date:'2026-10-17',completed_at:null},{id:'2',outing_date:'2026-10-20',completed_at:null},{id:'3',outing_date:'2026-10-19',completed_at:'finished'}];
   assert.deepEqual((await globalOutings(fixture('outings',rows),1,false)).rows.map(row=>row.id),['1','2']);assert.deepEqual((await globalOutings(fixture('outings',rows),1,true)).rows.map(row=>row.id),['3']);
 });
+
+test('activity photos use only returned group/event pairs; photo failure preserves the validated activity',async()=>{
+ const path=`profile-avatar/00000000-0000-4000-8000-000000000001/90000000-0000-4000-8000-000000000001.jpg`,calls=[];
+ const client={rpc:async(name,args)=>{calls.push([name,args]);return name==='get_home_activity'?{data:[event],error:null}:{data:[{key:event.event_key,path},{key:'unknown',path}],error:null};}};
+ assert.deepEqual(await getActivity(client,group),[{...event,avatar_path:path}]);assert.deepEqual(calls[1],['get_social_avatars',{p_group:group,p_keys:[event.event_key],p_comments:false}]);
+ client.rpc=async name=>name==='get_home_activity'?{data:[event],error:null}:{data:null,error:{code:'42501',message:'private'}};
+ assert.deepEqual(await getActivity(client,group),[event]);
+});

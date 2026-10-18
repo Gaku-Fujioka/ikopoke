@@ -22,6 +22,8 @@ registerHooks({resolve(specifier, context, next) {
     "@/lib/supabase/server": providerModule,
     "@/lib/groups/repository": new URL("../lib/groups/repository.ts", import.meta.url).href,
     "@/lib/groups/validation": new URL("../lib/groups/validation.ts", import.meta.url).href,
+    "@/lib/presentation/repository": new URL("../lib/presentation/repository.ts", import.meta.url).href,
+    "@/lib/presentation/colors": new URL("../lib/presentation/colors.ts", import.meta.url).href,
     "next/navigation": navigationModule,
     "next/cache": cacheModule,
   }[specifier];

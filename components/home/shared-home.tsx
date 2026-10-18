@@ -18,6 +18,7 @@ import { AuthSetupNotice } from "@/components/auth-setup-notice";
 import { GroupCards } from "./group-cards";
 import { ActivityCards } from "./activity-cards";
 import { RefreshButton } from "./refresh-button";
+import {ProfileImage} from "@/components/profiles/profile-image";
 
 export function HomeError({ message = "読み込めませんでした。更新してもう一度お試しください。" }: { message?: string }) {
   return <div role="alert" className="kk-notice"><p>{message}</p><RefreshButton /></div>;
@@ -89,7 +90,7 @@ export async function SharedHome({ groupId = null }: { groupId?: string | null }
     const group = groups.find(group=>group.id===groupId)!;
     const base = '/app/groups/'+groupId;
     return <div className="space-y-8">
-      <header className="kk-group-header"><div><p className="kk-eyebrow">わたしたちの、おでかけ帳</p><h1>{group.name}</h1><p>行きたいを持ち寄って、次の楽しみへ。</p></div><Link href={base+'/settings'} className="kk-secondary-link">メンバー・設定</Link></header>
+      <header className="kk-group-header"><div>{group.presentation?.cover_path&&<ProfileImage path={group.presentation.cover_path} alt="" className="kk-group-hero-photo"/>}<p className="kk-eyebrow">わたしたちの、おでかけ帳</p><h1>{group.name}</h1><p className="whitespace-pre-wrap">{group.presentation?.description||"行きたいを持ち寄って、次の楽しみへ。"}</p></div><Link href={base+'/settings'} className="kk-secondary-link">メンバー・設定</Link></header>
       <div className="kk-group-launch"><Link href={base+'/items/new'}><span aria-hidden="true">＋</span><strong>行きたいを追加</strong><small>名前だけでも、ひとつのきっかけ</small></Link><Link href={base+'/outings/new'}><CalendarDays aria-hidden="true" /><strong>おでかけを計画</strong><small>日程と行き先を、一緒に決めよう</small></Link></div>
       <Suspense fallback={<HomeLoading>次の楽しみを読み込んでいます…</HomeLoading>}><NextEnjoyment client={client} groupId={groupId} groups={groups} /></Suspense>
       <section aria-labelledby="group-candidates"><div className="kk-section-heading"><div><p className="kk-eyebrow">気持ちが集まったら、出かけよう</p><h2 id="group-candidates">みんなの行きたい</h2></div><div className="flex flex-wrap gap-3"><Link href={base+'/lists'} className="kk-secondary-link">▤ リストで探す</Link><Link href={base+'/items'} className="kk-text-link">すべて見る →</Link></div></div><Suspense fallback={<HomeLoading>候補を読み込んでいます…</HomeLoading>}><GroupCandidates client={client} groupId={groupId} /></Suspense></section>

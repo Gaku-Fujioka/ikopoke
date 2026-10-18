@@ -6,6 +6,7 @@ import { acceptInviteAction, previewInviteAction } from "@/app/app/groups/invite
 import type { InviteState } from "@/lib/groups/invitations";
 import { INVITE_PATH } from "@/lib/groups/invite-cookie";
 import { authEntryPath } from "@/lib/auth/safe-next-path";
+import {ProfileImage} from "@/components/profiles/profile-image";
 
 const initial: InviteState = { error: null };
 
@@ -31,7 +32,9 @@ export function JoinGroup() {
     {state.needLogin && <div className="space-y-4"><p className="leading-7">招待内容を確認するにはログインしてください。登録がまだの方はアカウントを作成できます。</p><div className="flex flex-wrap gap-4"><Link href={authEntryPath("login", INVITE_PATH)} className="inline-flex min-h-12 items-center rounded-full bg-orange-700 px-6 font-semibold text-white">ログイン</Link><Link href={authEntryPath("sign-up", INVITE_PATH)} className="inline-flex min-h-12 items-center font-semibold text-orange-800 underline underline-offset-4">アカウントを作成</Link></div><p className="text-xs leading-5 text-stone-500">同じブラウザで登録・メール確認すると、この招待へ戻れます。別のブラウザを使う場合は招待リンクを開き直してください。</p></div>}
     {state.error && <p role="alert" className="leading-7 text-red-700">{state.error}</p>}
     {state.preview && <div className="space-y-4">
+      {state.preview.cover_path&&<ProfileImage path={state.preview.cover_path} alt="招待先のグループ写真" className="kk-cover-preview"/>}
       <h2 className="break-words text-2xl font-semibold">{state.preview.group_name}</h2>
+      {state.preview.description&&<p className="whitespace-pre-wrap break-words text-sm leading-7">{state.preview.description}</p>}
       <p className="text-sm leading-6 text-stone-600">参加すると、このグループのメンバーとして招待の発行・管理ができるようになります。</p>
       <form action={joinAction} aria-busy={joining}>
         <input type="hidden" name="groupId" value={state.preview.group_id} />

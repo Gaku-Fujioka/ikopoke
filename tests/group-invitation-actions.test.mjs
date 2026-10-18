@@ -12,7 +12,8 @@ const providerModule = moduleUrl(`
     auth:{getClaims:async()=>({data:signedIn?{claims:{sub:'verified-user'}}:null,error:null})},
     rpc:async(name,input)=>{calls.push({name,input});return {error:code?{code,message:'provider-private-data'}:null,data:
       name==='create_group_invite'?[{id:'20000000-0000-4000-8000-000000000001',expires_at:'2026-11-01T00:00:00Z'}]:
-      name==='preview_group_invite'?[{group_id:'10000000-0000-4000-8000-000000000001',group_name:'Preview group',expires_at:'2026-11-01T00:00:00Z'}]:input.p_group_id};}
+      name==='preview_group_invite'?[{group_id:'10000000-0000-4000-8000-000000000001',group_name:'Preview group',expires_at:'2026-11-01T00:00:00Z'}]:
+      name==='preview_group_profile'?{group_id:'10000000-0000-4000-8000-000000000001',group_name:'Preview group',description:'共有の紹介',cover_path:null}:input.p_group_id};}
   };}
 `);
 const cookieModule = moduleUrl(`
@@ -71,11 +72,12 @@ test('cookie security follows the runtime and expiration is bounded to seven day
   try{process.env.NODE_ENV='production';assert.equal(inviteCookieOptions().secure,true);assert.equal(inviteCookieOptions().maxAge,7*86400);}
   finally{if(previous===undefined)delete process.env.NODE_ENV;else process.env.NODE_ENV=previous;}
 });
-test('preview resumes the cookie after login and is read-only',async()=>{
+test('preview resumes after login and reveals the shared profile without joining',async()=>{
   cookie.values.set(INVITE_COOKIE,token);
   const result=await previewInviteAction(initial,form());
   assert.equal(result.preview.group_id,groupId);assert.equal(result.token,undefined);
-  assert.deepEqual(provider.calls,[{name:'preview_group_invite',input:{p_token:token}}]);assert.deepEqual(cache.paths,[]);
+  assert.equal(result.preview.description,'共有の紹介');assert.equal(result.preview.cover_path,null);
+  assert.deepEqual(provider.calls,[{name:'preview_group_invite',input:{p_token:token}},{name:'preview_group_profile',input:{p_token:token}}]);assert.deepEqual(cache.paths,[]);
 });
 test('joining takes the token only from the cookie, verifies the confirmed group and redirects after invalidation',async()=>{
   cookie.values.set(INVITE_COOKIE,token);

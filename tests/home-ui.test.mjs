@@ -29,6 +29,7 @@ export async function globalItems(){return {rows:[],total:0};}export async funct
 const navigationURL=sourceURL(`export {usePathname,useSearchParams} from ${JSON.stringify(providerURL)};export function notFound(){throw Object.assign(Error('not found'),{navigation:'not-found'});}export function redirect(location){throw Object.assign(Error('redirect'),{location});}`);
 registerHooks({
   resolve(specifier,context,next){
+    if(specifier==='next/image')return {url:sourceURL('export default function Image(){return null;}'),shortCircuit:true};
     if(specifier==='@/app/app/map-actions')return {url:sourceURL('export async function placeListsAction(){return {lists:[]};}export async function savePlaceAction(){return {error:null};}export async function attachPlaceAction(){return {error:null};}'),shortCircuit:true};
     if(specifier==='@/components/maps/map-sections')return {url:sourceURL('export function SavedMapSection(){return null;}export function OutingMapSection(){return null;}export function ItemPlaceSection(){return null;}'),shortCircuit:true};
     if(specifier==='@/components/items/candidate-board')return {url:sourceURL('export function CandidateBoard(){return null;}export function PlanSelectionReceipt(){return null;}'),shortCircuit:true};

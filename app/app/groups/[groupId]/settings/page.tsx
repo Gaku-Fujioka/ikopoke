@@ -11,11 +11,13 @@ import { InviteManagement } from "@/components/groups/invite-management";
 import { listInvites, InviteError } from "@/lib/groups/invitations";
 import { RenameGroupForm } from "@/components/groups/rename-group-form";
 import { getGroupMembers } from "@/lib/profiles/repository";
+import {GroupProfileSection} from "@/components/profiles/presentation-sections";
+import {ProfileImage} from "@/components/profiles/profile-image";
 
 async function Members({ client, groupId }: { client: Awaited<ReturnType<typeof createClient>>; groupId: string }) {
   try {
     const members = await getGroupMembers(client, groupId);
-    return <section className="kk-surface"><h2 className="text-lg font-bold">一緒に楽しむメンバー · {members.length}人</h2><ul className="mt-4 space-y-2">{members.map(member => <li key={member.user_id} className="rounded-xl bg-stone-50 px-4 py-3 text-sm">{member.display_name || "表示名はまだ未設定"}</li>)}</ul></section>;
+    return <section className="kk-surface"><h2 className="text-lg font-bold">一緒に楽しむメンバー · {members.length}人</h2><ul className="mt-4 space-y-2">{members.map(member => <li key={member.user_id} className="flex items-center gap-3 rounded-xl bg-stone-50 px-4 py-3 text-sm"><ProfileImage path={member.avatar_path} alt="" fallback={Array.from(member.display_name||"・")[0]} className="kk-member-avatar"/>{member.display_name || "表示名はまだ未設定"}</li>)}</ul></section>;
   } catch {
     return <p role="alert" className="kk-notice">メンバーを読み込めませんでした。再読み込みしてください。</p>;
   }
@@ -59,6 +61,7 @@ async function GroupContent({ params }: { params: Promise<{ groupId: string }> }
     </section>
     <Suspense fallback={<p role="status" className="kk-loading">退出の情報を読み込んでいます…</p>}><GroupDepartureSection client={client} groupId={groupId}/></Suspense>
     <RenameGroupForm groupId={groupId} name={group.name} />
+    <Suspense fallback={<p role="status" className="kk-loading">グループのプロフィールを読み込んでいます…</p>}><GroupProfileSection client={client} groupId={groupId}/></Suspense>
     <Suspense fallback={<p role="status" className="kk-loading">メンバーを読み込んでいます…</p>}><Members client={client} groupId={groupId} /></Suspense>
     <Suspense fallback={<p role="status" className="rounded-3xl border border-stone-200 bg-white p-6 text-sm text-stone-600">招待を読み込んでいます…</p>}>
       <GroupInvitations client={client} groupId={groupId} />

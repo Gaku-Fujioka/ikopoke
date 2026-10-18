@@ -1,7 +1,13 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../supabase/database.types";
+import {getGroupPresentations,type GroupPresentation} from "@/lib/presentation/repository";
 
-export type SavedGroup = Pick<Database["public"]["Tables"]["groups"]["Row"], "id" | "name" | "created_at">;
+export type SavedGroup = Pick<Database["public"]["Tables"]["groups"]["Row"], "id" | "name" | "created_at"> & {presentation?:GroupPresentation};
+
+async function withPresentation(client:SupabaseClient<Database>,groups:SavedGroup[]):Promise<SavedGroup[]>{
+  try{const rows=await getGroupPresentations(client,groups.map(group=>group.id));return groups.map(group=>({...group,presentation:rows.find(row=>row.group_id===group.id)}));}
+  catch{return groups;} // Optional decoration failure keeps group navigation usable.
+}
 
 export class GroupStoreError extends Error {
   constructor(error: { code?: string } | null) {
@@ -18,14 +24,14 @@ export async function listGroups(client: SupabaseClient<Database>): Promise<Save
   // RLS, rather than a client-provided user ID, determines the visible groups.
   const { data, error } = await client.from("groups").select("id,name,created_at").order("created_at", { ascending: true }).order("id");
   if (error) throw new GroupStoreError(error);
-  return data ?? [];
+  return withPresentation(client,data ?? []);
 }
 
 export async function getGroup(client: SupabaseClient<Database>, groupId: string): Promise<SavedGroup | null> {
   const { data, error } = await client.from("groups").select("id,name,created_at").eq("id", groupId).maybeSingle();
   if (error) throw new GroupStoreError(error);
   // Missing and non-member IDs have the same result, without disclosing a name.
-  return data;
+  return data?(await withPresentation(client,[data]))[0]:null;
 }
 
 export async function createGroup(client: SupabaseClient<Database>, input: { name: string; requestId: string }): Promise<string> {
