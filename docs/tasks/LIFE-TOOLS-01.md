@@ -39,7 +39,7 @@ README・旧スターター削除・pnpm・work/・環境変数は既存変更�
 
 ## 結果 / 小さい仮定
 
-ローカル実装：A/Bを46c6b92、Cを35cab05でcommit。Dも実装し検証中。現時点の254件の全テスト成功。
+ローカル実装：A/Bを46c6b92、Cを35cab05、Dをf7a24bd、表紙等の調整をa776700でcommit。254件の全テスト成功。
 写真なし/表紙なしも可。新しい写真は並びの末尾、削除しても他写真の順序は保持。
 日付は既存どおり日本のカレンダー日付として扱い、時差で変換しない。空の日も旅行に含められる。
 旅行の終了/取消は全体単位で1冊を保持。既存単日データを初日の内容として引き継ぐ。
@@ -48,3 +48,24 @@ README・旧スターター削除・pnpm・work/・環境変数は既存変更�
 アカウント削除は共有写真を保持するためAuthの不可逆soft deletionを使い、識別行/profileは匿名化して残す。EdgeでgetUserと5分以内の再認証を確認する。privateの削除状態と全書き込みガードで有効期限内JWTによる復活を防ぐ。
 小さい運用上限：旅行366日・行き先50件・参加者50人。写真の表紙選択は12枚ごとのページ、一覧表紙は近くの画像から認証付きで取得。表紙選択と本文編集は同じアルバム改訂を使い、古い入力は再読込で確認する。
 自己レビューで、RLSによる他人の所属行の非表示を「作者が退出した」と誤判定しないようprivateの所属判定を使うこと、本人再確認から関数へパスワードを渡さないこと、旧RPCと送信中Storage経路の競合も確認した。
+
+## 開発Supabase反映（2026-10-18）
+
+対象は既知の開発プロジェクト gszekiwwrxlkorqfrdvd。下記4件はapply_migration成功、履歴を確認しSQL本文を変えずローカル名を実versionへ同期した。
+
+| migration | 実version |
+|---|---|
+| shared_candidate_tools | 20261018041048 |
+| shared_album_tools | 20261018041054 |
+| daily_trip_plans | 20261018041101 |
+| shared_account_lifecycle | 20261018041108 |
+
+36関数の本体ハッシュを投入SQLと照合し、存在・search_path・実行権限も確認。一切の新規関数はanonから実行不可。アカウント用4関数はauthenticated不可・service_roleだけ実行可、内部関数は必要なRLSヘルパー2件以外client実行不可。対象6テーブルのRLS有効を確認。
+適用前後の集計件数は一致：groups 2 / members 2 / items 3 / comments 1 / outings 2 / outing_items 3 / participants 2 / visits 3 / photos 3 / memories 1 / Storage実体3。ユーザーの本文・メール・認証情報・写真の中身は取得していない。
+
+Edge Function delete-account v1 ACTIVE、verify_jwt=true。実行時にgetUserと直近の再認証も確認。未認証/無効トークンの実HTTPは両方401。実アカウント削除と実Storage削除の試験は行っていない。関数の順序・失敗/再試行とDB削除は合成環境で検証した。
+
+Advisorでは新しい匿名実行・RLS欠落・外部キー索引不足を検出しなかった。認証済みSECURITY DEFINERは今回の限定RPC構成による指摘。既存のrls_auto_enable匿名実行、漏えいパスワード保護無効、groups.created_byとitem_list_membershipsの索引不足2件は残る。今回の対象外として設定は変更しない。
+参照：[SECURITY DEFINER](https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable)、[既存の匿名実行](https://supabase.com/docs/guides/database/database-linter?lint=0028_anon_security_definer_function_executable)、[パスワード保護](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection)。
+
+254件全Nodeテスト・lint・Next型検査・Edge handler型検査・production build成功。独立レビューと実ブラウザ操作は未実施。自己レビューでは権限の直接経路、本人と退出者、旧APIの保護、削除途中、改訂衝突、既存単日データの移行、HTMLの入れ子と写真読み込み量を確認し修正した。PR/CI/main統合は次の更新で記録する。
