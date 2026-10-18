@@ -18,7 +18,7 @@ type MarkerLibrary = { AdvancedMarkerElement: new (options: { map: MapHandle; po
 type RawAuthor = { displayName?: string; uri?: string; photoURI?: string };
 type RawReview = { text?: string; originalText?: string; rating?: number; relativePublishTimeDescription?: string; googleMapsURI?: string; authorAttribution?: RawAuthor };
 type RawPhoto = { googleMapsURI?: string; authorAttributions?: RawAuthor[]; getURI(options: { maxWidth: number; maxHeight: number }): string };
-type DetailedPlace = { rating?: number; userRatingCount?: number; photos?: RawPhoto[]; reviews?: RawReview[]; attributions?: RawPlace["attributions"]; fetchFields(request: { fields: string[] }): Promise<unknown> };
+type DetailedPlace = RawPlace & { rating?: number; userRatingCount?: number; photos?: RawPhoto[]; reviews?: RawReview[]; attributions?: RawPlace["attributions"]; fetchFields(request: { fields: string[] }): Promise<unknown> };
 type PlacesLibrary = { Place: { new (options: { id: string; requestedLanguage: string }): DetailedPlace; searchByText(request: SearchRequest): Promise<{ places?: RawPlace[] }> } };
 type MapsSDK = {
   importLibrary(name: "maps"): Promise<MapsLibrary>;
@@ -159,17 +159,8 @@ export function createGoogleMapStarter(pageLoader: ReturnType<typeof createGoogl
       let places: PlacesLibrary | null = null;
       let markers: Promise<MarkerLibrary> | null = null;
       let core: Promise<CoreLibrary> | null = null;
-      return {
-        async search(query) {
-          if (disposed || !config.placesEnabled || pageLoader.failed) throw genericFailure();
-          const currentSelection = ++selection;
-          clearPins();
-          const library = places ?? await deadline(sdk!.importLibrary("places"));
-          places = library;
-          if (disposed || pageLoader.failed) throw genericFailure();
-          const result = await deadline(library.Place.searchByText({ textQuery: query, fields: [...PLACE_SEARCH_FIELDS], maxResultCount: 5, language: "ja", region: "jp" }));
-          if (disposed || pageLoader.failed) throw genericFailure();
-          const results = (result.places ?? []).map(placeResult).filter((value): value is PlaceResult => value !== null).slice(0, 5);
+      const resolved = new Map<string, PlaceResult>();
+      async function showPins(results: PlaceResult[], currentSelection: number) {
           if (results.length) {
             markers ??= sdk!.importLibrary("marker");
             // Coordinates belong to the core library, not the maps library.
@@ -186,6 +177,49 @@ export function createGoogleMapStarter(pageLoader: ReturnType<typeof createGoogl
               else { const bounds = new coordinates.LatLngBounds(); results.forEach(place => bounds.extend(place.position)); currentMap.fitBounds(bounds, 32); }
             } catch { clearPins(); throw genericFailure(); }
           }
+      }
+      return {
+        async search(query) {
+          if (disposed || !config.placesEnabled || pageLoader.failed) throw genericFailure();
+          const currentSelection = ++selection;
+          clearPins();
+          const library = places ?? await deadline(sdk!.importLibrary("places"));
+          places = library;
+          if (disposed || pageLoader.failed) throw genericFailure();
+          const result = await deadline(library.Place.searchByText({ textQuery: query, fields: [...PLACE_SEARCH_FIELDS], maxResultCount: 5, language: "ja", region: "jp" }));
+          if (disposed || pageLoader.failed) throw genericFailure();
+          const results = (result.places ?? []).map(placeResult).filter((value): value is PlaceResult => value !== null).slice(0, 5);
+          await showPins(results, currentSelection);
+          return results;
+        },
+        async resolve(ids) {
+          if (disposed || !config.placesEnabled || pageLoader.failed || ids.length > 20 || ids.some(id => !/^[A-Za-z0-9_-]{1,255}$/.test(id))) throw genericFailure();
+          const currentSelection = ++selection;
+          clearPins();
+          const library = places ?? await deadline(sdk!.importLibrary("places")); places = library;
+          const unique = [...new Set(ids)];
+          const output = new Map<string, PlaceResult>();
+          let next = 0;
+          await Promise.all(Array.from({ length: Math.min(4, unique.length) }, async () => {
+            while (next < unique.length) {
+              const id = unique[next++];
+              if (disposed || pageLoader.failed || selection !== currentSelection) return;
+              try {
+                let result = resolved.get(id);
+                if (!result) {
+                  const detail = new library.Place({ id, requestedLanguage: "ja" });
+                  await deadline(detail.fetchFields({ fields: [...PLACE_SEARCH_FIELDS] }));
+                  if (disposed || pageLoader.failed || selection !== currentSelection) return;
+                  result = placeResult(detail) ?? undefined;
+                  if (result && result.id === id) resolved.set(id, result); else result = undefined;
+                }
+                if (result) output.set(id, result);
+              } catch { /* A missing/deleted place must not hide the other pins. */ }
+            }
+          }));
+          if (disposed || pageLoader.failed || selection !== currentSelection) throw genericFailure();
+          const results = unique.flatMap(id => output.has(id) ? [output.get(id)!] : []);
+          await showPins(results, currentSelection);
           return results;
         },
         select(place) {

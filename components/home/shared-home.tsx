@@ -4,7 +4,9 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { ArrowRight, CalendarDays, MapPin, Search, Sparkles } from "lucide-react";
-import { PlaceExplorer } from "@/components/maps/place-explorer";
+import { SearchWorkspace } from "@/components/maps/search-workspace";
+import { SavedMapSection } from "@/components/maps/map-sections";
+import { mapsConfig, type PlaceGroup } from "@/lib/maps/saved";
 import { createClient } from "@/lib/supabase/server";
 import { hasEnvVars } from "@/lib/utils";
 import { listGroups, type SavedGroup } from "@/lib/groups/repository";
@@ -40,15 +42,11 @@ async function SavedPeek({ client, groupId }: { client: HomeClient; groupId: str
   if (!items.length) return <p className="kk-map-note">気になる場所を見つけたら、まずは名前だけでも。</p>;
   return <ul className="kk-saved-peek">{items.map(item => <li key={item.id}><Link href={`/app/groups/${item.group_id}/items/${item.id}`} data-tone={groupTone(item.group_id)}><MapPin aria-hidden="true" size={15} /><span>{item.title}</span><ArrowRight aria-hidden="true" size={14} /></Link></li>)}</ul>;
 }
-function MapSpace({ client, groupId }: { client: HomeClient; groupId: string | null }) {
+function MapSpace({ client, groupId, groups }: { client: HomeClient; groupId: string | null; groups: PlaceGroup[] }) {
   return <section className="kk-map-card" aria-labelledby="home-map-title">
     <div className="kk-map-top"><h2 id="home-map-title"><MapPin aria-hidden="true" size={17} />行きたいが、ひろがる</h2><span className="kk-label">ここから、次の行き先へ</span></div>
-    <PlaceExplorer addHref={addHref("item", groupId)} config={{
-      enabled: process.env.NEXT_PUBLIC_GOOGLE_MAPS_ENABLED === "true",
-      placesEnabled: process.env.NEXT_PUBLIC_GOOGLE_PLACES_ENABLED === "true",
-      apiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "",
-      mapId: process.env.NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID ?? "",
-    }} />
+    <SearchWorkspace groups={groups} groupId={groupId ?? undefined} config={mapsConfig()} />
+    <Suspense fallback={<HomeLoading>保存した場所を読み込んでいます…</HomeLoading>}><SavedMapSection client={client} groupId={groupId} groups={groups} /></Suspense>
     <details className="kk-saved-search"><summary>保存した候補から探す</summary><p>みんなが追加した候補を、名前で絞り込みます。</p>
       <form action={collectionHref("items", groupId)} role="search" aria-label="保存した候補を検索" className="kk-map-search"><Search aria-hidden="true" size={18} /><label htmlFor="home-candidate-search" className="sr-only">保存した候補を名前で検索</label><input id="home-candidate-search" type="search" name="q" maxLength={100} placeholder="保存した候補の名前" /><button type="submit">候補を検索</button></form>
       <Suspense fallback={<HomeLoading>保存した候補を読み込んでいます…</HomeLoading>}><SavedPeek client={client} groupId={groupId} /></Suspense>
@@ -96,6 +94,7 @@ export async function SharedHome({ groupId = null }: { groupId?: string | null }
       <Suspense fallback={<HomeLoading>次の楽しみを読み込んでいます…</HomeLoading>}><NextEnjoyment client={client} groupId={groupId} groups={groups} /></Suspense>
       <section aria-labelledby="group-candidates"><div className="kk-section-heading"><div><p className="kk-eyebrow">気持ちが集まったら、出かけよう</p><h2 id="group-candidates">みんなの行きたい</h2></div><div className="flex flex-wrap gap-3"><Link href={base+'/lists'} className="kk-secondary-link">▤ リストで探す</Link><Link href={base+'/items'} className="kk-text-link">すべて見る →</Link></div></div><Suspense fallback={<HomeLoading>候補を読み込んでいます…</HomeLoading>}><GroupCandidates client={client} groupId={groupId} /></Suspense></section>
       <section aria-labelledby="group-conversations" className="kk-conversation-space"><div className="kk-section-heading"><div><p className="kk-eyebrow">ひとことから、楽しみがふくらむ</p><h2 id="group-conversations">最近の会話と反応</h2></div><RefreshButton /></div><Suspense fallback={<HomeLoading>会話と反応を読み込んでいます…</HomeLoading>}><GroupConversations client={client} groupId={groupId} groups={groups} /></Suspense><Link href={base+'/activity'} className="kk-text-link">グループの近況をすべて見る →</Link></section>
+      <MapSpace client={client} groupId={groupId} groups={groups} />
       <nav aria-label="グループのおでかけ帳" className="kk-group-shortcuts"><Link href={base+'/outings'}>おでかけ一覧 <ArrowRight size={16} aria-hidden="true" /></Link><Link href={base+'/memories'}>思い出をひらく <ArrowRight size={16} aria-hidden="true" /></Link><Link href={base+'/lists'}>リストで整理 <ArrowRight size={16} aria-hidden="true" /></Link><Link href={base+'/visits'}>行った！の記録 <ArrowRight size={16} aria-hidden="true" /></Link></nav>
     </div>;
   }
@@ -104,7 +103,7 @@ export async function SharedHome({ groupId = null }: { groupId?: string | null }
     <GroupCards groups={groups} selected={groupId} />
     {groups.length ? <>
       <Suspense fallback={<HomeLoading>次の楽しみを読み込んでいます…</HomeLoading>}><NextEnjoyment client={client} groupId={groupId} groups={groups} /></Suspense>
-      <MapSpace client={client} groupId={groupId} />
+      <MapSpace client={client} groupId={groupId} groups={groups} />
       <section aria-labelledby="home-activity-title"><div className="kk-row"><div><p className="kk-eyebrow">みんなで育つ、おでかけ帳</p><h2 id="home-activity-title">こんな動きがあった！</h2></div><RefreshButton /></div><p className="kk-muted kk-feed-help">{groupId ? "このグループ" : "全グループ"}の最近の追加と現在の反応 · 日本時間</p><Suspense fallback={<HomeLoading>みんなの動きを読み込んでいます…</HomeLoading>}><RecentActivity client={client} groupId={groupId} groups={groups} /></Suspense></section>
     </> : <div className="kk-welcome"><Sparkles aria-hidden="true" size={30} /><h2>最初のグループから、はじめよう。</h2><p>ひとりで候補をためても、あとから誰かを招待しても。<br />行きたいを一緒に育てる場所です。</p><Link href="/app/groups#new-group" className="kk-primary-link">グループを作る <ArrowRight aria-hidden="true" size={17} /></Link></div>}
   </div>;

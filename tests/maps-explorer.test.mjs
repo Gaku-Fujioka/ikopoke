@@ -268,3 +268,23 @@ test('missing media, loading and failed details remain distinct and retain the e
     if(status==='ready'){assert.match(markup,/ここで表示できる写真はありません/);assert.match(markup,/ここで表示できる口コミはありません/);assert.ok(!markup.includes('0件の評価'));}
   }
 });
+
+
+test('saved place resolution deduplicates identifiers, reuses only mounted memory, and isolates missing places',async()=>{
+ const fake=fakeSDK({fetchDetails:async(id,request)=>{if(id==='missing')throw Error('unavailable');assert.deepEqual(request.fields,['id','displayName','formattedAddress','location','attributions']);return {id,displayName:id,formattedAddress:'住所',location:{lat:()=>35,lng:()=>139}};}});
+ const session=await fake.start(host(),config,()=>{});
+ assert.equal(fake.detailRequests.length,0);
+ const results=await session.resolve(['place_a','place_a','missing','place_b']);
+ assert.deepEqual(results.map(p=>p.id),['place_a','place_b']);assert.equal(fake.markers.length,2);assert.equal(fake.fits.length,1);
+ assert.equal(fake.detailRequests.length,3);await session.resolve(['place_a','place_b']);assert.equal(fake.detailRequests.length,3);assert.equal(fake.maps,1);
+ await assert.rejects(session.resolve(Array.from({length:21},(_,i)=>'place_'+i)));await assert.rejects(session.resolve(['../invalid']));
+ session.dispose();assert.ok(fake.markers.every(m=>m.map===null));
+});
+test('saved resolution is cancelled on disposal, without fetching queued locations or creating pins',async()=>{
+ const pending=deferred();const fake=fakeSDK({fetchDetails:()=>pending.promise});const session=await fake.start(host(),config,()=>{});
+ const loading=session.resolve(['one','two','three','four','five']);await new Promise(r=>setImmediate(r));assert.equal(fake.detailRequests.length,4);session.dispose();pending.resolve({displayName:'late',location:{lat:()=>35,lng:()=>139}});await assert.rejects(loading);assert.equal(fake.markers.length,0);assert.equal(fake.detailRequests.length,4);
+});
+test('saved map controller is explicit, caps work, guards repeated clicks, and reports partial failures',async()=>{
+ let opens=0,loads=0,received;const pending=deferred();const explorer=createMapExplorer(async()=>{opens++;return {resolve:async ids=>{loads++;received=ids;return pending.promise;},select(){},dispose(){},details:async()=>({}),search:async()=>[]};});
+ assert.equal(opens,0);const work=explorer.loadSaved(host(),['one','one','two']);await new Promise(r=>setImmediate(r));await explorer.loadSaved(host(),['three']);assert.equal(loads,1);assert.deepEqual(received,['one','two']);pending.resolve([{...place,id:'one'}]);await work;assert.equal(explorer.getSnapshot().results.length,1);assert.match(explorer.getSnapshot().error,/一部/);explorer.dispose();
+});

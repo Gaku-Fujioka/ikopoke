@@ -23,7 +23,7 @@ export async function getNamedComments(client,...args){calls.push(['comments',..
 export async function listInvites(client,...args){calls.push(['invites',...args]);return plan.invites();}
 export async function getItemLists(client,...args){calls.push(['lists',...args]);return plan.lists();}
 `);
-const leafURL=moduleURL("export function CandidateBoard(){return null;}export function CommentManagement(){return null;}export function ItemManagement(){return null;}export function ItemExtraFilters(){return null;}export function PrivatePhotoPreview(){return null;}export function PrivateVisitImage(){return null;}export function GroupDepartureSection(){return null;}export function AuthSetupNotice(){return null;}export function CreateItemForm(){return null;}export function RetryItems(){return null;}export function EditItemForm(){return null;}export function ItemReactions(){return null;}export function CommentForm(){return null;}export function InviteManagement(){return null;}export function RenameGroupForm(){return null;}export function ItemListButton(){return null;}export function VisitHistory(){return null;}export default function Link(){return null;}");
+const leafURL=moduleURL("export function ItemPlaceSection(){return null;}export function CandidateBoard(){return null;}export function CommentManagement(){return null;}export function ItemManagement(){return null;}export function ItemExtraFilters(){return null;}export function PrivatePhotoPreview(){return null;}export function PrivateVisitImage(){return null;}export function GroupDepartureSection(){return null;}export function AuthSetupNotice(){return null;}export function CreateItemForm(){return null;}export function RetryItems(){return null;}export function EditItemForm(){return null;}export function ItemReactions(){return null;}export function CommentForm(){return null;}export function InviteManagement(){return null;}export function RenameGroupForm(){return null;}export function ItemListButton(){return null;}export function VisitHistory(){return null;}export default function Link(){return null;}");
 const navigationURL=moduleURL("export function notFound(){const error=new Error('not found');error.navigation='not-found';throw error;}export function redirect(path){const error=new Error('redirect');error.location=path;throw error;}");
 registerHooks({
   resolve(specifier,context,next){
@@ -62,7 +62,8 @@ test("candidate metadata starts both authorized reads without waiting and has in
   assert.deepEqual(provider.calls[2],["item",groupId,itemId]);
   groupRead.resolve(group);itemRead.resolve(item);const body=await pending;
   assert.match(text(body),/テスト候補/);assert.match(text(body),/メモ/);
-  const boundaries=walk(body,node=>node.type===Suspense);
+  const boundaries=walk(body,node=>node.type===Suspense && node.props.children.type?.name!=="ItemPlaceSection");
+  assert.equal(walk(body,node=>node.type===Suspense && node.props.children.type?.name==="ItemPlaceSection").length,1);
   assert.equal(boundaries.length,4);assert.match(text(boundaries[0].props.fallback),/反応/);assert.match(text(boundaries[1].props.fallback),/リスト/);assert.match(text(boundaries[2].props.fallback),/コメント/);assert.match(text(boundaries[3].props.fallback),/訪問/);
   assert.equal(boundaries[0].props.children.type,ItemReactionSection);assert.equal(boundaries[1].props.children.type,ItemLists);
   assert.deepEqual(provider.calls.map(call=>call[0]),["auth","group","item"]);
@@ -94,7 +95,7 @@ test("reaction failures stay in their section, with no raw provider detail or fa
 });
 test("comment and list pages keep each other's URL state",async()=>{
   const input=props();input.searchParams=Promise.resolve({q:"Cafe",list:"30000000-0000-4000-8000-000000000001",commentsPage:"2",listsPage:"3",listsQ:"旅"});
-  const body=await content(Detail,input),boundaries=walk(body,node=>node.type===Suspense);
+  const body=await content(Detail,input),boundaries=walk(body,node=>node.type===Suspense && node.props.children.type?.name!=="ItemPlaceSection");
   assert.equal(boundaries.length,4);
   const listParams=new URL(boundaries[1].props.children.props.detailHref,"https://example.invalid").searchParams;
   const commentParams=new URL(boundaries[2].props.children.props.detailHref,"https://example.invalid").searchParams;

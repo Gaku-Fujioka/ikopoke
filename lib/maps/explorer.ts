@@ -18,6 +18,7 @@ export type MapSession = {
   search(query: string): Promise<PlaceResult[]>;
   select(place: PlaceResult): void;
   details(place: PlaceResult, signal: AbortSignal): Promise<PlaceDetails>;
+  resolve?(ids: string[]): Promise<PlaceResult[]>;
   dispose(): void;
 };
 export type MapStarter = (host: HTMLElement, onFailure: () => void, signal: AbortSignal, onSelect: (id: string) => void) => Promise<MapSession>;
@@ -111,6 +112,22 @@ export function createMapExplorer(start: MapStarter) {
         const details = await session.details(place, detailAborter.signal);
         if (current === detailGeneration) update({ details, detailStatus: "ready" });
       } catch { if (current === detailGeneration) update({ details: null, detailStatus: "error" }); }
+    },
+    async loadSaved(host: HTMLElement, ids: string[]): Promise<void> {
+      if (state.phase === "loading" || state.phase === "failed" || state.searching) return;
+      if (state.phase === "closed") await explorer.open(host);
+      if (state.phase !== "ready" || !session?.resolve) return;
+      const current = generation;
+      detailAborter?.abort(); detailGeneration++;
+      update({ searching: true, error: null, results: [], selected: null, searched: null, details: null, detailStatus: "idle" });
+      try {
+        const unique = [...new Set(ids)].slice(0, 20);
+        const results = await session.resolve(unique);
+        if (current !== generation) return;
+        update({ results, searching: false, error: results.length < unique.length ? "一部の場所を表示できませんでした。候補の詳細やGoogleマップからも確認できます。" : null });
+      } catch {
+        if (current === generation) update({ searching: false, error: "保存した場所を表示できませんでした。もう一度表示するか、候補の詳細から確認してください。" });
+      }
     },
     dispose() {
       generation++;
