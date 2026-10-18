@@ -25,8 +25,9 @@ registerHooks({
   },
 });
 const {createMapExplorer,googleMapsPlaceHref,googleMapsSearchHref}=await import('../lib/maps/explorer.ts');
-const {createGoogleLoader,createGoogleMapStarter,placeResult,deadline}=await import('../lib/maps/google.ts');
+const {createGoogleLoader,createGoogleMapStarter,placeResult,detailResult,deadline}=await import('../lib/maps/google.ts');
 const {PlaceExplorer}=await import('../components/maps/place-explorer.tsx');
+const {PlaceDetailPanel}=await import('../components/maps/place-detail-panel.tsx');
 const deferred=()=>{let resolve,reject;const promise=new Promise((yes,no)=>{resolve=yes;reject=no;});return {promise,resolve,reject};};
 const flush=()=>new Promise(resolve=>setImmediate(resolve));
 const host=()=>({replaceChildren(){this.cleaned=true;}});
@@ -100,31 +101,36 @@ test('network failure never auto-retries; auth failure remains observable after 
     assert.equal(loader.failed,true);assert.ok(failures>0);
   }
 });
-function fakeSDK({search=async()=>({places:[]}),markerPromise=null}={}){
-  const imports=[],requests=[],markers=[],pans=[];let maps=0,cleared=0;
+function fakeSDK({search=async()=>({places:[]}),markerPromise=null,fetchDetails=async()=>({})}={}){
+  const imports=[],requests=[],markers=[],pans=[],fits=[],detailRequests=[];let maps=0,cleared=0;
   const sdk={
     async importLibrary(name){imports.push(name);
-      if(name==='maps')return {Map:class{constructor(){maps++;}panTo(point){pans.push(point);}setZoom(){}}};
-      if(name==='places')return {Place:{searchByText(request){requests.push(request);return search(request);}}};
-      if(name==='marker')return markerPromise??{AdvancedMarkerElement:class{constructor(options){Object.assign(this,options);markers.push(this);}}};
+      if(name==='maps')return {Map:class{constructor(){maps++;}panTo(point){pans.push(point);}setZoom(){}fitBounds(bounds,padding){fits.push({points:bounds.points,padding});}},LatLngBounds:class{points=[];extend(point){this.points.push(point);}}};
+      if(name==='places')return {Place:class{
+        constructor(options){this.id=options.id;}
+        static searchByText(request){requests.push(request);return search(request);}
+        async fetchFields(request){detailRequests.push({id:this.id,request});Object.assign(this,await fetchDetails(this.id,request));}
+      }};
+      if(name==='marker')return markerPromise??{AdvancedMarkerElement:class{events=new Map();constructor(options){Object.assign(this,options);markers.push(this);}addEventListener(event,callback){this.events.set(event,callback);}removeEventListener(event){this.events.delete(event);}}};
       throw Error('unexpected import');
     },
     event:{addListenerOnce(map,event,callback){queueMicrotask(callback);return {remove(){}};},clearInstanceListeners(){cleared++;}},
   };
   const loader={failed:false,load:async()=>sdk,subscribeFailure(){return ()=>{};}};
-  return {start:createGoogleMapStarter(loader),imports,requests,markers,pans,get maps(){return maps;},get cleared(){return cleared;}};
+  return {start:createGoogleMapStarter(loader),imports,requests,markers,pans,fits,detailRequests,get maps(){return maps;},get cleared(){return cleared;}};
 }
 test('new Places search is lazy and uses limited fields/count; repeated searches reuse the map',async()=>{
   const raw={id:place.id,displayName:place.name,formattedAddress:place.address,location:{lat:()=>35,lng:()=>139}};
   const fake=fakeSDK({search:async()=>({places:[raw]})}),element=host();
   const session=await fake.start(element,config,()=>{});assert.deepEqual(fake.imports,['maps']);
   assert.deepEqual(await session.search('吉祥寺'),[place]);await session.search('東京');assert.equal(fake.maps,1);
-  assert.deepEqual(fake.imports,['maps','places']);assert.equal(fake.requests.length,2);
+  assert.deepEqual(fake.imports,['maps','places','marker']);assert.equal(fake.requests.length,2);
   const request=fake.requests[0];assert.equal(request.textQuery,'吉祥寺');assert.equal(request.maxResultCount,5);
   assert.deepEqual(request.fields,['id','displayName','formattedAddress','location','attributions']);
   assert.ok(!JSON.stringify(request).includes('photos'));assert.ok(!JSON.stringify(request).includes('rating'));
-  session.select(place);await flush();assert.equal(fake.markers.length,1);assert.deepEqual(fake.pans,[place.position]);
-  session.dispose();assert.equal(fake.markers[0].map,null);assert.equal(element.cleaned,true);assert.equal(fake.cleared,1);
+  assert.equal(fake.markers.length,2);assert.equal(fake.markers[0].map,null);assert.equal(fake.markers[1].gmpClickable,true);assert.equal(fake.detailRequests.length,0);
+  session.select(place);await flush();assert.equal(fake.markers.length,2);assert.deepEqual(fake.pans,[place.position,place.position,place.position]);
+  session.dispose();assert.equal(fake.markers[1].map,null);assert.equal(element.cleaned,true);assert.equal(fake.cleared,1);
 });
 test('search can be disabled independently; it never imports or requests Places',async()=>{
   const fake=fakeSDK();const session=await fake.start(host(),{...config,placesEnabled:false},()=>{});
@@ -132,12 +138,11 @@ test('search can be disabled independently; it never imports or requests Places'
   for(const invalid of [{...config,enabled:false},{...config,apiKey:''},{...config,mapId:''}])await assert.rejects(fake.start(host(),invalid,()=>{}),/maps_unavailable/);
   assert.equal(fake.maps,1);
 });
-test('pending markers cannot reappear over a newer search or after unmount',async()=>{
-  for(const abort of ['search','dispose']){
-    const marker=deferred(),created=[];const fake=fakeSDK({markerPromise:marker.promise});const session=await fake.start(host(),config,()=>{});
-    session.select(place);if(abort==='search')await session.search('次の場所');else session.dispose();
-    marker.resolve({AdvancedMarkerElement:class{constructor(value){created.push(value);}}});await flush();assert.equal(created.length,0);session.dispose();
-  }
+test('pending result markers cannot reappear after unmount',async()=>{
+  const marker=deferred(),created=[];const raw={id:place.id,displayName:place.name,location:{lat:()=>35,lng:()=>139}};
+  const fake=fakeSDK({markerPromise:marker.promise,search:async()=>({places:[raw]})});const session=await fake.start(host(),config,()=>{});
+  const pending=session.search('場所');await flush();session.dispose();
+  marker.resolve({AdvancedMarkerElement:class{constructor(value){created.push(value);}}});await assert.rejects(pending,/maps_unavailable/);assert.equal(created.length,0);
 });
 test('navigation during SDK loading aborts before constructing a map on the detached host',async()=>{
   const loading=deferred();let constructions=0;
@@ -199,5 +204,66 @@ test('the new-place form is absent when Maps or Places is disabled, while manual
   for(const patch of [{enabled:false},{placesEnabled:false},{apiKey:''},{mapId:''}]){
     const markup=renderToStaticMarkup(createElement(PlaceExplorer,{config:{...config,...patch},addHref:'/app/new?type=item'}));
     assert.ok(!markup.includes('aria-label="新しい場所を検索"'));assert.ok(!markup.includes('action="/app/items'));
+  }
+});
+const rawPlace = (id,lat=35,lng=139) => ({id,displayName:id,location:{lat:()=>lat,lng:()=>lng}});
+const noDetails={rating:null,ratingCount:null,photo:null,reviews:[],attributions:[]};
+test('all result pins appear without selection, fit the map, and pin clicks open the same details as list selection',async()=>{
+  const raw=[rawPlace('one'),rawPlace('two',35.2,139.1),rawPlace('three',35.3,139.2)];
+  const fake=fakeSDK({search:async()=>({places:raw})});
+  const explorer=createMapExplorer((host,failure,signal,onSelect)=>fake.start(host,config,failure,signal,onSelect));
+  await explorer.searchOnMap(host(),'カフェ');
+  assert.equal(fake.markers.length,3);assert.equal(explorer.getSnapshot().selected,null);assert.equal(fake.detailRequests.length,0);
+  assert.deepEqual(fake.fits,[{points:raw.map(p=>({lat:p.location.lat(),lng:p.location.lng()})),padding:32}]);
+  fake.markers[1].events.get('gmp-click')();await flush();assert.equal(explorer.getSnapshot().selected,'two');assert.equal(fake.detailRequests.length,1);assert.equal(fake.detailRequests[0].id,'two');
+  assert.deepEqual(fake.detailRequests[0].request.fields,['rating','userRatingCount','photos','reviews','attributions']);
+  assert.equal(fake.markers[1].zIndex,100);assert.equal(fake.markers.filter(p=>p.map).length,3);
+  const previousClick=fake.markers[0].events.get('gmp-click');await explorer.search('別の街');previousClick();assert.equal(explorer.getSnapshot().selected,null);assert.equal(fake.detailRequests.length,1);
+  assert.equal(fake.markers.slice(0,3).every(marker=>marker.map===null&&marker.events.size===0),true);explorer.dispose();
+});
+test('selection loads details only once while loading or ready and ignores results from a previously selected place',async()=>{
+  const first=deferred(),second=deferred(),calls=[],signals=[];
+  const other={...place,id:'other'};
+  const explorer=createMapExplorer(async()=>({search:async()=>[place,other],select(){},details(p,signal){calls.push(p.id);signals.push(signal);return p.id===place.id?first.promise:second.promise;},dispose(){}}));
+  await explorer.open(host());await explorer.search('場所');const pending=explorer.select(place.id);await explorer.select(place.id);assert.equal(calls.length,1);
+  const next=explorer.select(other.id);assert.equal(signals[0].aborted,true);first.resolve({...noDetails,rating:1});await pending;
+  assert.equal(explorer.getSnapshot().selected,other.id);assert.equal(explorer.getSnapshot().details,null);assert.equal(explorer.getSnapshot().detailStatus,'loading');
+  second.resolve({...noDetails,rating:4.5});await next;await explorer.select(other.id);assert.deepEqual(calls,[place.id,other.id]);assert.equal(explorer.getSnapshot().details.rating,4.5);explorer.dispose();
+});
+test('detail failures keep map/results usable and retry is explicit; new search and unmount discard pending details',async()=>{
+  let calls=0;const pendingDetails=deferred();
+  const explorer=createMapExplorer(async()=>({search:async()=>[place],select(){},details:async()=>{calls++;if(calls===1)throw Error('private token');return pendingDetails.promise;},dispose(){}}));
+  await explorer.open(host());await explorer.search('場所');await explorer.select(place.id);assert.equal(explorer.getSnapshot().phase,'ready');assert.equal(explorer.getSnapshot().detailStatus,'error');assert.equal(explorer.getSnapshot().results.length,1);assert.equal(explorer.getSnapshot().error,null);
+  const pending=explorer.select(place.id);assert.equal(calls,2);await explorer.search('別の検索');pendingDetails.resolve(noDetails);await pending;
+  assert.equal(explorer.getSnapshot().details,null);assert.equal(explorer.getSnapshot().selected,null);assert.equal(explorer.getSnapshot().detailStatus,'idle');explorer.dispose();
+});
+test('aborted or unmounted detail fetches never produce a photo URL or issue extra photo requests',async()=>{
+  for(const cancel of ['abort','dispose']){
+    let photos=0;const details=deferred();const fake=fakeSDK({fetchDetails:()=>details.promise});const session=await fake.start(host(),config,()=>{});
+    const aborter=new AbortController(),pending=session.details(place,aborter.signal);await flush();
+    if(cancel==='abort')aborter.abort();else session.dispose();
+    details.resolve({photos:[{googleMapsURI:'https://www.google.com/maps/photo/synthetic',getURI(){photos++;return 'https://example.com/photo';}}]});
+    await assert.rejects(pending,/maps_unavailable/);assert.equal(photos,0);assert.equal(fake.detailRequests.length,1);session.dispose();
+  }
+});
+test('only one photo is requested and individual source/author links are required and sanitized',()=>{
+  let photoRequests=0;
+  const raw={rating:4.4,userRatingCount:120,photos:Array.from({length:10},(_,i)=>({googleMapsURI:`https://www.google.com/maps/photo/${i}`,authorAttributions:[{displayName:'撮影者',uri:'https://example.com/author',photoURI:'https://example.com/avatar'}],getURI(options){photoRequests++;assert.deepEqual(options,{maxWidth:800,maxHeight:800});return `https://example.com/photo/${i}`;}})),reviews:[
+    {text:'<script>bad</script>',originalText:'original text',rating:5,googleMapsURI:'https://www.google.com/maps/review/one',authorAttribution:{displayName:'<投稿者>',uri:'javascript:bad',photoURI:'data:bad'}},
+    {text:'missing source',authorAttribution:{displayName:'投稿者'}},
+    {text:'bad source',googleMapsURI:'javascript:bad',authorAttribution:{displayName:'投稿者'}},
+  ],attributions:[{provider:'<provider>',providerURI:'javascript:bad'}]};
+  const result=detailResult(raw);assert.equal(photoRequests,1);assert.equal(result.photo.uri,'https://example.com/photo/0');assert.equal(result.photo.authors[0].name,'撮影者');assert.equal(result.reviews.length,1);assert.equal(result.reviews[0].author.uri,null);assert.equal(result.reviews[0].author.avatar,null);assert.equal(result.reviews[0].original,'original text');assert.equal(result.attributions[0].uri,null);
+  const markup=renderToStaticMarkup(createElement(PlaceDetailPanel,{place,details:result,status:'ready',onRetry(){}}));
+  assert.ok(markup.includes('https://example.com/photo/0'));assert.ok(!markup.includes('/_next/image'));assert.match(markup,/撮影者/);assert.match(markup,/Google Maps/);assert.match(markup,/Googleによる翻訳/);assert.match(markup,/原文を見る/);
+  assert.ok(markup.includes('https://www.google.com/maps/review/one'));assert.ok(markup.includes('https://www.google.com/maps/photo/0'));assert.ok(!markup.includes('<script>'));assert.ok(!markup.includes('javascript:'));assert.ok(markup.includes('&lt;投稿者&gt;'));
+});
+test('missing media, loading and failed details remain distinct and retain the external Maps path',()=>{
+  for(const status of ['loading','error','ready']){
+    const markup=renderToStaticMarkup(createElement(PlaceDetailPanel,{place,details:status==='ready'?noDetails:null,status,onRetry(){}}));
+    assert.ok(markup.includes('https://www.google.com/maps/search/'));
+    if(status==='loading')assert.match(markup,/読み込んでいます/);
+    if(status==='error'){assert.match(markup,/もう一度読み込む/);assert.match(markup,/role="alert"/);}
+    if(status==='ready'){assert.match(markup,/ここで表示できる写真はありません/);assert.match(markup,/ここで表示できる口コミはありません/);assert.ok(!markup.includes('0件の評価'));}
   }
 });
