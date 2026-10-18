@@ -1,6 +1,6 @@
 # MAP-02：検索結果の一括ピンと写真・口コミ
 
-2026-10-18。状態：実装・自動検証済み、実画面確認待ち。担当：本会話のAgent単独。
+2026-10-18。状態：実装・自動検証・ユーザーの実画面確認済み。担当：本会話のAgent単独。最終CIと統合結果はPR #32に記録する。
 
 ## Goal・採用範囲
 
@@ -32,11 +32,11 @@ DB・Auth・依存・キー/クォータ/請求先設定・配備は変更しな
 - branch: feat/map-place-details。基準: b669fe733fccac764eba58c53ef1bcb94669a21b。D-009で単独自己レビュー、独立レビューなし。
 - 対象: lib/maps/google.ts・explorer.ts、components/maps/place-explorer.tsx・新規place-detail-panel.tsx、CSS、maps-explorerの回帰テスト、TASKS/decisions/frontend/当タスク。
 - 関連35件のNodeテスト成功。全ピン/fitBounds/ピン選択/古いピンの無効化/詳細の連打・切替・中断/写真1枚/帰属URL・翻訳・エスケープ/空・失敗を合成SDKで検証。全299件のNodeテスト・lint・型検査・本番build成功。最終headのCIとmain統合はPRへ記録する。
-- 前段のMAP-01はユーザーが実検索・ピンを確認済み。今回の一括ピン/写真/口コミは実Googleで未確認。CUAは接続一覧が空で実画面検証未実施。ユーザー確認手順はチャットで案内する。
+- 前段のMAP-01はユーザーが実検索・ピンを確認済み。今回の一括ピン/写真/口コミは、下記修正後にユーザーが実Googleで確認済み。CUAは接続一覧が空でAgentによる実画面・画面幅別の検証は未実施。
 
 ## 実画面で検出した検索失敗の修正
 
 - ユーザーの検索で、日本全体の地図のまま検索エラーとなった。複数結果を囲むLatLngBoundsをmapsライブラリから取得していたが、公式の所属はcore。合成SDKにも同じ誤りがあり、初回の自動検証では検出できなかった。
 - 合成SDKを公式の構成に修正して、既存の一括ピン検証が失敗することを確認。その後、実装をimportLibrary("core")に変更し、関連35件のテスト・lint・型検査が成功。coreの読み込みは検索結果がある場合だけ行い、次の検索で再利用する。
 - 根拠：[LatLngBoundsの公式リファレンス](https://developers.google.com/maps/documentation/javascript/reference/coordinates)。SDKの読み込み先の修正であり、Cloud・キー・請求設定は変更しない。
-- 修正後の実Googleでの再確認をチャットで依頼済み。初回headのCI成功だけでは統合せず、修正を含む最終headのCIを確認する。
+- 修正後の本番buildも成功。ユーザーが実Googleで「選択前から複数ピン」「選択後の写真・星評価・口コミ」の両方の動作を確認済み。初回headのCI成功だけでは統合せず、修正を含む最終headのCIを確認する。
