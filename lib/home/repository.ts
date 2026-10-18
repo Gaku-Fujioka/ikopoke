@@ -31,7 +31,7 @@ export async function getActivity(client: HomeClient, groupId: string | null, li
 }
 
 export async function nextOuting(client: HomeClient, groupId: string | null, today: string) {
-  let query = client.from("outings").select("id,group_id,title,outing_date,mode").is("completed_at", null).gte("outing_date", today);
+  let query = client.from("outings").select("id,group_id,title,outing_date,end_date,mode").is("completed_at", null).is("cancelled_at", null).gte("end_date", today);
   if (groupId) query = query.eq("group_id", groupId);
   const { data, error } = await query.order("outing_date").order("id").limit(1).maybeSingle();
   if (error) throw new HomeStoreError(error.code);
@@ -50,15 +50,16 @@ export async function globalItems(client: HomeClient, page: number, text: string
   const result = await browseItems(client, null, page, text, { ...filters, kind: kind === "spot" || kind === "activity" ? kind : undefined });
   return { rows: result.items, total: result.total };
 }
-export async function globalOutings(client: HomeClient, page: number, completed: boolean) {
-  let query = client.from("outings").select("id,group_id,title,outing_date,completed_at", { count: "exact" });
+export async function globalOutings(client: HomeClient, page: number, completed: boolean, cancelled = false) {
+  let query = client.from("outings").select("id,group_id,title,outing_date,end_date,completed_at,cancelled_at", { count: "exact" });
+  query = cancelled ? query.not("cancelled_at", "is", null) : query.is("cancelled_at", null);
   query = completed ? query.not("completed_at", "is", null) : query.is("completed_at", null);
   const { data, error, count } = await query.order("outing_date", { ascending: !completed }).order("id").range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
   if (error) throw new HomeStoreError(error.code);
   return { rows: data ?? [], total: count ?? 0 };
 }
 export async function globalMemories(client: HomeClient, page: number) {
-  const { data, error, count } = await client.from("memories").select("id,group_id,title,memory_date,note,cover_photo_id", { count: "exact" }).order("memory_date", { ascending: false }).order("id").range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
+  const { data, error, count } = await client.from("memories").select("id,group_id,title,memory_date,memory_end_date,note,cover_photo_id", { count: "exact" }).order("memory_date", { ascending: false }).order("id").range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
   if (error) throw new HomeStoreError(error.code);
   return { rows: await withMemoryCovers(client, data ?? []), total: count ?? 0 };
 }

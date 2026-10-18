@@ -8,10 +8,12 @@ export function OutingCalendar({ groupId, outings, month, today, selectedDay }: 
 }) {
   const cells = calendarCells(month), previous = shiftCalendarMonth(month,-1), next = shiftCalendarMonth(month,1);
   const [year, monthNumber] = month.split("-").map(Number);
-  const monthOutings = outings.filter(outing => outing.outing_date.startsWith(`${month}-`));
-  const shown = selectedDay ? monthOutings.filter(outing => outing.outing_date === selectedDay) : monthOutings;
+  const validCells = cells.filter((day): day is string => Boolean(day));
+  const includes = (outing: SavedOuting, day: string) => outing.outing_date <= day && (outing.end_date ?? outing.outing_date) >= day;
+  const monthOutings = outings.filter(outing => !outing.cancelled_at && outing.outing_date <= validCells.at(-1)! && (outing.end_date ?? outing.outing_date) >= validCells[0]);
+  const shown = selectedDay ? monthOutings.filter(outing => includes(outing, selectedDay)) : monthOutings;
   const counts = new Map<string,number>();
-  for (const outing of monthOutings) counts.set(outing.outing_date,(counts.get(outing.outing_date) ?? 0)+1);
+  for (const day of validCells) counts.set(day, monthOutings.filter(outing => includes(outing, day)).length);
   const linkStyle = "inline-flex min-h-11 items-center px-2 font-semibold text-orange-700 underline underline-offset-4";
   return <div className="space-y-6">
     <section aria-labelledby="calendar-month-heading" className="rounded-3xl border border-stone-200 bg-white p-3 sm:p-6">
@@ -41,7 +43,7 @@ export function OutingCalendar({ groupId, outings, month, today, selectedDay }: 
     </section>
     <section aria-labelledby="calendar-plans-heading" className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3"><h2 id="calendar-plans-heading" className="text-xl font-bold">{selectedDay ? calendarDateLabel(selectedDay) : `${year}年${monthNumber}月`}の計画（{shown.length}件）</h2>{selectedDay && <Link href={calendarHref(groupId,month)} className={linkStyle}>月の計画をすべて見る</Link>}</div>
-      {shown.length ? <ul className="space-y-3">{shown.map(outing => <li key={outing.id}><Link href={`/app/groups/${groupId}/outings/${outing.id}`} className="block rounded-2xl border border-stone-200 bg-white p-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-700"><p className="text-sm text-stone-600"><time dateTime={outing.outing_date}>{calendarDateLabel(outing.outing_date)}</time> · {OUTING_MODES.find(mode => mode.value === outing.mode)?.label}</p><h3 className="mt-2 break-words text-lg font-bold">{outing.title}</h3><span className="mt-3 inline-block text-sm font-semibold text-orange-700">計画を開く →</span></Link></li>)}</ul> : <p className="rounded-2xl border border-stone-200 bg-white p-5 text-stone-600">{selectedDay ? "この日の" : "この月の"}計画はまだありません。</p>}
+      {shown.length ? <ul className="space-y-3">{shown.map(outing => <li key={outing.id}><Link href={`/app/groups/${groupId}/outings/${outing.id}`} className="block rounded-2xl border border-stone-200 bg-white p-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-700"><p className="text-sm text-stone-600"><time dateTime={outing.outing_date}>{calendarDateLabel(outing.outing_date)}</time>{outing.end_date && outing.end_date !== outing.outing_date && <>〜<time dateTime={outing.end_date}>{calendarDateLabel(outing.end_date)}</time></>} · {OUTING_MODES.find(mode => mode.value === outing.mode)?.label}</p><h3 className="mt-2 break-words text-lg font-bold">{outing.title}</h3><span className="mt-3 inline-block text-sm font-semibold text-orange-700">計画を開く →</span></Link></li>)}</ul> : <p className="rounded-2xl border border-stone-200 bg-white p-5 text-stone-600">{selectedDay ? "この日の" : "この月の"}計画はまだありません。</p>}
       {selectedDay && <Link href={`/app/groups/${groupId}/outings/new?date=${selectedDay}`} className="inline-flex min-h-12 items-center rounded-full bg-orange-700 px-6 font-semibold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-700 focus-visible:ring-offset-2">この日のおでかけを作る</Link>}
     </section>
   </div>;

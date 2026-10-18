@@ -14,7 +14,7 @@ test('activity cannot silently become empty or use malformed or cross-group reco
   await assert.rejects(getActivity({rpc:async()=>({data:[],error:{code:'42501',message:'private-detail'}})},null),error=>!error.message.includes('private'));
 });
 
-function fixture(table,rows){return {from(name){assert.equal(name,table);let result=[...rows],orders=[],maximum=Infinity;
+function fixture(table,rows){return {from(name){assert.equal(name,table);let result=rows.map(r=>({...r,end_date:r.outing_date,cancelled_at:null})),orders=[],maximum=Infinity;
   const sort=()=>result.sort((a,b)=>{for(const [key,asc] of orders){const n=String(a[key]).localeCompare(String(b[key]));if(n)return asc?n:-n;}return 0;});
   const query={select(){return query;},eq(key,value){result=result.filter(row=>row[key]===value);return query;},is(key){result=result.filter(row=>row[key]===null);return query;},not(key){result=result.filter(row=>row[key]!==null);return query;},gte(key,value){result=result.filter(row=>row[key]>=value);return query;},filter(key,operator,pattern){assert.equal(operator,'imatch');result=result.filter(row=>new RegExp(pattern,'i').test(row[key]));return query;},order(key,options={ascending:true}){orders.push([key,options.ascending]);return query;},limit(n){maximum=n;return query;},maybeSingle(){sort();return Promise.resolve({data:result.slice(0,maximum)[0]??null,error:null});},range(start,end){sort();return Promise.resolve({data:result.slice(start,end+1),count:result.length,error:null});}};return query;
 }};}

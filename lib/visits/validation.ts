@@ -26,7 +26,8 @@ export function visitRating(value: unknown): number | null {
 export function recordVisitInput(form: FormData) {
   const ids=visitIds(form), fields=visitFields(form), itemId=form.get("itemId"), outing=form.get("outingId");
   if (!uuid(itemId) || (outing!==null && outing!=="" && !uuid(outing))) throw new Error("候補を選び直してください。");
-  return { ...ids,...fields,itemId,outingId:typeof outing === "string" && outing ? outing : null,rating:visitRating(form.get("rating")) };
+  const stop=form.get("stopId");if(stop!==null && stop!=="" && (!uuid(stop)||!uuid(outing)))throw new Error("計画の行き先を選び直してください。");
+  return { ...ids,...fields,itemId,stopId: typeof stop === "string" && stop ? stop : null,outingId:typeof outing === "string" && outing ? outing : null,rating:visitRating(form.get("rating")) };
 }
 export function photoInput(form: FormData) {
   const ids=visitIds(form), photoId=form.get("photoId");

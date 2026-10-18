@@ -105,3 +105,10 @@ test("valid date and candidate defaults survive login; invalid dates stay unset"
   });
   assert.deepEqual(provider.calls,["auth"]);
 });
+
+test("multi-day trips span month boundaries and cancelled plans stay outside the calendar",()=>{
+  const travel={...outings[0],id:'travel',title:'月をまたぐ旅',outing_date:'2028-02-28',end_date:'2028-03-02',cancelled_at:null};
+  const cancelled={...travel,id:'cancelled',title:'中止した旅',cancelled_at:'2028-02-01T00:00:00Z'};
+  const body=OutingCalendar({groupId,outings:[travel,cancelled],month:'2028-03',today:'2028-03-01',selectedDay:'2028-03-01'});
+  assert.match(text(body),/月をまたぐ旅/);assert.ok(!text(body).includes('中止した旅'));assert.ok(walk(body,n=>n.props?.['aria-label']?.includes('2028年3月1日、計画1件')).length);
+});

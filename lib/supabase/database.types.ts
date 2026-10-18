@@ -10,11 +10,11 @@ export type Database = {
   public: {
     Tables: {
       memories: {
-        Row: { id: string; group_id: string; outing_id: string; title: string; memory_date: string; note: string; revision: number; created_at: string; cover_photo_id: string | null };
+        Row: { id: string; group_id: string; outing_id: string; title: string; memory_date: string; note: string; revision: number; created_at: string; cover_photo_id: string | null; memory_end_date: string };
         Insert: never; Update: never; Relationships: [];
       };
       visits: {
-        Row: { id: string; group_id: string; item_id: string; outing_id: string | null; item_title: string; visited_on: string; visited_time: string | null; visited_period: "morning" | "noon" | "afternoon" | "night" | null; deleting: boolean; note: string; revision: number; created_by: string; created_at: string };
+        Row: { id: string; group_id: string; item_id: string; outing_id: string | null; item_title: string; visited_on: string; visited_time: string | null; visited_period: "morning" | "noon" | "afternoon" | "night" | null; deleting: boolean; outing_stop_id: string | null; note: string; revision: number; created_by: string; created_at: string };
         Insert: never; Update: never; Relationships: [];
       };
       visit_ratings: {
@@ -26,13 +26,14 @@ export type Database = {
         Insert: never; Update: never; Relationships: [];
       };
       outings: {
-        Row: { id: string; group_id: string; title: string; outing_date: string; mode: "exact" | "period" | "order"; memo: string; revision: number; completed_at: string | null; created_by: string; created_at: string; updated_at: string };
+        Row: { id: string; group_id: string; title: string; outing_date: string; end_date: string; cancelled_at: string | null; plan_format: number; mode: "exact" | "period" | "order"; memo: string; revision: number; completed_at: string | null; created_by: string; created_at: string; updated_at: string };
         Insert: never; Update: never; Relationships: [];
       };
       outing_items: {
-        Row: { outing_id: string; group_id: string; item_id: string; position: number; planned_time: string | null; period: "morning" | "noon" | "afternoon" | "night" | null };
+        Row: { id: string; day_index: number; outing_id: string; group_id: string; item_id: string; position: number; planned_time: string | null; period: "morning" | "noon" | "afternoon" | "night" | null };
         Insert: never; Update: never; Relationships: [];
       };
+      outing_days: { Row: { outing_id: string; group_id: string; day_index: number; mode: "exact" | "period" | "order"; participants: string[] }; Insert: never; Update: never; Relationships: [] };
       outing_participants: {
         Row: { outing_id: string; group_id: string; user_id: string };
         Insert: never; Update: never; Relationships: [];
@@ -99,6 +100,9 @@ export type Database = {
       };
     };
     Functions: {
+      save_trip: { Args: {p_group_id:string;p_outing_id:string;p_expected_revision:number;p_title:string;p_start:string;p_end:string;p_memo:string;p_days:{mode:string;participants:string[];items:{id:string;item_id:string;planned_time:string|null;period:string|null}[]}[];p_participants:string[];p_removed_ids:string[]}; Returns:number };
+      set_outing_cancelled: { Args: {p_group_id:string;p_outing_id:string;p_cancelled:boolean;p_expected_revision:number}; Returns:number };
+      record_stop_visit: { Args: {p_group_id:string;p_item_id:string;p_outing_id:string|null;p_stop_id:string|null;p_visited_on:string;p_note:string;p_rating:number|null;p_request_id:string;p_time:string|null;p_period:string|null}; Returns:string };
       get_visit_permissions: { Args: { p_group_id: string; p_visit_id: string }; Returns: { can_delete: boolean; photo_ids: string[] }[] };
       reorder_visit_photos: { Args: { p_group_id: string; p_visit_id: string; p_ids: string[]; p_expected_ids: string[] }; Returns: undefined };
       set_memory_cover: { Args: { p_group_id: string; p_memory_id: string; p_photo_id: string | null; p_expected_revision: number }; Returns: number };
