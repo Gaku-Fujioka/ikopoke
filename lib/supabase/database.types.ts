@@ -99,6 +99,7 @@ export type Database = {
       };
     };
     Functions: {
+      get_home_activity: { Args: { p_group_id: string | null; p_limit: number; p_before_at: string | null; p_before_key: string | null }; Returns: { event_key: string; group_id: string; kind: string; subject_id: string; title: string; actor_name: string | null; is_mine: boolean; occurred_at: string }[] };
       record_timed_visit: { Args: { p_group_id: string; p_item_id: string; p_outing_id: string | null; p_visited_on: string; p_note: string; p_rating: number | null; p_request_id: string; p_time: string | null; p_period: string | null }; Returns: string };
       update_timed_visit: { Args: { p_group_id: string; p_visit_id: string; p_visited_on: string; p_note: string; p_expected_revision: number; p_time: string | null; p_period: string | null }; Returns: number };
       set_outing_completed: { Args: { p_group_id: string; p_outing_id: string; p_completed: boolean; p_expected_revision: number }; Returns: string | null };
