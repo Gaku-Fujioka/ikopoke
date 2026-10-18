@@ -21,7 +21,8 @@
 - 保存失敗時の入力保持、成功時だけの更新/遷移、改訂番号の照合、二重送信防止、関連削除の明示確認を実装。
 - migration `20261018143100_personal_outing_finance.sql`を開発用ここいこへ適用。実履歴versionとローカル名を同期し、20関数の本体一致、公開8関数のSECURITY INVOKER/空search_path、匿名実行不可を確認。4公開表と非公開の再送確認表はRLS有効、認証ユーザーの直接書込不可。利用者の会計データは取得・投入していない。
 - Advisor：非公開`finance_requests`のRLSポリシーなしは直接アクセスを全拒否する意図的なINFO。新規索引の未使用INFOは実操作前の状態。[RLSポリシー](https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy)・[未使用索引](https://supabase.com/docs/guides/database/database-linter?lint=0005_unused_index)。新しい公開SECURITY DEFINER警告はない。既存の警告は今回変更しない。
-- ローカル：全350件（既存330＋会計20）のNodeテスト、`npm run lint`、`npm run build`、build後の`npx tsc --noEmit`成功。会計はDB7/Action5/取得3/SSR表示5件。CIにも4テストファイルを追加。
+- ローカル：全350件のNodeテスト、追加後の会計DB8件、`npm run lint`、`npm run build`、build後の`npx tsc --noEmit`成功。現在は既存330＋会計21の計351件（DB8/Action5/取得3/SSR表示5）。CIにも4テストファイルを追加。追加DBテストは61明細・25履歴のページ送りと重複/欠落防止、大きな合計額、分類上限と上限到達後の再送を確認。
 - DBテストはPGliteの実ロール/RLSで本人・同グループの他人・非所属・匿名、直接CRUD、部分精算と月境界、再送/改訂競合、分類/相手/記録先の改ざん、連鎖削除、退出/削除後の保持、アカウント削除ガードを検証した。実サービスのJWT検証や別接続の同時実行とは区別する。
 - 自己レビュー実施。独立レビューと実ブラウザ操作は未実施（接続可能なブラウザ/アプリ一覧が空）。UIテストはSSRの出力確認で、モバイル描画や実タップの確認ではない。Nextの既存partialPrefetching警告とNodeのmodule形式警告は継続。
-- GitHub CIとcommit/PRは反映後に追記する。ユーザー指示どおりmainへマージしない。
+- ローカルHTTPで会計一覧/追加/分類の3URLの未ログイン応答と、元URLを保つログイン誘導307を確認。既存のlocalhost:3000開発サーバーを利用し、別サーバーは起動しない。
+- 実装commit `6b4a202`を専用branchへpushし、[Draft PR #35](https://github.com/Gaku-Fujioka/kokoiko/pull/35)を作成。最新commitのCI結果はPRのChecksで追跡する。ユーザー指示どおりmainへマージしない。
