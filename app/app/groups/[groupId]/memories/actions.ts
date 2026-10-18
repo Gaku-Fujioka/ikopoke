@@ -1,5 +1,6 @@
 "use server";
 import {revalidatePath} from "next/cache";
+import { revalidateSharedHome } from "@/lib/home/revalidate";
 import {redirect} from "next/navigation";
 import {createClient} from "@/lib/supabase/server";
 import {hasEnvVars} from "@/lib/utils";
@@ -24,6 +25,7 @@ export async function setOutingCompletedAction(_previous:MemoryActionState,form:
   const base=`/app/groups/${input.groupId}`;
   revalidatePath(`${base}/outings`);revalidatePath(`${base}/outings/${input.id}`);revalidatePath(`${base}/outings/calendar`);revalidatePath(`${base}/memories`);
   if(memoryId)revalidatePath(`${base}/memories/${memoryId}`);
+  revalidateSharedHome(input.groupId, "outings");revalidatePath("/app/memories");
   redirect(completed?`${base}/memories/${memoryId}`:`${base}/outings/${input.id}`);
 }
 export async function updateMemoryAction(_previous:MemoryActionState,form:FormData):Promise<MemoryActionState>{
@@ -33,6 +35,7 @@ export async function updateMemoryAction(_previous:MemoryActionState,form:FormDa
     const client=await authenticatedClient();const {data,error}=await client.rpc("update_memory",{p_group_id:input.groupId,p_memory_id:input.id,p_expected_revision:input.revision,p_title:input.title,p_note:input.note});
     if(error||typeof data!=="number")throw new MemoryStoreError(error?.code);
     revalidatePath(`/app/groups/${input.groupId}/memories`);revalidatePath(`/app/groups/${input.groupId}/memories/${input.id}`);
+    revalidateSharedHome(input.groupId, "memories");
     return {error:null,savedRevision:data,savedTitle:input.title,savedNote:input.note};
   }catch(cause){return failure(cause);}
 }

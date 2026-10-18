@@ -29,7 +29,7 @@ export async function issueInviteAction(_previous: InviteState, form: FormData):
     if (!client) return { error: "ログインし直してください。" };
     const token = randomBytes(32).toString("hex");
     const issued = await issueInvite(client, groupId, createHash("sha256").update(token).digest("hex"));
-    revalidatePath(`/app/groups/${groupId}`);
+    revalidatePath(`/app/groups/${groupId}/settings`);
     return { error: null, token, inviteId: issued.id, expiresAt: issued.expires_at };
   } catch (error) { return failure(error); }
 }
@@ -42,7 +42,7 @@ export async function revokeInviteAction(_previous: InviteState, form: FormData)
     const client = await authenticatedClient();
     if (!client) return { error: "ログインし直してください。" };
     await revokeInvite(client, inviteId);
-    revalidatePath(`/app/groups/${groupId}`);
+    revalidatePath(`/app/groups/${groupId}/settings`);
     return { error: null, success: true };
   } catch (error) { return failure(error); }
 }
@@ -77,6 +77,7 @@ export async function acceptInviteAction(_previous: InviteState, form: FormData)
     jar.set(INVITE_COOKIE, "", { ...inviteCookieOptions(), maxAge: 0 });
   } catch (error) { return failure(error); }
   revalidatePath("/app/groups");
+  revalidatePath("/app");
   revalidatePath(`/app/groups/${groupId}`);
   redirect(`/app/groups/${encodeURIComponent(groupId)}`);
 }

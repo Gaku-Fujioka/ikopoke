@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getGroup } from "@/lib/groups/repository";
 import { isGroupId } from "@/lib/groups/validation";
 import { listOutings, OutingStoreError } from "@/lib/outings/repository";
-import { OUTING_MODES } from "@/lib/outings/validation";
+import { OutingCard } from "@/components/home/collection-cards";
 import { AuthSetupNotice } from "@/components/auth-setup-notice";
 
 async function OutingsContent({ params }: { params: Promise<{ groupId: string }> }) {
@@ -25,7 +25,7 @@ async function OutingsContent({ params }: { params: Promise<{ groupId: string }>
   if (!group) notFound();
   return <div className="space-y-6"><Link href={`/app/groups/${groupId}`} className="inline-flex min-h-11 items-center font-semibold text-orange-700 underline">← グループへ</Link><div className="flex flex-wrap items-end justify-between gap-4"><div><p className="text-sm font-semibold text-orange-700">{group.name}</p><h1 className="mt-2 text-3xl font-bold">みんなのおでかけ計画</h1><p className="mt-2 text-stone-600">日付、候補、参加者をグループで共有します。</p></div><Link href={`/app/groups/${groupId}/outings/new`} className="inline-flex min-h-12 items-center rounded-full bg-orange-700 px-6 font-semibold text-white">計画を作る</Link></div>
     <Link href={`/app/groups/${groupId}/outings/calendar`} className="inline-flex min-h-11 items-center font-semibold text-orange-700 underline underline-offset-4">カレンダーで見る</Link>
-    {outings.length ? <ul className="grid gap-4 sm:grid-cols-2">{outings.map(outing => <li key={outing.id}><Link href={`/app/groups/${groupId}/outings/${outing.id}`} className="block h-full rounded-3xl border border-stone-200 bg-white p-6 hover:border-orange-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-700"><p className="text-sm font-semibold text-orange-700">{outing.completed_at ? "終了済み · " : "計画中 · "}{outing.outing_date} · {OUTING_MODES.find(mode => mode.value === outing.mode)?.label}</p><h2 className="mt-2 break-words text-xl font-bold">{outing.title}</h2><p className="mt-3 text-sm font-semibold text-orange-700">計画を開く →</p></Link></li>)}</ul> : <p className="rounded-3xl border border-stone-200 bg-white p-6 text-stone-600">計画はまだありません。候補を選んで最初の計画を作りましょう。</p>}
+    {outings.length ? <ul className="kk-collection-grid">{outings.map(outing => <li key={outing.id}><OutingCard outing={outing} groupName={group.name} /></li>)}</ul> : <p className="rounded-3xl border border-stone-200 bg-white p-6 text-stone-600">計画はまだありません。候補を選んで最初の計画を作りましょう。</p>}
   </div>;
 }
 

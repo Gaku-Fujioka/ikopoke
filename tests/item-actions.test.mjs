@@ -18,6 +18,7 @@ const cacheModule = asModule("export const paths=[]; export function revalidateP
 registerHooks({resolve(specifier,context,next){
   const url={
     "@/lib/utils":envModule,"@/lib/supabase/server":providerModule,
+    "@/lib/home/revalidate":new URL("../lib/home/revalidate.ts",import.meta.url).href,
     "@/lib/groups/validation":new URL("../lib/groups/validation.ts",import.meta.url).href,
     "@/lib/items/validation":new URL("../lib/items/validation.ts",import.meta.url).href,
     "@/lib/items/repository":new URL("../lib/items/repository.ts",import.meta.url).href,
@@ -67,7 +68,7 @@ test("creation ignores forged actor fields, passes stable request ID and redirec
   const input=form({userId:"forged",created_by:"forged"});
   await assert.rejects(createItemAction(initial,input),error=>error.location===`/app/groups/${groupId}/items/${requestId}`);
   assert.deepEqual(provider.calls,[{name:"create_item",input:{p_group_id:groupId,p_title:"カフェ",p_kind:"spot",p_memo:"海を見たい",p_request_id:requestId}}]);
-  assert.deepEqual(cache.paths,[`/app/groups/${groupId}/items`]);
+  assert.deepEqual(cache.paths,[`/app/groups/${groupId}/items`,"/app","/app/activity",`/app/groups/${groupId}`,`/app/groups/${groupId}/activity`,"/app/items"]);
 });
 
 test("DB errors and unexpected failures disclose no raw details or success navigation",async()=>{

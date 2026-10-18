@@ -40,6 +40,14 @@ export function sharedItemListHref(groupId: string, query = "", page = 1, filter
   return `/app/groups/${encodeURIComponent(groupId)}/items${search ? `?${search}` : ""}`;
 }
 
+export function allItemListHref(query = "", page = 1, kind?: ItemFilters["kind"]): string {
+  const params = new URLSearchParams();
+  if (query) params.set("q", query);
+  if (page > 1) params.set("page", String(page));
+  if (kind) params.set("kind", kind);
+  return `/app/items${params.size ? `?${params}` : ""}`;
+}
+
 export function sharedItemDetailHref(groupId: string, itemId: string, query: string, page: number, filters: ItemFilters = {}): string {
   const list = sharedItemListHref(groupId, query, page, filters);
   const [pathname, search] = list.split("?");

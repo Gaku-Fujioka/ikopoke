@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { revalidateSharedHome } from "@/lib/home/revalidate";
 import { createClient } from "@/lib/supabase/server";
 import { hasEnvVars } from "@/lib/utils";
 import { isGroupId } from "@/lib/groups/validation";
@@ -23,5 +24,6 @@ export async function setReactionAction(_previous: ReactionState, form: FormData
   }
   revalidatePath(`/app/groups/${groupId}/items/${itemId}`);
   revalidatePath(`/app/groups/${groupId}/items`);
+  revalidateSharedHome(groupId);
   return { error: null, saved: true };
 }

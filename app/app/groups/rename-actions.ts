@@ -20,6 +20,13 @@ export async function renameGroupAction(_previous: RenameGroupState, form: FormD
     return { error: error instanceof GroupStoreError ? error.message : "グループ名を保存できませんでした。もう一度お試しください。" };
   }
   revalidatePath("/app/groups");
+  revalidatePath("/app");
+  revalidatePath("/app/items");
+  revalidatePath("/app/outings");
+  revalidatePath("/app/memories");
+  revalidatePath("/app/activity");
+  revalidatePath(`/app/groups/${input.groupId}/activity`);
+  revalidatePath(`/app/groups/${input.groupId}/settings`);
   revalidatePath(`/app/groups/${input.groupId}`);
   revalidatePath(`/app/groups/${input.groupId}/items`);
   revalidatePath(`/app/groups/${input.groupId}/items/[itemId]`, "page");

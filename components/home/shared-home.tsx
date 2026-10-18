@@ -1,0 +1,76 @@
+import { Suspense } from "react";
+import Link from "next/link";
+import { notFound, redirect } from "next/navigation";
+import { ArrowRight, BookmarkPlus, CalendarDays, Map, MapPin, Search, Sparkles } from "lucide-react";
+import { createClient } from "@/lib/supabase/server";
+import { hasEnvVars } from "@/lib/utils";
+import { listGroups, type SavedGroup } from "@/lib/groups/repository";
+import { isGroupId } from "@/lib/groups/validation";
+import { getActivity, HomeStoreError, nextOuting, recentCandidates, type HomeClient } from "@/lib/home/repository";
+import { addHref, collectionHref, groupTone, prettyDate } from "@/lib/home/navigation";
+import { japanCalendarToday } from "@/lib/outings/calendar";
+import { AuthSetupNotice } from "@/components/auth-setup-notice";
+import { GroupCards } from "./group-cards";
+import { ActivityCards } from "./activity-cards";
+import { RefreshButton } from "./refresh-button";
+
+export function HomeError({ message = "読み込めませんでした。更新してもう一度お試しください。" }: { message?: string }) {
+  return <div role="alert" className="kk-notice"><p>{message}</p><RefreshButton /></div>;
+}
+export function HomeLoading({ children }: { children: string }) {
+  return <p role="status" className="kk-loading">{children}</p>;
+}
+async function NextEnjoyment({ client, groupId, groups }: { client: HomeClient; groupId: string | null; groups: SavedGroup[] }) {
+  let outing;
+  const today = japanCalendarToday(new Date());
+  try { outing = await nextOuting(client, groupId, today); } catch { return <HomeError message="次のおでかけを読み込めませんでした。おでかけタブからも確認できます。" />; }
+  if (!outing) return <section aria-labelledby="next-enjoyment" className="kk-next-empty"><span className="kk-option-icon"><CalendarDays aria-hidden="true" /></span><div><h2 id="next-enjoyment">次の楽しみをつくろう</h2><p>ためていた行きたいを、ひとつの予定に。</p><Link className="kk-text-link" href={addHref("outing", groupId)}>おでかけを計画する <ArrowRight size={15} aria-hidden="true" /></Link></div></section>;
+  const days = Math.round((Date.parse(`${outing.outing_date}T00:00:00Z`) - Date.parse(`${today}T00:00:00Z`)) / 86400000);
+  return <section aria-labelledby="next-enjoyment"><Link href={`/app/groups/${outing.group_id}/outings/${outing.id}`} className={`kk-next${days <= 3 ? " kk-next-soon" : ""}`}>
+    <span className="kk-date-block"><span>{Number(outing.outing_date.slice(5, 7))}月</span><strong>{Number(outing.outing_date.slice(8, 10))}</strong></span>
+    <div><p className="kk-next-label">{days === 0 ? "今日のおでかけ！" : days === 1 ? "明日が、たのしみ！" : days <= 3 ? `あと${days}日、もうすぐ！` : "次の楽しみ"}</p><h2 id="next-enjoyment">{outing.title}</h2><p className="kk-next-meta">{groups.find(group => group.id === outing.group_id)?.name} · <time dateTime={outing.outing_date}>{prettyDate(outing.outing_date)}</time></p></div><ArrowRight aria-hidden="true" size={20} />
+  </Link></section>;
+}
+async function SavedPeek({ client, groupId }: { client: HomeClient; groupId: string | null }) {
+  let items;
+  try { items = await recentCandidates(client, groupId); } catch { return <p role="alert" className="kk-map-note">候補を読み込めませんでした。「行きたい」タブから開き直してください。</p>; }
+  if (!items.length) return <p className="kk-map-note">気になる場所を見つけたら、まずは名前だけでも。</p>;
+  return <ul className="kk-saved-peek">{items.map(item => <li key={item.id}><Link href={`/app/groups/${item.group_id}/items/${item.id}`} data-tone={groupTone(item.group_id)}><MapPin aria-hidden="true" size={15} /><span>{item.title}</span><ArrowRight aria-hidden="true" size={14} /></Link></li>)}</ul>;
+}
+function MapSpace({ client, groupId }: { client: HomeClient; groupId: string | null }) {
+  return <section className="kk-map-card" aria-labelledby="home-map-title">
+    <div className="kk-map-top"><h2 id="home-map-title"><MapPin aria-hidden="true" size={17} />行きたいが、ひろがる</h2><span className="kk-label">地図は準備中</span></div>
+    <form action={collectionHref("items", groupId)} role="search" className="kk-map-search"><Search aria-hidden="true" size={18} /><label htmlFor="home-candidate-search" className="sr-only">保存した候補を名前で検索</label><input id="home-candidate-search" type="search" name="q" maxLength={100} placeholder="保存した候補を探す" /><button type="submit">探す</button></form>
+    <div className="kk-map-unconnected"><span className="kk-map-doodle" aria-hidden="true"><Map size={48} strokeWidth={1.3} /><Sparkles size={20} /></span><strong>次の行き先、少しずつ。</strong><p>地図と新しい場所の検索は、これから。<br />いまは候補をためて、一緒に選ぼう。</p><Link href={addHref("item", groupId)} className="kk-primary-link"><BookmarkPlus aria-hidden="true" size={17} />行きたいを追加</Link></div>
+    <Suspense fallback={<HomeLoading>保存した候補を読み込んでいます…</HomeLoading>}><SavedPeek client={client} groupId={groupId} /></Suspense>
+  </section>;
+}
+async function RecentActivity({ client, groupId, groups }: { client: HomeClient; groupId: string | null; groups: SavedGroup[] }) {
+  let entries;
+  try { entries = await getActivity(client, groupId); } catch (cause) { return <HomeError message={cause instanceof HomeStoreError ? cause.message : undefined} />; }
+  return <>
+    {entries.length ? <ActivityCards entries={entries.slice(0, 12)} groups={groups} /> : <div className="kk-empty"><Sparkles aria-hidden="true" /><h3>ここから、ワイワイ。</h3><p>候補を追加したり反応したりすると、<br />みんなの動きがここに集まります。</p><Link href={addHref("item", groupId)} className="kk-text-link">最初の行きたいを残す →</Link></div>}
+    {entries.length > 0 && <Link href={groupId ? `/app/groups/${groupId}/activity` : "/app/activity"} className="kk-feed-more">近況を一覧で見る <ArrowRight aria-hidden="true" size={15} /></Link>}
+  </>;
+}
+
+export async function SharedHome({ groupId = null }: { groupId?: string | null }) {
+  if (groupId && !isGroupId(groupId)) notFound();
+  if (!hasEnvVars) return <AuthSetupNotice />;
+  const client = await createClient();
+  const { data, error } = await client.auth.getClaims();
+  const path = groupId ? `/app/groups/${groupId}` : "/app";
+  if (error || !data?.claims?.sub) redirect(`/auth/login?next=${encodeURIComponent(path)}`);
+  let groups;
+  try { groups = await listGroups(client); } catch { return <HomeError message="グループを読み込めませんでした。更新してもう一度お試しください。" />; }
+  if (groupId && !groups.some(group => group.id === groupId)) notFound();
+  return <div className="kk-home">
+    <div className="kk-hero"><p className="kk-eyebrow">行きたいから、思い出まで。</p><h1>次は、どこいこ？<span aria-hidden="true">✦</span></h1><p>みんなの「いいね」が、次の楽しみに。</p></div>
+    <GroupCards groups={groups} selected={groupId} />
+    {groups.length ? <>
+      <Suspense fallback={<HomeLoading>次の楽しみを読み込んでいます…</HomeLoading>}><NextEnjoyment client={client} groupId={groupId} groups={groups} /></Suspense>
+      <MapSpace client={client} groupId={groupId} />
+      <section aria-labelledby="home-activity-title"><div className="kk-row"><div><p className="kk-eyebrow">みんなで育つ、おでかけ帳</p><h2 id="home-activity-title">こんな動きがあった！</h2></div><RefreshButton /></div><p className="kk-muted kk-feed-help">{groupId ? "このグループ" : "全グループ"}の最近の追加と現在の反応 · 日本時間</p><Suspense fallback={<HomeLoading>みんなの動きを読み込んでいます…</HomeLoading>}><RecentActivity client={client} groupId={groupId} groups={groups} /></Suspense></section>
+    </> : <div className="kk-welcome"><Sparkles aria-hidden="true" size={30} /><h2>最初のグループから、はじめよう。</h2><p>ひとりで候補をためても、あとから誰かを招待しても。<br />行きたいを一緒に育てる場所です。</p><Link href="/app/groups#new-group" className="kk-primary-link">グループを作る <ArrowRight aria-hidden="true" size={17} /></Link></div>}
+  </div>;
+}

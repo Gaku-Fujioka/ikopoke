@@ -18,6 +18,7 @@ const cacheModule=asModule("export const paths=[];export function revalidatePath
 registerHooks({resolve(specifier,context,next){
   const url={
     "@/lib/utils":envModule,"@/lib/supabase/server":providerModule,"next/cache":cacheModule,
+    "@/lib/home/revalidate":new URL("../lib/home/revalidate.ts",import.meta.url).href,
     "@/lib/groups/validation":new URL("../lib/groups/validation.ts",import.meta.url).href,
     "@/lib/items/reactions":new URL("../lib/items/reactions.ts",import.meta.url).href,
   }[specifier];
@@ -53,7 +54,7 @@ test("saving ignores forged user IDs and refreshes the candidate and reaction-fi
   const result=await setReactionAction({error:null},form({userId:"forged",user_id:"forged"}));
   assert.deepEqual(result,{error:null,saved:true});
   assert.deepEqual(provider.calls,[{name:"set_item_reaction",input:{p_group_id:groupId,p_item_id:itemId,p_value:"want_to_go"}}]);
-  assert.deepEqual(cache.paths,[`/app/groups/${groupId}/items/${itemId}`,`/app/groups/${groupId}/items`]);
+  assert.deepEqual(cache.paths,[`/app/groups/${groupId}/items/${itemId}`,`/app/groups/${groupId}/items`,"/app","/app/activity",`/app/groups/${groupId}`,`/app/groups/${groupId}/activity`]);
 });
 
 test("an explicit cancellation is sent as null rather than a toggle",async()=>{

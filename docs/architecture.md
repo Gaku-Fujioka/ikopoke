@@ -7,6 +7,8 @@ GROUP-02はmain統合済みで、実DB適用と実ユーザーの作成・再読
 
 ## 現在の構成
 
+UI-APP-01で`/app`と全グループの4タブ一覧を実データ化した。`components/home/`はServer Componentで所属/共有データを取得し、共通ナビの＋と更新操作だけClientにする。グループホームは同じ構成を再利用し、設定を独立ルートへ移した。`lib/home/`は集約取得・安全なUI型への射影・URL/色の共通規則・保存後の限定した再取得を担当する。近況RPCは所属を検証して現在の各記録をまとめ、監査履歴は複製保存しない。地図APIは未接続。以下のP1や古い未実装表記は当時の記録として残す。
+
 REACTION-02で`lib/items/reactions.ts`・反応Actionとフォームを追加し、候補詳細から実データの反応を扱う。集計は所属を検証するRPCで行い、ブラウザに他メンバーの識別子を渡さない。実適用version `20261017153040`と実アカウントでの保存・再読込・変更・取消はユーザー確認済み。別アカウントは未確認。
 
 ITEM-02で`lib/items/`に候補の検証・Supabaseアクセス、`app/app/groups/[groupId]/items/`に実データ用のServer Componentと保存Action、`components/items/`に入力操作だけのClient Componentを追加した。

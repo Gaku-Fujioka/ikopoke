@@ -2,6 +2,7 @@
 
 import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
+import { revalidateSharedHome } from "@/lib/home/revalidate";
 import { createClient } from "@/lib/supabase/server";
 import { hasEnvVars } from "@/lib/utils";
 import { parseComment, createComment, CommentError, type CommentState } from "@/lib/items/comments";
@@ -20,5 +21,6 @@ export async function createCommentAction(_previous: CommentState, form: FormDat
     return { error: error instanceof CommentError ? error.message : "コメントを投稿できませんでした。もう一度お試しください。" };
   }
   revalidatePath(`/app/groups/${input.groupId}/items/${input.itemId}`);
+  revalidateSharedHome(input.groupId);
   return { error: null, nextRequestId: randomUUID() };
 }

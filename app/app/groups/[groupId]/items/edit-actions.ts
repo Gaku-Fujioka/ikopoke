@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { revalidateSharedHome } from "@/lib/home/revalidate";
 import { createClient } from "@/lib/supabase/server";
 import { hasEnvVars } from "@/lib/utils";
 import { updateItem, ItemStoreError } from "@/lib/items/repository";
@@ -25,5 +26,6 @@ export async function updateItemAction(_previous: ItemEditState, form: FormData)
   }
   revalidatePath(`/app/groups/${input.groupId}/items`);
   revalidatePath(`/app/groups/${input.groupId}/items/${input.itemId}`);
+  revalidateSharedHome(input.groupId, "items");
   return { error: null, saved: { title: input.title, memo: input.memo } };
 }

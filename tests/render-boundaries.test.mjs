@@ -30,7 +30,7 @@ registerHooks({
     if(specifier==="@/lib/utils")return {url:moduleURL("export const hasEnvVars=true;"),shortCircuit:true};
     if(["@/lib/supabase/server","@/lib/groups/repository","@/lib/items/repository","@/lib/items/reactions","@/lib/items/comments","@/lib/groups/invitations","@/lib/lists/repository"].includes(specifier))return {url:providerURL,shortCircuit:true};
     if(specifier==="next/navigation")return {url:navigationURL,shortCircuit:true};
-    if(specifier==="next/link"||(specifier.startsWith("@/components/")&& !["@/components/items/item-comments","@/components/items/item-reaction-section","@/components/lists/item-lists"].includes(specifier)))return {url:leafURL,shortCircuit:true};
+    if(specifier==="next/link"||(specifier.startsWith("@/components/")&& !["@/components/items/item-comments","@/components/items/item-reaction-section","@/components/lists/item-lists","@/components/home/collection-cards"].includes(specifier)))return {url:leafURL,shortCircuit:true};
     if(specifier.startsWith("@/"))return {url:new URL(`../${specifier.slice(2)}${specifier.startsWith("@/components/")?".tsx":".ts"}`,import.meta.url).href,shortCircuit:true};
     return next(specifier,context);
   },
@@ -41,7 +41,7 @@ registerHooks({
 });
 const {default:Detail}=await import("../app/app/groups/[groupId]/items/[itemId]/page.tsx");
 const {default:List}=await import("../app/app/groups/[groupId]/items/page.tsx");
-const {default:Group}=await import("../app/app/groups/[groupId]/page.tsx");
+const {default:Group}=await import("../app/app/groups/[groupId]/settings/page.tsx");
 const {ItemReactionSection}=await import("../components/items/item-reaction-section.tsx");
 const {ItemLists}=await import("../components/lists/item-lists.tsx");
 const provider=await import(providerURL);
@@ -76,7 +76,7 @@ test("list reads start together and keep the selected group and filters",async()
 });
 test("group metadata and rename form can render before invitation data is fetched",async()=>{
   const body=await content(Group);assert.match(text(body),/テストグループ/);
-  const boundaries=walk(body,node=>node.type===Suspense);assert.equal(boundaries.length,1);assert.match(text(boundaries[0].props.fallback),/招待/);
+  const boundaries=walk(body,node=>node.type===Suspense);assert.equal(boundaries.length,2);assert.match(text(boundaries[0].props.fallback),/メンバー/);assert.match(text(boundaries[1].props.fallback),/招待/);
   assert.deepEqual(provider.calls.map(call=>call[0]),["auth","group"]);
 });
 test("signed-out renders redirect before any data read",async()=>{
@@ -98,4 +98,13 @@ test("comment and list pages keep each other's URL state",async()=>{
   const listParams=new URL(boundaries[0].props.children.props.detailHref,"https://example.invalid").searchParams;
   const commentParams=new URL(boundaries[2].props.children.props.detailHref,"https://example.invalid").searchParams;
   for(const params of [listParams,commentParams])assert.deepEqual([params.get("q"),params.get("list"),params.get("commentsPage"),params.get("listsPage"),params.get("listsQ")],["Cafe","30000000-0000-4000-8000-000000000001","2","3","旅"]);
+});
+
+test("a candidate opened from all groups returns to the original search and preserves that origin in auxiliary pages",async()=>{
+  const input=props();input.searchParams=Promise.resolve({origin:"all",q:"カフェ.*",kind:"spot",page:"2",commentsPage:"2"});
+  const body=await content(Detail,input);
+  const back=walk(body,node=>typeof node.props?.href==="string"&&node.props.href.startsWith("/app/items?"))[0];
+  const query=new URL(back.props.href,"https://example.invalid").searchParams;
+  assert.deepEqual([query.get("q"),query.get("kind"),query.get("page")],["カフェ.*","spot","2"]);
+  for(const boundary of walk(body,node=>node.type===Suspense).filter(node=>node.props.children.props.detailHref))assert.equal(new URL(boundary.props.children.props.detailHref,"https://example.invalid").searchParams.get("origin"),"all");
 });

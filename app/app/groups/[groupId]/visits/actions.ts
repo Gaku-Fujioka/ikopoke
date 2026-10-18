@@ -1,6 +1,7 @@
 "use server";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { revalidateSharedHome } from "@/lib/home/revalidate";
 import { createClient } from "@/lib/supabase/server";
 import { hasEnvVars } from "@/lib/utils";
 import { photoFileInput,photoInput,recordVisitInput,visitFields,visitIds,visitRating,PHOTO_BUCKET } from "@/lib/visits/validation";
@@ -23,6 +24,7 @@ export async function recordVisitAction(_previous:VisitActionState,form:FormData
   let id;
   try{id=await recordVisit(await clientForAction(),input);}catch(cause){return {error:message(cause)};}
   refreshVisit(input.groupId,id);
+  revalidateSharedHome(input.groupId);
   revalidatePath(`/app/groups/${input.groupId}/items/${input.itemId}`);
   if(input.outingId)revalidatePath(`/app/groups/${input.groupId}/outings/${input.outingId}`);
   redirect(`/app/groups/${input.groupId}/visits/${id}`);

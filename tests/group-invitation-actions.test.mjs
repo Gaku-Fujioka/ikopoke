@@ -57,7 +57,7 @@ test('issuing sends only the token hash to the database and does not accept a fo
   const result=await issueInviteAction(initial,form({groupId,userId:'attacker'}));
   assert.equal(result.error,null);assert.match(result.token,/^[0-9a-f]{64}$/);
   assert.deepEqual(provider.calls,[{name:'create_group_invite',input:{p_group_id:groupId,p_token_hash:createHash('sha256').update(result.token).digest('hex')}}]);
-  assert.deepEqual(cache.paths,[`/app/groups/${groupId}`]);
+  assert.deepEqual(cache.paths,[`/app/groups/${groupId}/settings`]);
 });
 test('signed-out preview preserves the token for login without revealing a group or joining',async()=>{
   provider.configure(false);
@@ -82,7 +82,7 @@ test('joining takes the token only from the cookie, verifies the confirmed group
   await assert.rejects(acceptInviteAction(initial,form({groupId,token:'forged',userId:'attacker'})),(error)=>error.location===`/app/groups/${groupId}`);
   assert.deepEqual(provider.calls,[{name:'accept_group_invite',input:{p_token:token,p_group_id:groupId}}]);
   assert.equal(cookie.writes.at(-1).options.maxAge,0);assert.equal(cookie.writes.at(-1).options.path,INVITE_PATH);
-  assert.deepEqual(cache.paths,['/app/groups',`/app/groups/${groupId}`]);
+  assert.deepEqual(cache.paths,['/app/groups','/app',`/app/groups/${groupId}`]);
 });
 test('an absent pending cookie prevents membership changes',async()=>{
   assert.ok((await acceptInviteAction(initial,form({groupId,token}))).error);
@@ -102,5 +102,5 @@ test('missing migrations are shown as not ready, rather than fake issuance succe
 test('revoking succeeds through its limited RPC and refreshes the group',async()=>{
   const result=await revokeInviteAction(initial,form({groupId,inviteId,userId:'attacker'}));
   assert.equal(result.success,true);assert.deepEqual(provider.calls,[{name:'revoke_group_invite',input:{p_invite_id:inviteId}}]);
-  assert.deepEqual(cache.paths,[`/app/groups/${groupId}`]);
+  assert.deepEqual(cache.paths,[`/app/groups/${groupId}/settings`]);
 });
