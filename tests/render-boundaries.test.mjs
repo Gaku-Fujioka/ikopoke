@@ -124,3 +124,10 @@ test('list classification is visible without opening a disclosure and named list
   const panel=await ItemLists({client:{},groupId,itemId,page:1,query:'',detailHref:'/app/groups/'+groupId+'/items/'+itemId});
   assert.equal(panel.props.className.includes('kk-list-feature'),true);const toggle=walk(panel,n=>n.props?.listId===listId)[0];assert.equal(toggle.props.label,'週末');assert.equal(toggle.props.selected,true);assert.ok(walk(panel,n=>n.props?.href==='/app/groups/'+groupId+'/items?list='+listId).length);
 });
+
+test('spot detail offers a name search without pretending the title is a verified place; activities do not',async()=>{
+  const spot=await content(Detail);
+  const links=walk(spot,node=>node.type==='a'&&node.props.href?.startsWith('https://www.google.com/maps/'));
+  assert.equal(links.length,1);const url=new URL(links[0].props.href);assert.equal(url.searchParams.get('query'),item.title);assert.equal(url.searchParams.has('query_place_id'),false);assert.equal(links[0].props.rel,'noopener noreferrer');assert.match(text(spot),/この名前で検索/);
+  provider.configure({group:()=>group,item:()=>({...item,kind:'activity'})});const activity=await content(Detail);assert.equal(walk(activity,node=>node.type==='a'&&node.props.href?.startsWith('https://www.google.com/maps/')).length,0);
+});
