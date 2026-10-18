@@ -8,13 +8,16 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import ts from 'typescript';
 
 const moduleURL = source => `data:text/javascript,${encodeURIComponent(source)}`;
-const actions = moduleURL('export async function saveTripAction(){return {error:null};}export async function cancelOutingAction(){return {error:null};}export async function createItemAction(){return {error:null};}export async function updateItemAction(){return {error:null};}export async function setReactionAction(){return {error:null};}');
+const actions = moduleURL('export async function saveTripAction(){return {error:null};}export async function cancelOutingAction(){return {error:null};}export async function createItemAction(){return {error:null};}export async function updateItemAction(){return {error:null};}export async function setReactionAction(){return {error:null};}export async function manageItemAction(){return {error:null};}export async function setItemListAction(){return {error:null};}');
+const providerURL=moduleURL("let denied=false;export function setDenied(v){denied=v;}export async function createClient(){return {auth:{getClaims:async()=>({data:{claims:{sub:'synthetic'}},error:null})},rpc:async()=>({data:8,error:denied?{code:'40001'}:null})};}");
 registerHooks({
   resolve(specifier, context, next) {
     if (specifier === 'react' && context.parentURL?.startsWith('data:')) return next(specifier, { ...context, parentURL: import.meta.url });
+    if(specifier==='@/lib/supabase/server')return {url:providerURL,shortCircuit:true};
+    if(specifier==='next/cache')return {url:moduleURL('export function revalidatePath(){}'),shortCircuit:true};
     if (specifier.startsWith('@/app/')) return { url: actions, shortCircuit: true };
     if (specifier === 'next/link') return { url: moduleURL("import {createElement} from 'react';export default function Link(props){return createElement('a',props);}"), shortCircuit: true };
-    if (specifier === 'next/navigation') return { url: moduleURL("export function usePathname(){return '/app';}export function useRouter(){return {replace(){}};}"), shortCircuit: true };
+    if (specifier === 'next/navigation') return { url: moduleURL("export function redirect(location){throw Object.assign(Error('redirect'),{location});}export function usePathname(){return '/app';}export function useRouter(){return {replace(){}};}"), shortCircuit: true };
     if (specifier.startsWith('@/') || (specifier.startsWith('./') && /\.tsx?$/.test(context.parentURL ?? ''))) {
       const base = specifier.startsWith('@/') ? new URL(`../${specifier.slice(2)}`, import.meta.url) : new URL(specifier, context.parentURL);
       const url = ['.ts', '.tsx'].map(ext => base.href + ext).find(url => existsSync(fileURLToPath(url)));
@@ -89,4 +92,31 @@ test('list reactions carry the correct candidate and toggle a selected reaction 
   assert.equal(hidden(markup,'groupId'),groupId);assert.equal(hidden(markup,'itemId'),candidate);assert.match(markup,/value="clear" aria-pressed="true"/);assert.match(markup,/value="not_now" aria-pressed="false"/);
   const board=render(CandidateBoard,{groupId,items:[{...candidates[0],group_id:groupId,memo:'海が見える',my_reaction:'want_to_go',want_count:2}],links:{[candidate]:'/detail?keep=1'}});
   assert.match(board,/href="\/detail\?keep=1"/);assert.ok(!/<a[^>]*>[\s\S]*?<form[\s\S]*?<\/a>/.test(board));assert.match(board,/type="checkbox"/);
+});
+
+
+const {createPlanSelectionStore}=await import('../lib/items/plan-selection.ts');
+test('a completed plan clears group selection and a cached screen reading again cannot restore old choices',()=>{
+  const data=new Map();let writes=0,notifications=0;const storage={getItem:key=>data.get(key)??null,setItem(key,value){writes++;data.set(key,value);}};
+  const store=createPlanSelectionStore(()=>storage,()=>notifications++);
+  store.update(groupId,()=>[{id:candidate,title:'カフェ'},{id:another,title:'公園'}]);store.update('other',()=>[{id:another,title:'別のグループ'}]);
+  const staleSnapshot=store.snapshot(groupId);assert.equal(JSON.parse(staleSnapshot).length,2);
+  store.clear(groupId);const atSave=writes;
+  for(let resume=0;resume<4;resume++)assert.equal(store.snapshot(groupId),'[]');
+  const restored=createPlanSelectionStore(()=>storage);assert.equal(restored.snapshot(groupId),'[]');assert.equal(writes,atSave);assert.equal(JSON.parse(store.snapshot('other')).length,1);assert.equal(notifications,3);
+  // Subsequent user interaction starts with the cleared snapshot, not an old closure.
+  store.update(groupId,before=>[...before,{id:another,title:'次の候補'}]);assert.deepEqual(JSON.parse(store.snapshot(groupId)).map(c=>c.id),[another]);
+});
+test('selection is retained until an explicit confirmed save, including storage denial and malformed saved values',()=>{
+  const store=createPlanSelectionStore(()=>{throw Error('storage denied');});store.update(groupId,()=>[{id:candidate,title:'候補'}]);
+  const before=store.snapshot(groupId);assert.equal(JSON.parse(before).length,1);assert.equal(store.snapshot(groupId),before);store.clear(groupId);assert.equal(store.snapshot(groupId),'[]');
+});
+
+const {saveTripAction}=await import('../app/app/groups/[groupId]/outings/trip-actions.ts');
+const selectionProvider=await import(providerURL);
+test('only a successful selected-candidate save returns the client handoff used to clear selection before navigation',async()=>{
+  const markup=render(OutingForm,{...props,section:'title'}),form=new FormData();
+  for(const [key,value] of Object.entries({groupId,outingId,expectedRevision:'7',title:'計画',start:'2026-10-20',end:'2026-10-21',memo:'',days:hidden(markup,'days'),participants:hidden(markup,'participants'),removedIds:'[]',selectedIds:candidate}))form.set(key,value);
+  selectionProvider.setDenied(false);const success=await saveTripAction({error:null},form);assert.equal(success.error,null);assert.ok(success.redirectTo.includes('/outings/'+outingId+'?planned='));
+  selectionProvider.setDenied(true);const failed=await saveTripAction({error:null},form);assert.ok(failed.error);assert.equal(failed.redirectTo,undefined);selectionProvider.setDenied(false);
 });

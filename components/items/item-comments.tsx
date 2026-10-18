@@ -23,19 +23,22 @@ export async function ItemComments({ client, groupId, itemId, page, detailHref }
   return (
     <section id="comments" aria-labelledby="comments-heading" className="kk-item-conversation scroll-mt-6 space-y-5">
       <h2 id="comments-heading" className="text-xl font-semibold">ここで話そう <span className="text-sm font-normal text-stone-600">{saved.total}件</span></h2>
-      <p className="text-xs leading-5 text-stone-500">新しい順に表示します。ほかの人の投稿は再読み込みで反映されます。自分の投稿は編集できます。</p>
-      {saved.comments.length ? <ul className="space-y-4">
-        {saved.comments.map(comment => <li key={comment.id} className="rounded-2xl bg-stone-50 p-4">
-          <p className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-stone-600"><span className="font-semibold">{comment.display_name}{comment.is_mine ? "（あなた）" : ""}</span><time dateTime={comment.created_at}>{commentDate.format(new Date(comment.created_at))}（日本時間）</time></p>
-          <p className="mt-3 whitespace-pre-wrap break-words leading-7">{comment.body}</p>
-          <CommentManagement groupId={groupId} itemId={itemId} comment={comment} />
-        </li>)}
-      </ul> : <p className="text-sm text-stone-600">{page > 1 ? "このページにはコメントがありません。" : "コメントはまだありません。気になることを話してみましょう。"}</p>}
-      {(page > 1 || page * COMMENT_PAGE_SIZE < saved.total) && <nav aria-label="コメントのページ" className="flex flex-wrap items-center gap-4 text-sm">
-        {page > 1 && <><Link href={`${href(1)}#comments`} className="inline-flex min-h-11 items-center font-semibold text-orange-700 underline underline-offset-4">最新のコメントへ</Link><Link href={`${href(page - 1)}#comments`} className="inline-flex min-h-11 items-center font-semibold text-orange-700 underline underline-offset-4">前のページ</Link></>}
+      <p className="text-xs leading-5 text-stone-500">表示中の会話は上から時間順。新しい投稿は再読み込みで反映されます。</p>
+      {(page > 1 || page * COMMENT_PAGE_SIZE < saved.total) && <nav aria-label="コメントのページ" className="kk-chat-pagination">
+        {page * COMMENT_PAGE_SIZE < saved.total && <Link href={href(page+1)+'#comments'} className="kk-text-link">前の会話を見る ↑</Link>}
+        {page > 1 && <><Link href={href(page-1)+'#comments'} className="kk-text-link">新しい会話へ ↓</Link><Link href={href(1)+'#comments'} className="kk-text-link">最新の会話へ</Link></>}
         <span>{page}ページ</span>
-        {page * COMMENT_PAGE_SIZE < saved.total && <Link href={`${href(page + 1)}#comments`} className="inline-flex min-h-11 items-center font-semibold text-orange-700 underline underline-offset-4">次のページ</Link>}
       </nav>}
+      {saved.comments.length ? <ol className="kk-chat-messages" aria-label="ここでの会話">
+        {[...saved.comments].reverse().map(comment => <li key={comment.id} className="kk-chat-row" data-mine={comment.is_mine}>
+          {!comment.is_mine && <span className="kk-chat-avatar" aria-hidden="true">{Array.from(comment.display_name)[0] || '・'}</span>}
+          <div className="kk-chat-content"><p className="kk-chat-name">{comment.display_name}{comment.is_mine ? '（あなた）' : ''}</p>
+            <div className="kk-chat-bubble"><p>{comment.body}</p></div>
+            <p className="kk-chat-time"><time dateTime={comment.created_at}>{commentDate.format(new Date(comment.created_at))}</time><span className="sr-only">（日本時間）</span></p>
+            <CommentManagement groupId={groupId} itemId={itemId} comment={comment} />
+          </div>
+        </li>)}
+      </ol> : <p className="kk-chat-empty">{page > 1 ? 'このページには会話がありません。' : 'ここ、どうかな？ 気になることを話してみよう。'}</p>}
       <CommentForm groupId={groupId} itemId={itemId} requestId={randomUUID()} firstPageHref={href(1)} onFirstPage={page === 1} />
     </section>
   );

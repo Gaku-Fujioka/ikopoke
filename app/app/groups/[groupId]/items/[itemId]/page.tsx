@@ -55,22 +55,25 @@ async function ItemContent({ params, searchParams }: Props) {
   }
   if (!group || !item) notFound();
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div className="kk-spot-detail mx-auto max-w-3xl space-y-5">
       <Link href={listPath} className="inline-flex min-h-11 items-center text-sm font-semibold text-stone-600 underline underline-offset-4">← みんなの候補へ</Link>
       <article className="kk-item-hero">
         <p className="break-words text-sm font-semibold text-orange-700">{group.name} / {item.kind === "spot" ? "スポット" : "やりたいこと"}</p>
         <div className="kk-item-title"><span aria-hidden="true" className="kk-item-doodle">{item.kind === "spot" ? "✦" : "☀"}</span><h1 className="break-words text-3xl font-bold tracking-tight sm:text-4xl">{item.title}</h1><EditItemForm groupId={groupId} itemId={itemId} title={item.title} memo={item.memo} field="title" /></div>
-        <div className="flex flex-wrap gap-3">{!item.archived_at && <Link href={`/app/groups/${groupId}/outings/new?item=${itemId}`} className="kk-primary-link">この行き先で計画する →</Link>}{!item.archived_at && <Link href={`/app/groups/${groupId}/outings/add?items=${itemId}`} className="kk-secondary-link">予定に追加</Link>}<Link href={`/app/groups/${groupId}/visits/new?item=${itemId}`} className="kk-text-link">行った！を記録する</Link></div>
+        <div className="kk-spot-actions">{!item.archived_at && <Link href={`/app/groups/${groupId}/outings/new?item=${itemId}`} className="kk-primary-link">この行き先で計画する →</Link>}{!item.archived_at && <Link href={`/app/groups/${groupId}/outings/add?items=${itemId}`} className="kk-secondary-link">予定に追加</Link>}<Link href="#item-lists" className="kk-secondary-link">リストにまとめる ↓</Link><Link href={`/app/groups/${groupId}/visits/new?item=${itemId}`} className="kk-text-link">行った！を記録する</Link></div>
 
       </article>
       {item.archived_at && <p className="kk-notice">アーカイブ中です。既存の計画・訪問記録は残っています。</p>}
       <Suspense fallback={<section role="status" aria-label="リアクション" className="rounded-3xl border border-stone-200 bg-white p-6">反応を読み込んでいます…</section>}>
         <ItemReactionSection client={client} groupId={groupId} itemId={itemId} />
       </Suspense>
-      <section aria-labelledby="item-memo-heading" className="kk-item-memo"><div className="kk-section-heading"><h2 id="item-memo-heading">{item.kind === "spot" ? "この場所、気になる理由" : "やってみたい理由"}</h2></div><p className="whitespace-pre-wrap break-words leading-7 text-stone-700">{item.memo || "メモはまだありません。気になることを残してみよう。"}</p><EditItemForm groupId={groupId} itemId={itemId} title={item.title} memo={item.memo} field="memo" /></section>
-      <div className="kk-item-organize"><ItemManagement groupId={groupId} itemId={itemId} priority={item.priority} archived={Boolean(item.archived_at)} /><details open={Boolean(search.listsQ || search.listsPage)}><summary className="kk-edit-button">リスト・分類を変更</summary>      <Suspense fallback={<section role="status" aria-label="リスト" className="rounded-3xl border border-stone-200 bg-white p-6">リストを読み込んでいます…</section>}>
+
+      <Suspense fallback={<section role="status" aria-label="リスト" className="rounded-3xl border border-stone-200 bg-white p-6">リストを読み込んでいます…</section>}>
         <ItemLists client={client} groupId={groupId} itemId={itemId} page={listsPage} query={listsQ} detailHref={currentHref} />
-      </Suspense></details></div>
+      </Suspense>
+      <section aria-labelledby="item-memo-heading" className="kk-item-memo"><div className="kk-section-heading"><h2 id="item-memo-heading">{item.kind === "spot" ? "この場所、気になる理由" : "やってみたい理由"}</h2><EditItemForm groupId={groupId} itemId={itemId} title={item.title} memo={item.memo} field="memo" /></div><p className="whitespace-pre-wrap break-words leading-7 text-stone-700">{item.memo || "メモはまだありません。気になることを残してみよう。"}</p></section>
+      <ItemManagement groupId={groupId} itemId={itemId} priority={item.priority} archived={Boolean(item.archived_at)} />
+
       <Suspense fallback={<section role="status" aria-label="コメント" className="rounded-3xl border border-stone-200 bg-white p-6">コメントを読み込んでいます…</section>}>
         <ItemComments client={client} groupId={groupId} itemId={itemId} page={commentsPage} detailHref={currentHref} />
       </Suspense>

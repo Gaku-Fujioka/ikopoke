@@ -43,6 +43,7 @@ const {default:Detail}=await import("../app/app/groups/[groupId]/items/[itemId]/
 const {default:List}=await import("../app/app/groups/[groupId]/items/page.tsx");
 const {default:Group}=await import("../app/app/groups/[groupId]/settings/page.tsx");
 const {ItemReactionSection}=await import("../components/items/item-reaction-section.tsx");
+const {ItemComments}=await import("../components/items/item-comments.tsx");
 const {ItemLists}=await import("../components/lists/item-lists.tsx");
 const provider=await import(providerURL);
 const groupId="10000000-0000-4000-8000-000000000001",itemId="20000000-0000-4000-8000-000000000001";
@@ -107,4 +108,19 @@ test("a candidate opened from all groups returns to the original search and pres
   const query=new URL(back.props.href,"https://example.invalid").searchParams;
   assert.deepEqual([query.get("q"),query.get("kind"),query.get("page")],["カフェ.*","spot","2"]);
   for(const boundary of walk(body,node=>node.type===Suspense).filter(node=>node.props.children.props.detailHref))assert.equal(new URL(boundary.props.children.props.detailHref,"https://example.invalid").searchParams.get("origin"),"all");
+});
+
+
+test('comments appear in chronological bubbles with own messages on the right and member messages on the left',async()=>{
+  const newer={id:'new',body:'自分のひとこと',created_at:'2026-10-18T02:00:00Z',is_mine:true,display_name:'はる',revision:1,can_delete:true};
+  const older={...newer,id:'old',body:'相手のひとこと',created_at:'2026-10-18T01:00:00Z',is_mine:false,display_name:'あおい',can_delete:false};
+  provider.configure({comments:()=>({comments:[newer,older],total:2})});
+  const body=await ItemComments({client:{},groupId,itemId,page:1,detailHref:'/app/groups/'+groupId+'/items/'+itemId}),rows=walk(body,n=>n.props?.className==='kk-chat-row');
+  assert.deepEqual(rows.map(n=>n.props['data-mine']),[false,true]);assert.match(text(rows[0]),/相手のひとこと/);assert.match(text(rows[1]),/自分のひとこと/);assert.match(text(body),/ここで話そう/);
+});
+test('list classification is visible without opening a disclosure and named list buttons keep browse routes',async()=>{
+  const body=await content(Detail);const details=walk(body,n=>n.type==='details');assert.ok(!details.some(n=>walk(n,x=>x.type===ItemLists).length));
+  const listId='30000000-0000-4000-8000-000000000001';provider.configure({lists:()=>({lists:[{id:listId,name:'週末',is_selected:true}],total:1})});
+  const panel=await ItemLists({client:{},groupId,itemId,page:1,query:'',detailHref:'/app/groups/'+groupId+'/items/'+itemId});
+  assert.equal(panel.props.className.includes('kk-list-feature'),true);const toggle=walk(panel,n=>n.props?.listId===listId)[0];assert.equal(toggle.props.label,'週末');assert.equal(toggle.props.selected,true);assert.ok(walk(panel,n=>n.props?.href==='/app/groups/'+groupId+'/items?list='+listId).length);
 });

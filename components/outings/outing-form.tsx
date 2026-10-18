@@ -1,6 +1,8 @@
 "use client";
 import { useActionState, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { planSelection } from "@/lib/items/plan-selection";
 import { CalendarDays, MapPin, UsersRound, StickyNote } from "lucide-react";
 import { saveTripAction, cancelOutingAction } from "@/app/app/groups/[groupId]/outings/trip-actions";
 import { OUTING_MODES, OUTING_PERIODS, type OutingMode, type OutingPeriod } from "@/lib/outings/validation";
@@ -24,7 +26,12 @@ export function OutingForm({groupId,outingId,current,candidates,members,actorId,
     result[initialDay].items.push(...ids.map((id,index)=>({id:seedId(draftId,index),item_id:id,planned_time:null,period:null})));
     return result;
   });
-  const [state,action,pending]=useActionState(saveTripAction,{error:null});
+  const router = useRouter();
+  const [state,action,pending]=useActionState(async (previous: {error:string|null}, form:FormData) => {
+    const result = await saveTripAction(previous, form);
+    if (result.redirectTo) { planSelection.clear(groupId); router.push(result.redirectTo); }
+    return result;
+  },{error:null});
   const duration=dateDistance(start,end)+1,validDuration=Number.isInteger(duration)&&duration>0&&duration<=366;
   const day=days[active]??days[0],total=days.reduce((n,d)=>n+d.items.length,0),outside=validDuration&&days.slice(duration).some(d=>d.items.length>0);
   const incompleteDays=days.slice(0,validDuration?duration:days.length).flatMap((d,index)=>!d.participants.length||d.items.some(s=>d.mode==='exact'&&!s.planned_time||d.mode==='period'&&!s.period)?[index]:[]);
