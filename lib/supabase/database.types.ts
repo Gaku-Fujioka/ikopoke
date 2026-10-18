@@ -10,6 +10,7 @@ export type GroupRow = {
 export type Database = {
   public: {
     Tables: {
+      item_places: { Row: { item_id: string; group_id: string; place_id: string }; Insert: never; Update: never; Relationships: [] };
       memories: {
         Row: { id: string; group_id: string; outing_id: string; title: string; memory_date: string; note: string; revision: number; created_at: string; cover_photo_id: string | null; memory_end_date: string };
         Insert: never; Update: never; Relationships: [];
@@ -101,6 +102,8 @@ export type Database = {
       };
     };
     Functions: {
+      save_place_item: { Args: { p_group_id: string; p_place_id: string; p_title: string; p_list_ids: string[]; p_request_id: string }; Returns: { item_id: string; reused: boolean; archived: boolean }[] };
+      set_item_place: { Args: { p_group_id: string; p_item_id: string; p_place_id: string | null; p_expected_place_id: string | null }; Returns: undefined };
       get_my_group_departures:{Args:Record<string,never>;Returns:{group_id:string;name:string;member_count:number;deleting:boolean}[]};
       get_my_account_deletion:{Args:Record<string,never>;Returns:{request_id:string;state:string;group_ids:string[];delete_group_ids:string[]}[]};
       begin_leave_group:{Args:{p_group_id:string;p_expected_members:number;p_delete_last:boolean};Returns:boolean};

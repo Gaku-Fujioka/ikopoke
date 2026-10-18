@@ -29,6 +29,8 @@ export async function globalItems(){return {rows:[],total:0};}export async funct
 const navigationURL=sourceURL(`export {usePathname,useSearchParams} from ${JSON.stringify(providerURL)};export function notFound(){throw Object.assign(Error('not found'),{navigation:'not-found'});}export function redirect(location){throw Object.assign(Error('redirect'),{location});}`);
 registerHooks({
   resolve(specifier,context,next){
+    if(specifier==='@/app/app/map-actions')return {url:sourceURL('export async function placeListsAction(){return {lists:[]};}export async function savePlaceAction(){return {error:null};}export async function attachPlaceAction(){return {error:null};}'),shortCircuit:true};
+    if(specifier==='@/components/maps/map-sections')return {url:sourceURL('export function SavedMapSection(){return null;}export function OutingMapSection(){return null;}export function ItemPlaceSection(){return null;}'),shortCircuit:true};
     if(specifier==='@/components/items/candidate-board')return {url:sourceURL('export function CandidateBoard(){return null;}export function PlanSelectionReceipt(){return null;}'),shortCircuit:true};
     if(specifier==='react'&&context.parentURL?.startsWith('data:'))return next(specifier,{...context,parentURL:import.meta.url});
     if(specifier==='@/lib/utils')return {url:sourceURL("export const hasEnvVars=true;"),shortCircuit:true};
@@ -123,19 +125,19 @@ for(const cancelled of [true,false])test(`album ${cancelled?'cancelled':'active'
 });
 
 
-test('group workspace has direct creation/settings entrances and candidate/conversation boundaries without repeating the global map',async()=>{
+test('group workspace has direct creation/settings entrances and candidate/conversation boundaries with a group-scoped map',async()=>{
   const tree=await SharedHome({groupId});
   assert.deepEqual(provider.calls,['auth','groups']);
   const links=nodes(tree,node=>typeof node.props?.href==='string').map(node=>node.props.href);
   for(const path of ['/items/new','/outings/new','/settings','/items','/outings','/memories'])assert.ok(links.includes('/app/groups/'+groupId+path),path);
-  assert.equal(nodes(tree,node=>node.type?.name==='MapSpace').length,0);
+  assert.equal(nodes(tree,node=>node.type?.name==='MapSpace')[0].props.groupId,groupId);
   const candidates=nodes(tree,node=>node.type?.name==='GroupCandidates')[0];assert.equal(candidates.props.groupId,groupId);await candidates.type(candidates.props);assert.ok(provider.calls.some(call=>Array.isArray(call)&&call[0]==='items'&&call[1]===groupId));
   const conversations=nodes(tree,node=>node.type?.name==='GroupConversations')[0];assert.equal(conversations.props.groupId,groupId);
 });
 
 test('home gives the primary entry to new places and nests saved-candidate navigation in an explicit disclosure',async()=>{
   const tree=await SharedHome({});const wrapper=nodes(tree,node=>node.type?.name==='MapSpace')[0];const map=wrapper.type(wrapper.props);
-  assert.equal(map.props.children[1].type.name,'PlaceExplorer');
+  assert.equal(map.props.children[1].type.name,'SearchWorkspace');
   const saved=nodes(map,node=>node.type==='details')[0];assert.ok(saved);assert.equal(saved.props.children[0].props.children,'保存した候補から探す');
   const form=nodes(saved,node=>node.type==='form')[0];assert.equal(form.props.action,'/app/items');assert.equal(form.props['aria-label'],'保存した候補を検索');assert.ok(nodes(form,node=>node.type==='button'&&node.props.children==='候補を検索').length);
   assert.equal(nodes(map,node=>node.type==='form').length,1);

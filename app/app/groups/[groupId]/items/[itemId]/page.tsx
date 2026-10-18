@@ -1,3 +1,4 @@
+import { ItemPlaceSection } from "@/components/maps/map-sections";
 import { ItemManagement } from "@/components/items/item-management";
 import { Suspense } from "react";
 import Link from "next/link";
@@ -65,6 +66,7 @@ async function ItemContent({ params, searchParams }: Props) {
         <div className="kk-spot-actions">{!item.archived_at && <Link href={`/app/groups/${groupId}/outings/new?item=${itemId}`} className="kk-primary-link">この行き先で計画する →</Link>}{!item.archived_at && <Link href={`/app/groups/${groupId}/outings/add?items=${itemId}`} className="kk-secondary-link">予定に追加</Link>}<Link href="#item-lists" className="kk-secondary-link">リストにまとめる ↓</Link><Link href={`/app/groups/${groupId}/visits/new?item=${itemId}`} className="kk-text-link">行った！を記録する</Link></div>
 
       </article>
+      {item.kind === "spot" && <Suspense fallback={<p role="status" className="kk-loading">場所を読み込んでいます…</p>}><ItemPlaceSection client={client} groupId={groupId} itemId={itemId} title={item.title} /></Suspense>}
       {item.archived_at && <p className="kk-notice">アーカイブ中です。既存の計画・訪問記録は残っています。</p>}
       <Suspense fallback={<section role="status" aria-label="リアクション" className="rounded-3xl border border-stone-200 bg-white p-6">反応を読み込んでいます…</section>}>
         <ItemReactionSection client={client} groupId={groupId} itemId={itemId} />
