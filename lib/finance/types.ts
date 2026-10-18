@@ -1,0 +1,13 @@
+export type FinanceKind='expense'|'receive'|'pay';
+export type FinanceCategory={id:string;name:string;revision:number;created_at:string};
+export type FinanceContext={id:string;kind:'outing'|'visit';source_id:string;group_id:string;outing_id:string|null;group_name:string;title:string;outing_title:string|null;occurred_on:string;created_at:string};
+export type FinanceSource={id:string;kind:'outing'|'visit';title:string;group_name:string;occurred_on:string};
+export type FinanceOptions={categories:FinanceCategory[];contexts:FinanceContext[];context:(FinanceContext&{accessible:boolean})|null;members:{id:string;name:string}[];sources:FinanceSource[]};
+export type FinanceEntry={id:string;context_id:string;kind:FinanceKind;title:string;amount:number;occurred_on:string;category_id:string;expense_id:string|null;party_name:string;memo:string;revision:number;created_at:string;updated_at:string};
+export type FinancePayment={id:string;entry_id:string;amount:number;paid_on:string;memo:string;revision:number;created_at:string};
+export type FinanceDetail={entry:FinanceEntry;settled:number;remaining:number;payments:FinancePayment[];payment_count:number;receivables:{id:string;title:string;amount:number;party_name:string}[]};
+export type FinanceTotals={paid:number;received:number;receive_remaining:number;pay_remaining:number;forecast:number};
+export type FinanceRow={id:string;entry_id:string;kind:FinanceKind;title:string;amount:number;occurred_on:string;paid_on:string|null;category_name:string;context_title:string;group_name:string;party_name:string;settled:number;remaining:number;automatic:boolean};
+export type FinanceDashboard={totals:FinanceTotals;breakdown:{category_id:string;category_name:string;forecast:number}[];rows:FinanceRow[];total_count:number};
+export type FinanceInput={context_id:string;kind:FinanceKind;title:string;amount:number;occurred_on:string;category_id:string;expense_id:string|null;expense_revision:number|null;party_name:string;member_id:string|null;memo:string};
+export type FinanceHistoryInput={amount:number;paid_on:string;memo:string};

@@ -23,5 +23,5 @@ async function ProfileContent() {
 }
 
 export default function ProfilePage() {
-  return <div className="mx-auto max-w-2xl space-y-6"><Link href="/app" className="kk-text-link">← ホームへ</Link><div><p className="kk-eyebrow">アカウント</p><h1 className="mt-2 text-3xl font-bold">あなたのプロフィール</h1><p className="mt-3 text-stone-600">この表示名で、一緒におでかけする仲間に見えます。</p></div><Suspense fallback={<p role="status">表示名を読み込んでいます…</p>}><ProfileContent /></Suspense><div className="kk-row kk-surface"><Link href="/app/groups" className="kk-text-link">マイグループ</Link><LogoutButton /></div></div>;
+  return <div className="mx-auto max-w-2xl space-y-6"><Link href="/app" className="kk-text-link">← ホームへ</Link><div><p className="kk-eyebrow">アカウント</p><h1 className="mt-2 text-3xl font-bold">あなたのプロフィール</h1><p className="mt-3 text-stone-600">この表示名で、一緒におでかけする仲間に見えます。</p></div><Link href="/app/finance" className="kk-surface block space-y-2"><span className="text-xl font-bold">自分の会計 →</span><p className="text-sm text-stone-600">おでかけの出費・もらう分・あとでわたす分。あなただけの記録です。</p></Link><Suspense fallback={<p role="status">表示名を読み込んでいます…</p>}><ProfileContent /></Suspense><div className="kk-row kk-surface"><Link href="/app/groups" className="kk-text-link">マイグループ</Link><LogoutButton /></div></div>;
 }
