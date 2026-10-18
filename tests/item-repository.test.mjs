@@ -12,7 +12,7 @@ const rows=Array.from({length:23},(_,index)=>({id:`20000000-0000-4000-8000-${Str
 // mixing their data; the repository must also scope reads to the selected group.
 function client(error=null){return {async rpc(name,args){
   assert.equal(name,"browse_items");let matching=rows.filter(r=>r.group_id===args.p_group_id && r.title.toLowerCase().includes(args.p_query.toLowerCase())).sort((a,b)=>b.created_at.localeCompare(a.created_at)||b.id.localeCompare(a.id));
-  return {data:[{items:matching.slice((args.p_page-1)*20,args.p_page*20).map(r=>({...r,priority:0,archived_at:null,want_count:0,visited:false,score:0})),total_count:matching.length}],error};
+  return {data:[{items:matching.slice((args.p_page-1)*20,args.p_page*20).map(r=>({...r,priority:0,archived_at:null,want_count:0,my_reaction:null,visited:false,score:0})),total_count:matching.length}],error};
 },from(table){
   assert.equal(table,"items");
   let filtered=[...rows], orders=[], start=0, end=Infinity;

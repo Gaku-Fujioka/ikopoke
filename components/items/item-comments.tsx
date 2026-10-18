@@ -21,8 +21,8 @@ export async function ItemComments({ client, groupId, itemId, page, detailHref }
   }
   const href = (number: number) => sharedItemCommentsHref(detailHref, number);
   return (
-    <section id="comments" aria-labelledby="comments-heading" className="scroll-mt-6 space-y-5 rounded-3xl border border-stone-200 bg-white p-6 sm:p-8">
-      <h2 id="comments-heading" className="text-xl font-semibold">コメント <span className="text-sm font-normal text-stone-600">{saved.total}件</span></h2>
+    <section id="comments" aria-labelledby="comments-heading" className="kk-item-conversation scroll-mt-6 space-y-5">
+      <h2 id="comments-heading" className="text-xl font-semibold">ここで話そう <span className="text-sm font-normal text-stone-600">{saved.total}件</span></h2>
       <p className="text-xs leading-5 text-stone-500">新しい順に表示します。ほかの人の投稿は再読み込みで反映されます。自分の投稿は編集できます。</p>
       {saved.comments.length ? <ul className="space-y-4">
         {saved.comments.map(comment => <li key={comment.id} className="rounded-2xl bg-stone-50 p-4">

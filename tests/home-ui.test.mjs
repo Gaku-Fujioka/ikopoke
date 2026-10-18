@@ -14,6 +14,7 @@ export function usePathname(){return config.pathname??'/app';}
 export function useSearchParams(){return new URLSearchParams(config.search??'');}
 export async function createClient(){return {auth:{getClaims:async()=>{calls.push('auth');return {data:config.signedOut?null:{claims:{sub:'synthetic'}},error:null};}}};}
 export async function listGroups(){calls.push('groups');if(config.groupError)throw Error('private');return config.groups??[];}
+export class ItemStoreError extends Error{};export async function listItems(client,group){calls.push(['items',group]);return {items:config.items??[],total:config.items?.length??0};}
 export async function getGroup(client,id){return config.groups?.find(group=>group.id===id)??null;}
 export async function getGroupMembers(){return [{user_id:'synthetic',display_name:'参加者'}];}
 export async function getOuting(){const c=config.current;if(!c)return c;return {...c,outing:{...c.outing,end_date:c.outing.end_date??c.outing.outing_date},items:c.items.map((s,index)=>({...s,id:s.id??"stop-"+index,day_index:s.day_index??0})),days:c.days??[{day_index:0,mode:c.outing.mode,participants:c.participants}]};}
@@ -28,9 +29,10 @@ export async function globalItems(){return {rows:[],total:0};}export async funct
 const navigationURL=sourceURL(`export {usePathname,useSearchParams} from ${JSON.stringify(providerURL)};export function notFound(){throw Object.assign(Error('not found'),{navigation:'not-found'});}export function redirect(location){throw Object.assign(Error('redirect'),{location});}`);
 registerHooks({
   resolve(specifier,context,next){
+    if(specifier==='@/components/items/candidate-board')return {url:sourceURL('export function CandidateBoard(){return null;}export function PlanSelectionReceipt(){return null;}'),shortCircuit:true};
     if(specifier==='react'&&context.parentURL?.startsWith('data:'))return next(specifier,{...context,parentURL:import.meta.url});
     if(specifier==='@/lib/utils')return {url:sourceURL("export const hasEnvVars=true;"),shortCircuit:true};
-    if(['@/lib/supabase/server','@/lib/groups/repository','@/lib/home/repository','@/lib/profiles/repository','@/lib/outings/repository','@/lib/memories/repository'].includes(specifier))return {url:providerURL,shortCircuit:true};
+    if(['@/lib/supabase/server','@/lib/groups/repository','@/lib/home/repository','@/lib/items/repository','@/lib/profiles/repository','@/lib/outings/repository','@/lib/memories/repository'].includes(specifier))return {url:providerURL,shortCircuit:true};
     if(['@/components/outings/outing-form','@/components/visits/visit-sections','@/components/memories/memory-forms','@/components/memories/cover-editor','@/components/memories/memory-book'].includes(specifier))return {url:sourceURL('export function CoverEditor(){return null;}export function MemoryBook(){return null;}export function MemoryEditForm(){return null;}export function OutingCancellation(){return null;}export function OutingForm(){return null;}export function VisitHistory(){return null;}export function CompletionForm(){return null;}'),shortCircuit:true};
     if(specifier==='next/navigation')return {url:navigationURL,shortCircuit:true};
     if(specifier==='next/link')return {url:sourceURL("import {createElement} from 'react';export default function Link({href,children,...props}){return createElement('a',{...props,href},children);}"),shortCircuit:true};
@@ -103,7 +105,7 @@ test('outing detail leads with the saved itinerary and visit actions; editing is
     const tree=OutingPage({params:Promise.resolve({groupId,outingId:'30000000-0000-4000-8000-000000000001'})});
     const boundary=nodes(tree,node=>node.type===Suspense)[0],body=await boundary.props.children.type(boundary.props.children.props);
     const sections=nodes(body,node=>node.type==='section');assert.equal(sections[0].props['aria-label'],'日付と参加者');assert.equal(sections[1].props['aria-label'],'1日目のプラン');
-    const edit=nodes(body,node=>node.type==='details')[0];assert.equal(edit.props.id,'edit-plan');assert.notEqual(edit.props.open,true);
+    const editLinks=nodes(body,node=>typeof node.props?.href==='string'&&node.props.href.includes('/edit?'));assert.ok(editLinks.some(link=>link.props.href.includes('section=dates')));assert.ok(editLinks.some(link=>link.props.href.includes('section=participants')));assert.ok(editLinks.some(link=>link.props.href.includes('section=day')));assert.equal(nodes(body,node=>node.type?.name==='OutingForm').length,0);
     const links=nodes(sections[1],node=>typeof node.props?.href==='string');assert.ok(links.some(link=>link.props.href.includes('/visits/new?item=candidate&outing=')));
     const markup=renderToStaticMarkup(sections[1]);if(mode==='exact')assert.ok(markup.includes('10:15'));if(mode==='period')assert.ok(markup.includes('午前'));if(mode==='order')assert.ok(!markup.includes('10:15'));
   }
@@ -118,4 +120,15 @@ for(const cancelled of [true,false])test(`album ${cancelled?'cancelled':'active'
   const controls=nodes(book,n=>n.type?.name==='CompletionForm');assert.equal(controls.length,cancelled?0:1);
   assert.equal(nodes(book,n=>n.type?.name==='MemoryBook').length,1);assert.equal(nodes(book,n=>n.type?.name==='CoverEditor').length,1);
   if(cancelled){const paragraphs=nodes(book,n=>n.type==='p').map(n=>n.props.children).join('');assert.match(paragraphs,/中止中/);assert.ok(nodes(book,n=>n.props?.href===`/app/groups/${groupId}/outings/${outingId}`).length);}
+});
+
+
+test('group workspace has direct creation/settings entrances and candidate/conversation boundaries without repeating the global map',async()=>{
+  const tree=await SharedHome({groupId});
+  assert.deepEqual(provider.calls,['auth','groups']);
+  const links=nodes(tree,node=>typeof node.props?.href==='string').map(node=>node.props.href);
+  for(const path of ['/items/new','/outings/new','/settings','/items','/outings','/memories'])assert.ok(links.includes('/app/groups/'+groupId+path),path);
+  assert.equal(nodes(tree,node=>node.type?.name==='MapSpace').length,0);
+  const candidates=nodes(tree,node=>node.type?.name==='GroupCandidates')[0];assert.equal(candidates.props.groupId,groupId);await candidates.type(candidates.props);assert.ok(provider.calls.some(call=>Array.isArray(call)&&call[0]==='items'&&call[1]===groupId));
+  const conversations=nodes(tree,node=>node.type?.name==='GroupConversations')[0];assert.equal(conversations.props.groupId,groupId);
 });

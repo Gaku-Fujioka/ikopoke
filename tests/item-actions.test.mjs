@@ -6,11 +6,11 @@ const asModule = (source) => `data:text/javascript,${encodeURIComponent(source)}
 const envModule = asModule("export let hasEnvVars=true; export function configure(value){hasEnvVars=value;}");
 const providerModule = asModule(`
   export const calls=[];
-  let signedIn=true, rpcError=null, throws=false;
-  export function configure(session,error=null,shouldThrow=false){signedIn=session;rpcError=error;throws=shouldThrow;calls.length=0;}
+  let signedIn=true, rpcError=null, throws=false, listFails=false;
+  export function configure(session,error=null,shouldThrow=false,failList=false){signedIn=session;rpcError=error;throws=shouldThrow;listFails=failList;calls.length=0;}
   export async function createClient(){return {
     auth:{getClaims:async()=>({data:signedIn?{claims:{sub:'verified-user'}}:null,error:null})},
-    rpc:async(name,input)=>{calls.push({name,input});if(throws)throw new Error('private-network-detail');return {data:rpcError?null:input.p_request_id,error:rpcError};},
+    rpc:async(name,input)=>{calls.push({name,input});if(throws)throw new Error('private-network-detail');if(name==='set_item_list'&&listFails)return {data:null,error:{code:'42501',message:'private'}};return {data:rpcError?null:input.p_request_id,error:rpcError};},
   };}
 `);
 const navigationModule = asModule("export function redirect(location){const error=new Error('redirect');error.location=location;throw error;}");
@@ -21,10 +21,13 @@ registerHooks({resolve(specifier,context,next){
     "@/lib/home/revalidate":new URL("../lib/home/revalidate.ts",import.meta.url).href,
     "@/lib/groups/validation":new URL("../lib/groups/validation.ts",import.meta.url).href,
     "@/lib/items/validation":new URL("../lib/items/validation.ts",import.meta.url).href,
+    "@/lib/lists/repository":new URL("../lib/lists/repository.ts",import.meta.url).href,
+    "@/lib/lists/validation":new URL("../lib/lists/validation.ts",import.meta.url).href,
     "@/lib/items/repository":new URL("../lib/items/repository.ts",import.meta.url).href,
     "@/lib/items/search":new URL("../lib/items/search.ts",import.meta.url).href,
     "next/navigation":navigationModule,"next/cache":cacheModule,
   }[specifier];
+  if(specifier==="./validation" && context.parentURL?.includes("/lists/")) return {url:new URL("../lib/lists/validation.ts",import.meta.url).href,shortCircuit:true};
   return url?{url,shortCircuit:true}:next(specifier,context);
 }});
 const {parseItemInput,itemPage} = await import("../lib/items/validation.ts");
@@ -90,4 +93,16 @@ test("missing migrations are unavailable rather than a successful empty save",as
 test("page input cannot turn into arbitrary filters or unbounded integer offsets",()=>{
   for(const value of [undefined,["2"],"0","-1","1.5","1 OR true","1000000","Infinity"]) assert.equal(itemPage(value),1);
   assert.equal(itemPage("2"),2);
+});
+
+
+test('optional classification validates IDs before creation and deduplicates selected lists',async()=>{
+  const list='30000000-0000-4000-8000-000000000001',input=form();input.append('listIds',list);input.append('listIds',list);
+  await assert.rejects(createItemAction(initial,input),e=>e.location===`/app/groups/${groupId}/items/${requestId}`);
+  assert.equal(provider.calls.length,2);assert.equal(provider.calls[1].name,'set_item_list');assert.deepEqual(provider.calls[1].input,{p_group_id:groupId,p_item_id:requestId,p_list_id:list,p_selected:true});
+  provider.configure(true);const bad=form();bad.append('listIds','bad');assert.ok((await createItemAction(initial,bad)).error);assert.deepEqual(provider.calls,[]);
+});
+test('a classification failure reports the already-saved candidate without hiding partial success or leaking provider details',async()=>{
+  provider.configure(true,null,false,true);const input=form();input.append('listIds','30000000-0000-4000-8000-000000000001');
+  const result=await createItemAction(initial,input);assert.equal(result.createdItemId,requestId);assert.match(result.error,/候補は保存/);assert.ok(!result.error.includes('private'));assert.ok(cache.paths.includes('/app/groups/'+groupId+'/items'));assert.equal(provider.calls[0].name,'create_item');assert.equal(provider.calls[1].name,'set_item_list');
 });

@@ -1,3 +1,4 @@
+import { selectedCandidateIds, availableSelection } from "@/lib/outings/selection";
 import { randomUUID } from "node:crypto";
 import { Suspense } from "react";
 import Link from "next/link";
@@ -12,7 +13,7 @@ import { AuthSetupNotice } from "@/components/auth-setup-notice";
 import { OutingForm } from "@/components/outings/outing-form";
 import { isCalendarDate } from "@/lib/outings/calendar";
 
-type Props = { params: Promise<{ groupId: string }>; searchParams: Promise<{ item?: string | string[]; date?: string | string[] }> };
+type Props = { params: Promise<{ groupId: string }>; searchParams: Promise<{ item?: string | string[]; date?: string | string[]; items?: string }> };
 async function NewOutingContent({ params, searchParams }: Props) {
   const { groupId } = await params;
   if (!isGroupId(groupId)) notFound();
@@ -23,6 +24,7 @@ async function NewOutingContent({ params, searchParams }: Props) {
   const itemId = typeof search.item === "string" && isGroupId(search.item) ? search.item : undefined;
   const initialDate = isCalendarDate(search.date) ? search.date : undefined;
   const query = new URLSearchParams();
+  if (search.items) query.set("items",selectedCandidateIds(search.items).join(","));
   if (itemId) query.set("item",itemId);
   if (initialDate) query.set("date",initialDate);
   const nextPath = `/app/groups/${groupId}/outings/new${query.size ? `?${query}` : ""}`;
@@ -34,8 +36,9 @@ async function NewOutingContent({ params, searchParams }: Props) {
     return <p role="alert" className="rounded-3xl border bg-white p-6">計画の入力画面を読み込めませんでした。グループ画面から開き直してください。</p>;
   }
   if (!group) notFound();
-  return <div className="space-y-6"><Link href={`/app/groups/${groupId}/outings`} className="inline-flex min-h-11 items-center font-semibold text-orange-700 underline">← 計画一覧へ</Link><div><p className="text-sm font-semibold text-orange-700">{group.name}</p><h1 className="mt-2 text-3xl font-bold">おでかけ計画を作る</h1><p className="mt-2 text-stone-600">日付を決め、計画モード・候補・参加者を選びます。</p></div><OutingForm groupId={groupId} outingId={randomUUID()} current={null} candidates={candidates} members={members} actorId={data.claims.sub} initialItemId={itemId} initialDate={initialDate} /></div>;
+  const selectedIds = selectedCandidateIds(search.items), validIds = availableSelection(selectedIds, candidates);
+  return <div className="space-y-6"><Link href={`/app/groups/${groupId}/outings`} className="inline-flex min-h-11 items-center font-semibold text-orange-700 underline">← 計画一覧へ</Link><div><p className="text-sm font-semibold text-orange-700">{group.name}</p><h1 className="mt-2 text-3xl font-bold">おでかけ計画を作る</h1><p className="mt-2 text-stone-600">日程も、誰と行くかも、行き先も。全体を見ながら組み立てよう。</p></div>{validIds.length !== selectedIds.length && <p role="alert" className="kk-notice">アーカイブなどで追加できなくなった候補を除きました。行き先をご確認ください。</p>}<OutingForm groupId={groupId} outingId={randomUUID()} current={null} candidates={candidates} members={members} actorId={data.claims.sub} initialItemIds={validIds} initialItemId={itemId} initialDate={initialDate} /></div>;
 }
 export default function NewOutingPage(props: Props) {
-  return <div className="mx-auto max-w-3xl"><Suspense fallback={<p role="status">計画の入力画面を読み込んでいます…</p>}><NewOutingContent {...props} /></Suspense></div>;
+  return <div className="mx-auto max-w-5xl"><Suspense fallback={<p role="status">計画の入力画面を読み込んでいます…</p>}><NewOutingContent {...props} /></Suspense></div>;
 }

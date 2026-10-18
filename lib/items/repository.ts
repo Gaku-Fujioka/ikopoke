@@ -4,7 +4,7 @@ import type { ItemInput } from "./validation";
 import { validItemSearch, type ItemFilters } from "@/lib/items/search";
 import type { ItemEditInput } from "./edit";
 
-export type SavedItem = Pick<Database["public"]["Tables"]["items"]["Row"], "id" | "group_id" | "title" | "kind" | "memo" | "created_at"> & { priority?: number; archived_at?: string | null; want_count?: number; visited?: boolean; score?: number };
+export type SavedItem = Pick<Database["public"]["Tables"]["items"]["Row"], "id" | "group_id" | "title" | "kind" | "memo" | "created_at"> & { priority?: number; archived_at?: string | null; want_count?: number; my_reaction?: "want_to_go" | "not_now" | null; visited?: boolean; score?: number };
 export const ITEM_PAGE_SIZE = 20;
 const columns = "id,group_id,title,kind,memo,created_at,priority,archived_at";
 
@@ -59,7 +59,7 @@ export async function browseItems(client: SupabaseClient<Database>, groupId: str
   });
   const row = data?.[0];
   if (error || !row || !Array.isArray(row.items) || row.items.length > ITEM_PAGE_SIZE || !Number.isSafeInteger(row.total_count) || row.total_count < 0 || row.items.some(i =>
-    !/^[0-9a-f-]{36}$/i.test(i.id) || !/^[0-9a-f-]{36}$/i.test(i.group_id) || (groupId && i.group_id !== groupId) || typeof i.title !== "string" || !["spot", "activity"].includes(i.kind) || typeof i.memo !== "string" || typeof i.created_at !== "string" || !Number.isInteger(i.priority) || i.priority < 0 || i.priority > 3 || typeof i.visited !== "boolean" || !Number.isSafeInteger(i.want_count) || i.want_count < 0
+    !/^[0-9a-f-]{36}$/i.test(i.id) || !/^[0-9a-f-]{36}$/i.test(i.group_id) || (groupId && i.group_id !== groupId) || typeof i.title !== "string" || !["spot", "activity"].includes(i.kind) || typeof i.memo !== "string" || typeof i.created_at !== "string" || !Number.isInteger(i.priority) || i.priority < 0 || i.priority > 3 || typeof i.visited !== "boolean" || !Number.isSafeInteger(i.want_count) || i.want_count < 0 || (i.my_reaction !== null && i.my_reaction !== "want_to_go" && i.my_reaction !== "not_now")
   )) throw new ItemStoreError(error);
-  return { items: row.items.map(i => ({ id:i.id,group_id:i.group_id,title:i.title,kind:i.kind,memo:i.memo,created_at:i.created_at,priority:i.priority,archived_at:i.archived_at,want_count:i.want_count,visited:i.visited,score:i.score })), total:row.total_count };
+  return { items: row.items.map(i => ({ id:i.id,group_id:i.group_id,title:i.title,kind:i.kind,memo:i.memo,created_at:i.created_at,priority:i.priority,archived_at:i.archived_at,want_count:i.want_count,my_reaction:i.my_reaction as SavedItem["my_reaction"],visited:i.visited,score:i.score })), total:row.total_count };
 }
