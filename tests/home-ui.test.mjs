@@ -16,7 +16,7 @@ export async function createClient(){return {auth:{getClaims:async()=>{calls.pus
 export async function listGroups(){calls.push('groups');if(config.groupError)throw Error('private');return config.groups??[];}
 export async function getGroup(client,id){return config.groups?.find(group=>group.id===id)??null;}
 export async function getGroupMembers(){return [{user_id:'synthetic',display_name:'参加者'}];}
-export async function getOuting(){return config.current;}
+export async function getOuting(){const c=config.current;if(!c)return c;return {...c,outing:{...c.outing,end_date:c.outing.end_date??c.outing.outing_date},items:c.items.map((s,index)=>({...s,id:s.id??"stop-"+index,day_index:s.day_index??0})),days:c.days??[{day_index:0,mode:c.outing.mode,participants:c.participants}]};}
 export async function listCandidateOptions(){return [{id:'candidate',title:'訪問先',kind:'spot'}];}
 export async function getActivity(client,group){calls.push(['activity',group]);if(config.activityError)throw Error('private');return config.activity??[];}
 export async function nextOuting(client,group){calls.push(['next',group]);return config.next??null;}
@@ -30,7 +30,7 @@ registerHooks({
     if(specifier==='react'&&context.parentURL?.startsWith('data:'))return next(specifier,{...context,parentURL:import.meta.url});
     if(specifier==='@/lib/utils')return {url:sourceURL("export const hasEnvVars=true;"),shortCircuit:true};
     if(['@/lib/supabase/server','@/lib/groups/repository','@/lib/home/repository','@/lib/profiles/repository','@/lib/outings/repository'].includes(specifier))return {url:providerURL,shortCircuit:true};
-    if(['@/components/outings/outing-form','@/components/visits/visit-sections','@/components/memories/memory-forms'].includes(specifier))return {url:sourceURL('export function OutingForm(){return null;}export function VisitHistory(){return null;}export function CompletionForm(){return null;}'),shortCircuit:true};
+    if(['@/components/outings/outing-form','@/components/visits/visit-sections','@/components/memories/memory-forms'].includes(specifier))return {url:sourceURL('export function OutingCancellation(){return null;}export function OutingForm(){return null;}export function VisitHistory(){return null;}export function CompletionForm(){return null;}'),shortCircuit:true};
     if(specifier==='next/navigation')return {url:navigationURL,shortCircuit:true};
     if(specifier==='next/link')return {url:sourceURL("import {createElement} from 'react';export default function Link({href,children,...props}){return createElement('a',{...props,href},children);}"),shortCircuit:true};
     if(specifier==='@/components/home/refresh-button'||specifier==='./refresh-button')return {url:sourceURL("export function RefreshButton(){return '更新';}"),shortCircuit:true};
@@ -101,7 +101,7 @@ test('outing detail leads with the saved itinerary and visit actions; editing is
     provider.configure({groups,current:{outing:{title:'おでかけ',outing_date:'2026-10-18',mode,completed_at:null,revision:1,memo:'共有メモ'},items:[{item_id:'candidate',position:0,planned_time:'10:15',period:'morning'}],participants:['synthetic']}});
     const tree=OutingPage({params:Promise.resolve({groupId,outingId:'30000000-0000-4000-8000-000000000001'})});
     const boundary=nodes(tree,node=>node.type===Suspense)[0],body=await boundary.props.children.type(boundary.props.children.props);
-    const sections=nodes(body,node=>node.type==='section');assert.equal(sections[0].props['aria-label'],'日付と参加者');assert.equal(sections[1].props['aria-labelledby'],'outing-route-title');
+    const sections=nodes(body,node=>node.type==='section');assert.equal(sections[0].props['aria-label'],'日付と参加者');assert.equal(sections[1].props['aria-label'],'1日目のプラン');
     const edit=nodes(body,node=>node.type==='details')[0];assert.equal(edit.props.id,'edit-plan');assert.notEqual(edit.props.open,true);
     const links=nodes(sections[1],node=>typeof node.props?.href==='string');assert.ok(links.some(link=>link.props.href.includes('/visits/new?item=candidate&outing=')));
     const markup=renderToStaticMarkup(sections[1]);if(mode==='exact')assert.ok(markup.includes('10:15'));if(mode==='period')assert.ok(markup.includes('午前'));if(mode==='order')assert.ok(!markup.includes('10:15'));

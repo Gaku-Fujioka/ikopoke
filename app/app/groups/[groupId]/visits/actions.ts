@@ -25,6 +25,8 @@ export async function recordVisitAction(_previous:VisitActionState,form:FormData
   try{id=await recordVisit(await clientForAction(),input);}catch(cause){return {error:message(cause)};}
   refreshVisit(input.groupId,id);
   revalidateSharedHome(input.groupId);
+  revalidatePath(`/app/groups/${input.groupId}/items`);
+  revalidatePath("/app/items");
   revalidatePath(`/app/groups/${input.groupId}/items/${input.itemId}`);
   if(input.outingId)revalidatePath(`/app/groups/${input.groupId}/outings/${input.outingId}`);
   redirect(`/app/groups/${input.groupId}/visits/${id}`);

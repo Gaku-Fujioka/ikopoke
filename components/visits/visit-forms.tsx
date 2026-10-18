@@ -6,12 +6,12 @@ import {VisitTimeFields} from "@/components/visits/visit-time-fields";
 const field="min-h-12 w-full rounded-xl border border-stone-300 bg-white px-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-700";
 const button="min-h-12 rounded-full bg-orange-700 px-6 font-semibold text-white disabled:opacity-50";
 function RatingOptions(){return <><option value="">未評価</option>{[1,2,3,4,5].map(n=><option key={n} value={n}>{n} / 5</option>)}</>;}
-export function CreateVisitForm({groupId,itemId,outingId,title,requestId,initialDate}:{groupId:string;itemId:string;outingId:string|null;title:string;requestId:string;initialDate:string}){
+export function CreateVisitForm({groupId,itemId,outingId,stopId,title,requestId,initialDate}:{groupId:string;itemId:string;outingId:string|null;stopId?:string|null;title:string;requestId:string;initialDate:string}){
   const [date,setDate]=useState(initialDate),[note,setNote]=useState(""),[rating,setRating]=useState("");
   const [time,setTime]=useState(""),[period,setPeriod]=useState("");
   const [state,action,pending]=useActionState(recordVisitAction,{error:null});
   return <form action={action} aria-busy={pending} className="space-y-5 rounded-3xl border border-stone-200 bg-white p-6 sm:p-8">
-    <input type="hidden" name="groupId" value={groupId}/><input type="hidden" name="itemId" value={itemId}/><input type="hidden" name="outingId" value={outingId??""}/><input type="hidden" name="visitId" value={requestId}/>
+    <input type="hidden" name="groupId" value={groupId}/><input type="hidden" name="itemId" value={itemId}/><input type="hidden" name="outingId" value={outingId??""}/><input type="hidden" name="stopId" value={stopId??""}/><input type="hidden" name="visitId" value={requestId}/>
     <h2 className="break-words text-xl font-bold">{title}</h2><p className="text-sm text-stone-600">再訪は新しい記録として残ります。写真は保存後に追加できます。</p>
     <fieldset disabled={pending} className="min-w-0 space-y-5">
       <label className="block space-y-2 font-semibold"><span>訪問日（必須）</span><input type="date" name="date" required value={date} onChange={e=>setDate(e.target.value)} className={field}/></label>

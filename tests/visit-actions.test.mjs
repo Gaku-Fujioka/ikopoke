@@ -41,6 +41,7 @@ test("invalid or signed-out submissions never mutate the provider",async()=>{
 test("record creation derives actor in the DB, preserves the request and redirects only on success",async()=>{
   await assert.rejects(actions.recordVisitAction({error:null},form({userId:"spoofed"})),error=>error.location===`/app/groups/${group}/visits/saved-id`);
   const call=provider.calls.find(call=>call[0]==="rpc");assert.equal(call[1],"record_timed_visit");assert.equal(call[2].p_request_id,visit);assert.equal(call[2].p_outing_id,null);assert.ok(!JSON.stringify(call).includes("spoofed"));
+  assert.ok(provider.calls.some(call=>call[0]==="revalidate"&&call[1]===`/app/groups/${group}/items`));assert.ok(provider.calls.some(call=>call[0]==="revalidate"&&call[1]==="/app/items"));
   provider.configure({rpc:()=>({data:null,error:{code:"40001",message:"private provider detail"}})});
   const result=await actions.updateVisitAction({error:null},form());assert.match(result.error,/別の画面/);assert.ok(!result.error.includes("private"));assert.equal(provider.calls.some(call=>call[0]==="revalidate"),false);
 });
@@ -72,4 +73,12 @@ test("retrying a ready reservation does not upload again and cancelling reservat
   assert.equal(uploaded,false);
   await assert.rejects(transferVisitPhoto({...steps,reserve:async()=>({error:null,reservation:{photo_id:photo,object_path:"path",status:"cancelling"}})}),/中断/);
   assert.equal(uploaded,false);
+});
+
+test("ready photo deletion refreshes cover lists and visited filters after Storage and metadata complete",async()=>{
+  const {manageVisitAction}=await import("../app/app/groups/[groupId]/visits/manage-actions.ts");
+  provider.configure({rpc:name=>({data:name==='begin_remove_photo'?'reserved/path.jpg':null,error:null})});
+  assert.equal((await manageVisitAction({error:null},form({operation:'deletePhoto',confirm:'yes'}))).saved,true);
+  for(const path of ['/app/memories','/app/items',`/app/groups/${group}/memories`,`/app/groups/${group}/items`])assert.ok(provider.calls.some(call=>call[0]==='revalidate'&&call[1]===path));
+  assert.deepEqual(provider.calls.filter(call=>['rpc','remove'].includes(call[0])).map(call=>call[0]==='rpc'?call[1]:call[0]),['begin_remove_photo','remove','finish_remove_photo']);
 });

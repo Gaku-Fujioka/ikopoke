@@ -1,3 +1,4 @@
+import { DeleteVisitContent } from "@/components/visits/photo-management";
 import {Suspense} from "react";
 import Link from "next/link";
 import {notFound,redirect} from "next/navigation";
@@ -17,11 +18,13 @@ async function Content({params}:{params:Promise<{groupId:string;visitId:string}>
   if(error||!data?.claims?.sub)redirect(`/auth/login?next=${encodeURIComponent(`/app/groups/${groupId}/visits/${visitId}`)}`);
   let group,visit;try{[group,visit]=await Promise.all([getGroup(client,groupId),getVisit(client,groupId,visitId)]);}catch{return <p role="alert">訪問記録を読み込めませんでした。もう一度お試しください。</p>;}
   if(!group||!visit)notFound();
+  const permissions=await client.rpc("get_visit_permissions",{p_group_id:groupId,p_visit_id:visitId});
   return <div className="space-y-6"><Link href={`/app/groups/${groupId}/visits`} className="inline-flex min-h-11 items-center font-semibold text-orange-700 underline">← 訪問記録の一覧へ</Link>
     <article className="space-y-4 rounded-3xl border border-stone-200 bg-white p-6 sm:p-8"><p className="text-sm font-semibold text-orange-700">{group.name} / 行った！</p><h1 className="break-words text-3xl font-bold">{visit.item_title}</h1><time dateTime={visit.visited_on} className="block font-semibold">{visit.visited_on} · {visitTimeLabel(visit)}</time><p className="whitespace-pre-wrap break-words leading-7 text-stone-700">{visit.note||"メモはまだありません。"}</p><div className="flex flex-wrap gap-4"><Link href={`/app/groups/${groupId}/items/${visit.item_id}`} className="inline-flex min-h-11 items-center text-sm font-semibold text-orange-700 underline">元の候補を開く</Link>{visit.outing_id&&<Link href={`/app/groups/${groupId}/outings/${visit.outing_id}`} className="inline-flex min-h-11 items-center text-sm font-semibold text-orange-700 underline">おでかけ計画を開く</Link>}</div><p className="text-xs text-stone-500">名前は訪問を記録した時点のものです。</p></article>
-    <EditVisitForm visit={visit}/>
-    <Suspense fallback={<p role="status">評価を読み込んでいます…</p>}><VisitRatingSection client={client} groupId={groupId} visitId={visitId}/></Suspense>
-    <Suspense fallback={<p role="status">写真を読み込んでいます…</p>}><VisitPhotos client={client} groupId={groupId} visitId={visitId} title={visit.item_title}/></Suspense>
+    {visit.deleting ? <p role="status" className="kk-notice">削除処理が途中です。下の「訪問記録を削除」から同じ操作を再試行してください。</p> : <EditVisitForm visit={visit}/>}
+    {permissions.error ? <p role="status">削除権限を確認できませんでした。再読み込みしてください。</p> : permissions.data?.[0]?.can_delete && <DeleteVisitContent groupId={groupId} visitId={visitId} revision={visit.revision}/>}
+    <Suspense fallback={<p role="status">評価を読み込んでいます…</p>}>{!visit.deleting && <VisitRatingSection client={client} groupId={groupId} visitId={visitId}/>}</Suspense>
+    <Suspense fallback={<p role="status">写真を読み込んでいます…</p>}>{!visit.deleting && <VisitPhotos client={client} groupId={groupId} visitId={visitId} title={visit.item_title}/>}</Suspense>
   </div>;
 }
 export default function VisitPage({params}:{params:Promise<{groupId:string;visitId:string}>}){return <div className="mx-auto max-w-3xl"><Suspense fallback={<p role="status">訪問記録を読み込んでいます…</p>}><Content params={params}/></Suspense></div>;}

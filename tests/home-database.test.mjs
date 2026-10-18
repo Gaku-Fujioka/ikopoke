@@ -75,7 +75,7 @@ test("keyset pages break timestamp ties and do not repeat cards when newer activ
 test("former member names are hidden immediately and membership removal revokes all access",async()=>{
   await db.query("delete from public.group_members where group_id=$1 and user_id=$2",[group,bob]);
   const rows=(await asUser(alice,()=>feed(group))).rows;
-  assert.equal(rows.find(row=>row.kind==="comment").actor_name,null);
+  assert.equal(rows.find(row=>row.kind==="comment").actor_name,"退出したメンバー");
   await asUser(bob,()=>fails(feed(group),"42501"));assert.equal((await asUser(bob,()=>feed())).rows.length,0);
 });
 test("unbounded pages and incomplete or invalid cursors are rejected",async()=>{

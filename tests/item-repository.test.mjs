@@ -5,12 +5,15 @@ registerHooks({resolve(specifier,context,next){return specifier==="@/lib/items/s
 const {getItem,listItems}=await import("../lib/items/repository.ts");
 
 const groupA="10000000-0000-4000-8000-000000000001", groupB="10000000-0000-4000-8000-000000000002";
-const rows=Array.from({length:23},(_,index)=>({id:`candidate-${index}`,group_id:groupA,title:`候補${index}`,kind:"spot",memo:"",created_at:`2026-10-17T00:00:${String(index).padStart(2,"0")}Z`}))
+const rows=Array.from({length:23},(_,index)=>({id:`20000000-0000-4000-8000-${String(index).padStart(12,"0")}`,group_id:groupA,title:`候補${index}`,kind:"spot",memo:"",created_at:`2026-10-17T00:00:${String(index).padStart(2,"0")}Z`}))
   .concat({id:"other-group-candidate",group_id:groupB,title:"別グループ",kind:"activity",memo:"",created_at:"2026-10-17T00:01:00Z"});
 
 // Both groups are visible to this simulated member. RLS alone cannot prevent
 // mixing their data; the repository must also scope reads to the selected group.
-function client(error=null){return {from(table){
+function client(error=null){return {async rpc(name,args){
+  assert.equal(name,"browse_items");let matching=rows.filter(r=>r.group_id===args.p_group_id && r.title.toLowerCase().includes(args.p_query.toLowerCase())).sort((a,b)=>b.created_at.localeCompare(a.created_at)||b.id.localeCompare(a.id));
+  return {data:[{items:matching.slice((args.p_page-1)*20,args.p_page*20).map(r=>({...r,priority:0,archived_at:null,want_count:0,visited:false,score:0})),total_count:matching.length}],error};
+},from(table){
   assert.equal(table,"items");
   let filtered=[...rows], orders=[], start=0, end=Infinity;
   const result=()=>({data:filtered.slice(start,end+1),count:filtered.length,error});

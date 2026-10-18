@@ -28,7 +28,7 @@ async function NextEnjoyment({ client, groupId, groups }: { client: HomeClient; 
   const days = Math.round((Date.parse(`${outing.outing_date}T00:00:00Z`) - Date.parse(`${today}T00:00:00Z`)) / 86400000);
   return <section aria-labelledby="next-enjoyment"><Link href={`/app/groups/${outing.group_id}/outings/${outing.id}`} className={`kk-next${days <= 3 ? " kk-next-soon" : ""}`}>
     <span className="kk-date-block"><span>{Number(outing.outing_date.slice(5, 7))}月</span><strong>{Number(outing.outing_date.slice(8, 10))}</strong></span>
-    <div><p className="kk-next-label">{days === 0 ? "今日のおでかけ！" : days === 1 ? "明日が、たのしみ！" : days <= 3 ? `あと${days}日、もうすぐ！` : "次の楽しみ"}</p><h2 id="next-enjoyment">{outing.title}</h2><p className="kk-next-meta">{groups.find(group => group.id === outing.group_id)?.name} · <time dateTime={outing.outing_date}>{prettyDate(outing.outing_date)}</time></p></div><ArrowRight aria-hidden="true" size={20} />
+    <div><p className="kk-next-label">{days < 0 ? "旅のまっただ中！" : days === 0 ? "今日のおでかけ！" : days === 1 ? "明日が、たのしみ！" : days <= 3 ? `あと${days}日、もうすぐ！` : "次の楽しみ"}</p><h2 id="next-enjoyment">{outing.title}</h2><p className="kk-next-meta">{groups.find(group => group.id === outing.group_id)?.name} · <time dateTime={outing.outing_date}>{prettyDate(outing.outing_date)}</time>{outing.end_date && outing.end_date !== outing.outing_date && <>〜<time dateTime={outing.end_date}>{prettyDate(outing.end_date)}</time></>}</p></div><ArrowRight aria-hidden="true" size={20} />
   </Link></section>;
 }
 async function SavedPeek({ client, groupId }: { client: HomeClient; groupId: string | null }) {

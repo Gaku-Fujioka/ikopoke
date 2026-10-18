@@ -1,3 +1,4 @@
+import { GroupDepartureSection } from "@/components/groups/departure-sections";
 import { Suspense } from "react";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
@@ -56,6 +57,7 @@ async function GroupContent({ params }: { params: Promise<{ groupId: string }> }
       <Link href={`/app/groups/${groupId}/lists`} className="ml-3 inline-flex min-h-12 items-center font-semibold text-orange-700 underline underline-offset-4">リストを管理</Link>
       <p className="text-sm leading-6 text-stone-500">このグループの候補・計画・訪問記録・思い出はメンバー間で共有されます。</p>
     </section>
+    <Suspense fallback={<p role="status" className="kk-loading">退出の情報を読み込んでいます…</p>}><GroupDepartureSection client={client} groupId={groupId}/></Suspense>
     <RenameGroupForm groupId={groupId} name={group.name} />
     <Suspense fallback={<p role="status" className="kk-loading">メンバーを読み込んでいます…</p>}><Members client={client} groupId={groupId} /></Suspense>
     <Suspense fallback={<p role="status" className="rounded-3xl border border-stone-200 bg-white p-6 text-sm text-stone-600">招待を読み込んでいます…</p>}>
