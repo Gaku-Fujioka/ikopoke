@@ -132,3 +132,11 @@ test('group workspace has direct creation/settings entrances and candidate/conve
   const candidates=nodes(tree,node=>node.type?.name==='GroupCandidates')[0];assert.equal(candidates.props.groupId,groupId);await candidates.type(candidates.props);assert.ok(provider.calls.some(call=>Array.isArray(call)&&call[0]==='items'&&call[1]===groupId));
   const conversations=nodes(tree,node=>node.type?.name==='GroupConversations')[0];assert.equal(conversations.props.groupId,groupId);
 });
+
+test('home gives the primary entry to new places and nests saved-candidate navigation in an explicit disclosure',async()=>{
+  const tree=await SharedHome({});const wrapper=nodes(tree,node=>node.type?.name==='MapSpace')[0];const map=wrapper.type(wrapper.props);
+  assert.equal(map.props.children[1].type.name,'PlaceExplorer');
+  const saved=nodes(map,node=>node.type==='details')[0];assert.ok(saved);assert.equal(saved.props.children[0].props.children,'保存した候補から探す');
+  const form=nodes(saved,node=>node.type==='form')[0];assert.equal(form.props.action,'/app/items');assert.equal(form.props['aria-label'],'保存した候補を検索');assert.ok(nodes(form,node=>node.type==='button'&&node.props.children==='候補を検索').length);
+  assert.equal(nodes(map,node=>node.type==='form').length,1);
+});

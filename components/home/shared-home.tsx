@@ -43,14 +43,16 @@ async function SavedPeek({ client, groupId }: { client: HomeClient; groupId: str
 function MapSpace({ client, groupId }: { client: HomeClient; groupId: string | null }) {
   return <section className="kk-map-card" aria-labelledby="home-map-title">
     <div className="kk-map-top"><h2 id="home-map-title"><MapPin aria-hidden="true" size={17} />行きたいが、ひろがる</h2><span className="kk-label">ここから、次の行き先へ</span></div>
-    <form action={collectionHref("items", groupId)} role="search" className="kk-map-search"><Search aria-hidden="true" size={18} /><label htmlFor="home-candidate-search" className="sr-only">保存した候補を名前で検索</label><input id="home-candidate-search" type="search" name="q" maxLength={100} placeholder="保存した候補を探す" /><button type="submit">探す</button></form>
     <PlaceExplorer addHref={addHref("item", groupId)} config={{
       enabled: process.env.NEXT_PUBLIC_GOOGLE_MAPS_ENABLED === "true",
       placesEnabled: process.env.NEXT_PUBLIC_GOOGLE_PLACES_ENABLED === "true",
       apiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "",
       mapId: process.env.NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID ?? "",
     }} />
-    <Suspense fallback={<HomeLoading>保存した候補を読み込んでいます…</HomeLoading>}><SavedPeek client={client} groupId={groupId} /></Suspense>
+    <details className="kk-saved-search"><summary>保存した候補から探す</summary><p>みんなが追加した候補を、名前で絞り込みます。</p>
+      <form action={collectionHref("items", groupId)} role="search" aria-label="保存した候補を検索" className="kk-map-search"><Search aria-hidden="true" size={18} /><label htmlFor="home-candidate-search" className="sr-only">保存した候補を名前で検索</label><input id="home-candidate-search" type="search" name="q" maxLength={100} placeholder="保存した候補の名前" /><button type="submit">候補を検索</button></form>
+      <Suspense fallback={<HomeLoading>保存した候補を読み込んでいます…</HomeLoading>}><SavedPeek client={client} groupId={groupId} /></Suspense>
+    </details>
   </section>;
 }
 async function RecentActivity({ client, groupId, groups }: { client: HomeClient; groupId: string | null; groups: SavedGroup[] }) {

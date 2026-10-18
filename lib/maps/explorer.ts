@@ -23,6 +23,7 @@ export type ExplorerState = {
 export const initialExplorerState: ExplorerState = {
   phase: "closed", searching: false, results: [], selected: null, searched: null, error: null,
 };
+const queryError = "場所の名前やエリアを1〜100文字で入力してください。";
 
 // Google responses live only in this mounted view. No storage, URL, logs or DB.
 export function createMapExplorer(start: MapStarter) {
@@ -42,7 +43,7 @@ export function createMapExplorer(start: MapStarter) {
     update({ phase: "failed", searching: false, results: [], selected: null, searched: null,
       error: "地図を読み込めませんでした。ページを再読み込みしてお試しください。候補の検索や手入力は引き続き使えます。" });
   }
-  return {
+  const explorer = {
     getSnapshot: () => state,
     subscribe(listener: () => void) { listeners.add(listener); return () => { listeners.delete(listener); }; },
     async open(host: HTMLElement) {
@@ -61,7 +62,7 @@ export function createMapExplorer(start: MapStarter) {
       if (state.phase !== "ready" || state.searching || !session) return;
       const query = value.trim();
       if (!query || [...query].length > 100) {
-        update({ error: "場所の名前やエリアを1〜100文字で入力してください。" }); return;
+        update({ error: queryError }); return;
       }
       const current = generation;
       update({ searching: true, error: null, results: [], selected: null, searched: null });
@@ -73,6 +74,14 @@ export function createMapExplorer(start: MapStarter) {
         if (current === generation) update({ searching: false, results: [], searched: null,
           error: "場所を検索できませんでした。時間をおいて再度お試しください。保存した候補の検索や手入力も使えます。" });
       }
+    },
+    async searchOnMap(host: HTMLElement, value: string): Promise<void> {
+      if (state.phase === "loading" || state.phase === "failed" || state.searching) return;
+      const query = value.trim();
+      if (!query || [...query].length > 100) { update({ error: queryError }); return; }
+      // Submit is an explicit user action too; no navigation to saved candidates.
+      if (state.phase === "closed") await explorer.open(host);
+      await explorer.search(query);
     },
     select(id: string) {
       if (state.phase !== "ready" || state.searching || !session) return;
@@ -89,6 +98,7 @@ export function createMapExplorer(start: MapStarter) {
       state = initialExplorerState;
     },
   };
+  return explorer;
 }
 
 export function googleMapsPlaceHref(place: Pick<PlaceResult, "id" | "name">): string {

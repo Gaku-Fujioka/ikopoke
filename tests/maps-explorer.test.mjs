@@ -167,3 +167,37 @@ test('SSR gives opt-in or manual fallback and never embeds a Maps script or brow
     if(!enabled)assert.ok(markup.includes('href="/app/new?type=item"'));
   }
 });
+test('new-place search is visible before opening the map and has no navigation form action',()=>{
+  const markup=renderToStaticMarkup(createElement(PlaceExplorer,{config,addHref:'/app/new?type=item'}));
+  assert.match(markup,/<h3[^>]*>新しい場所を探す<\/h3>/);
+  assert.match(markup,/<form[^>]*aria-label="新しい場所を検索"/);
+  assert.match(markup,/場所を検索/);
+  assert.ok(!markup.includes('action="/app/items'));
+  assert.ok(!markup.includes('<script'));
+});
+test('submitting a new-place search opens the map once and searches after ready, without a separate open action',async()=>{
+  let opens=0;const queries=[],opening=deferred();
+  const explorer=createMapExplorer(async()=>{opens++;return opening.promise;});
+  const pending=explorer.searchOnMap(host(),' 吉祥寺 カフェ ');
+  await explorer.searchOnMap(host(),'二重送信');assert.equal(opens,1);assert.deepEqual(queries,[]);
+  opening.resolve({search:async query=>{queries.push(query);return [place];},select(){},dispose(){}});await pending;
+  assert.deepEqual(queries,['吉祥寺 カフェ']);assert.deepEqual(explorer.getSnapshot().results,[place]);assert.equal(explorer.getSnapshot().phase,'ready');
+  await explorer.searchOnMap(host(),'別の街');assert.equal(opens,1);assert.deepEqual(queries,['吉祥寺 カフェ','別の街']);explorer.dispose();
+});
+test('invalid initial searches never initialize a paid map or call Places',async()=>{
+  let opens=0;const explorer=createMapExplorer(async()=>{opens++;throw Error('must not open');});
+  for(const query of ['   ','あ'.repeat(101)]){await explorer.searchOnMap(host(),query);assert.equal(explorer.getSnapshot().phase,'closed');assert.match(explorer.getSnapshot().error,/1〜100/);}
+  assert.equal(opens,0);explorer.dispose();
+});
+test('a submitted search never reaches Places after SDK failure or navigation during initialization',async()=>{
+  let searches=0;
+  const failed=createMapExplorer(async()=>{throw Error('private');});await failed.searchOnMap(host(),'検索');assert.equal(failed.getSnapshot().phase,'failed');assert.deepEqual(failed.getSnapshot().results,[]);
+  const opening=deferred(),explorer=createMapExplorer(()=>opening.promise);const pending=explorer.searchOnMap(host(),'検索');explorer.dispose();
+  opening.resolve({search:async()=>{searches++;return [place];},dispose(){},select(){}});await pending;assert.equal(searches,0);assert.equal(explorer.getSnapshot().phase,'closed');
+});
+test('the new-place form is absent when Maps or Places is disabled, while manual fallback remains',()=>{
+  for(const patch of [{enabled:false},{placesEnabled:false},{apiKey:''},{mapId:''}]){
+    const markup=renderToStaticMarkup(createElement(PlaceExplorer,{config:{...config,...patch},addHref:'/app/new?type=item'}));
+    assert.ok(!markup.includes('aria-label="新しい場所を検索"'));assert.ok(!markup.includes('action="/app/items'));
+  }
+});

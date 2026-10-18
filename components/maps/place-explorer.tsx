@@ -14,8 +14,20 @@ export function PlaceExplorer({ config, addHref }: { config: MapsConfig; addHref
   const state = useSyncExternalStore(explorer.subscribe, explorer.getSnapshot, () => initialExplorerState);
   useEffect(() => () => explorer.dispose(), [explorer]);
   const available = config.enabled && Boolean(config.apiKey) && Boolean(config.mapId);
-  function search(event: FormEvent<HTMLFormElement>) { event.preventDefault(); void explorer.search(query); }
+  const busy = state.phase === "loading" || state.searching;
+  function search(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (host.current && available && config.placesEnabled) void explorer.searchOnMap(host.current, query);
+  }
   return <div className="kk-place-explorer">
+    {available && config.placesEnabled && state.phase !== "failed" && <div className="kk-new-place-search">
+      <h3>新しい場所を探す</h3><p>街やお店をGoogleマップから見つけよう。</p>
+      <form onSubmit={search} role="search" aria-label="新しい場所を検索" className="kk-map-search">
+        <Search aria-hidden="true" size={18} /><label htmlFor={searchId} className="sr-only">新しい場所の名前やエリア</label>
+        <input id={searchId} type="search" value={query} onChange={event => setQuery(event.target.value)} maxLength={100} placeholder="例：吉祥寺 カフェ" required disabled={busy} />
+        <button type="submit" disabled={busy}>{busy ? "検索中" : "場所を検索"}</button>
+      </form>
+    </div>}
     {state.phase === "closed" && <div className="kk-map-unconnected">
       <span className="kk-map-doodle" aria-hidden="true"><Map size={48} strokeWidth={1.3} /><Sparkles size={20} /></span>
       <strong>次の「ここいこ」を、見つけよう。</strong>
@@ -26,11 +38,7 @@ export function PlaceExplorer({ config, addHref }: { config: MapsConfig; addHref
     <div ref={host} className="kk-google-map" hidden={state.phase !== "loading" && state.phase !== "ready"} aria-label="新しい行き先を探すGoogleマップ" />
     {state.phase === "loading" && <p role="status" className="kk-map-note">地図をひらいています…</p>}
     {state.phase === "ready" && <>
-      {config.placesEnabled ? <form onSubmit={search} role="search" aria-label="新しい場所を検索" className="kk-map-search">
-        <Search aria-hidden="true" size={18} /><label htmlFor={searchId} className="sr-only">新しい場所の名前やエリア</label>
-        <input id={searchId} type="search" value={query} onChange={event => setQuery(event.target.value)} maxLength={100} placeholder="例：吉祥寺 カフェ" required disabled={state.searching} />
-        <button type="submit" disabled={state.searching}>{state.searching ? "検索中" : "探す"}</button>
-      </form> : <p className="kk-map-note">新しい場所の検索は準備中です。保存した候補の検索・手入力を使えます。</p>}
+      {!config.placesEnabled && <p className="kk-map-note">新しい場所の検索は準備中です。保存した候補の検索・手入力を使えます。</p>}
       {state.searching && <p role="status" className="kk-map-note">気になる場所を探しています…</p>}
       {state.searched !== null && <p role="status" className="kk-map-note">「{state.searched}」{state.results.length ? `の検索結果 · ${state.results.length}件` : "に合う場所が見つかりませんでした。エリアや名前を変えてみてください。"}</p>}
       {state.results.length > 0 && <><ul className="kk-place-results" aria-label="Google Mapsの検索結果">{state.results.map(place => <li key={place.id} data-selected={state.selected === place.id}>
