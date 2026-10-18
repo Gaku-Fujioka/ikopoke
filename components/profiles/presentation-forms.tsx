@@ -4,13 +4,19 @@ import {useRouter} from "next/navigation";
 import {createClient} from "@/lib/supabase/client";
 import {GROUP_COLORS,type GroupColor} from "@/lib/presentation/colors";
 import type {GroupPresentation,MediaEditor} from "@/lib/presentation/repository";
-import {profileMediaAction,saveGroupPresentationAction} from "@/app/app/profile/presentation-actions";
+import {profileMediaAction,saveGroupPresentationAction,type PresentationState} from "@/app/app/profile/presentation-actions";
 import {ProfileImage} from "./profile-image";
 
 export function GroupPresentationForm({groupId,presentation}:{groupId:string;presentation:GroupPresentation}){
  const [color,setColor]=useState<GroupColor>(presentation.color??"sky");
  const [colorState,colorAction,colorPending]=useActionState(saveGroupPresentationAction,{error:null});
- const [aboutState,aboutAction,aboutPending]=useActionState(saveGroupPresentationAction,{error:null});
+ const [descriptionDraft,setDescriptionDraft]=useState<{body:string;revision:number}|null>(null);
+ // Keep the text and its expected revision together across unrelated photo/color refreshes.
+ const [aboutState,aboutAction,aboutPending]=useActionState(async(previous:PresentationState,form:FormData)=>{
+  const result=await saveGroupPresentationAction(previous,form);
+  if(result.saved)setDescriptionDraft(null);
+  return result;
+ },{error:null});
  return <div className="space-y-6">
   <section className="kk-surface space-y-4"><div><h2 className="text-xl font-bold">自分の表示色</h2><p className="mt-2 text-sm text-stone-600">あなたの画面だけの色です。他のメンバーの色は変わりません。</p></div>
    <form action={colorAction} className="space-y-4" aria-busy={colorPending}><input type="hidden" name="groupId" value={groupId}/><input type="hidden" name="mode" value="color"/>
@@ -19,8 +25,8 @@ export function GroupPresentationForm({groupId,presentation}:{groupId:string;pre
    </form>
   </section>
   <section className="kk-surface space-y-4"><div><h2 className="text-xl font-bold">このグループについて</h2><p className="mt-2 text-sm text-stone-600">写真・説明はみんなで共有します。有効な招待を持つ人にも、ログイン後・参加前に表示します。</p></div>
-   <form action={aboutAction} className="space-y-4" aria-busy={aboutPending}><input type="hidden" name="groupId" value={groupId}/><input type="hidden" name="mode" value="description"/><input type="hidden" name="revision" value={presentation.revision}/>
-    <label className="block space-y-2"><span className="font-semibold">グループの説明 <small className="font-normal text-stone-500">任意・500文字まで</small></span><textarea name="description" defaultValue={presentation.description} maxLength={500} rows={4} className="kk-field"/></label>
+   <form action={aboutAction} className="space-y-4" aria-busy={aboutPending}><input type="hidden" name="groupId" value={groupId}/><input type="hidden" name="mode" value="description"/><input type="hidden" name="revision" value={descriptionDraft?.revision??presentation.revision}/>
+    <label className="block space-y-2"><span className="font-semibold">グループの説明 <small className="font-normal text-stone-500">任意・500文字まで</small></span><textarea name="description" value={descriptionDraft?.body??presentation.description} onChange={event=>{const body=event.target.value;setDescriptionDraft(current=>({body,revision:current?.revision??presentation.revision}));}} disabled={aboutPending} maxLength={500} rows={4} className="kk-field"/></label>
     <button disabled={aboutPending} className="kk-primary-link">{aboutPending?"保存中…":"説明を保存"}</button>{aboutState.error&&<p role="alert" className="text-sm text-red-700">{aboutState.error}</p>}{aboutState.saved&&<p role="status" className="text-sm">説明を保存しました。</p>}
    </form>
   </section>

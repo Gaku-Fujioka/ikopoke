@@ -24,7 +24,7 @@
 ## 結果
 
 - 実装：白い吹き出し/部分配色、グループの個人用8色・共有写真/説明、全グループ共通の個人写真、ホーム/近況/会話/所属メンバー表示、ログイン後の招待プレビュー。既存ホーム順序を維持。グループ名の識別アクセントも一覧で本人色を使用する。
-- 保存：画像はブラウザでJPEGへ正規化・縮小し、予約UUIDの再利用、実体のサイズ/MIME照合、公開写真の比較による競合防止、未完了画像の再確認/取消・古い画像の整理を実装。既存の非公開bucketを拡張し、写真なしでも文字/アイコンで成立する。
+- 保存：画像はブラウザでJPEGへ正規化・縮小し、予約UUIDの再利用、実体のサイズ/MIME照合、公開写真の比較による競合防止、未完了画像の再確認/取消・古い画像の整理を実装。既存の非公開bucketを拡張し、写真なしでも文字/アイコンで成立する。説明の入力を始めた時点の本文と改訂番号を一緒に保持し、写真/色の再取得で古い本文に新しい改訂番号だけを付けて上書きしない。
 - ローカル：全319テスト成功。追加の共同所属アバター照会・退出後の共有写真の保全/整理を含む関連20件、削除の補強後に関連13件も成功。lint、npx tsc --noEmit、Edge handler単体型検査、production build、PostCSS構文検査成功。既存のNext partialPrefetching/Node module種別の警告は残る。
 - 開発Supabase：対象gszekiwwrxlkorqfrdvdを構造/履歴で確認し、group_profile_presentationを実version 20261018115447で適用。削除と送信が重なった時のaccount lock取得後の再確認を追加migration harden_profile_upload_lifecycle（実version 20261018115842）で補強。ローカルファイル名を実versionへ同期。新規3表のRLS、公開7RPCのSECURITY INVOKER/空search_path、匿名実行不可、画像の直接CRUD拒否、Storageポリシーと履歴を確認。削除Edge Functionはリモート既存v1とmainの同一性を確認後、後方互換のpath検証をv2として配備、JWT検証trueを維持。実ユーザーデータ/環境変数値の取得・テスト画像保存・実アカウント削除は行っていない。
 - Advisor：新規profile_media/非公開招待閲覧表の[ポリシーなしINFO](https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy)は、直接CRUD権限を剥奪した拒否設計。新規索引の[未使用INFO](https://supabase.com/docs/guides/database/database-linter?lint=0005_unused_index)あり。既存のrls_auto_enable匿名実行、従来RPCのSECURITY DEFINER実行、[漏えいパスワード保護](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection)、groups.created_by等の索引指摘は別課題として変更しない。今回追加した公開RPCへのSECURITY DEFINER警告はない。
