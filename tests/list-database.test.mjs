@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile, readdir } from "node:fs/promises";
 import { after, before, test } from "node:test";
+import { createStorageFixture } from "./storage-fixture.mjs";
 
 const { PGlite } = await import(process.env.KOKOIKO_PGLITE_MODULE_URL ?? "@electric-sql/pglite");
 let db;
@@ -22,6 +23,7 @@ const feed=(group,query="",kind=null,reaction=null,list=null,unclassified=false,
 before(async()=>{
   db=await PGlite.create();
   await db.exec(`create role anon nologin;create role authenticated nologin;create schema auth;create table auth.users(id uuid primary key);create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;grant usage on schema auth to anon,authenticated;insert into auth.users(id) values('${alice}'),('${bob}'),('${outsider}');`);
+  await createStorageFixture(db);
   const migrations=(await readdir(new URL("../supabase/migrations/",import.meta.url))).filter(name=>name.endsWith(".sql")).sort();
   for(const name of migrations)await db.exec(await readFile(new URL(`../supabase/migrations/${name}`,import.meta.url),"utf8"));
   await asUser(alice,()=>db.query("select public.create_group('A',$1)",[groupA]));

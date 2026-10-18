@@ -13,6 +13,7 @@ import { ItemReactionSection } from "@/components/items/item-reaction-section";
 import { EditItemForm } from "@/components/items/edit-item-form";
 import { ItemComments } from "@/components/items/item-comments";
 import { ItemLists } from "@/components/lists/item-lists";
+import { VisitHistory } from "@/components/visits/visit-sections";
 import { listQuery } from "@/lib/lists/validation";
 import { itemSearchQuery, itemFilters, sharedItemListHref, sharedItemDetailHref, sharedItemCommentsHref, sharedItemListsHref } from "@/lib/items/search";
 
@@ -58,6 +59,7 @@ async function ItemContent({ params, searchParams }: Props) {
         <h1 className="break-words text-3xl font-bold tracking-tight sm:text-4xl">{item.title}</h1>
         <p className="text-sm leading-6 text-stone-600">このグループのメンバーに共有されています。</p>
         <Link href={`/app/groups/${groupId}/outings/new?item=${itemId}`} className="inline-flex min-h-11 items-center font-semibold text-orange-700 underline underline-offset-4">この候補から計画を作る</Link>
+        <Link href={`/app/groups/${groupId}/visits/new?item=${itemId}`} className="inline-flex min-h-11 items-center font-semibold text-orange-700 underline underline-offset-4">行った！を記録する</Link>
         <section aria-labelledby="item-memo-heading" className="border-t border-stone-200 pt-5">
           <h2 id="item-memo-heading" className="font-semibold">メモ</h2>
           <p className="mt-3 whitespace-pre-wrap break-words leading-7 text-stone-700">{item.memo || "メモはまだありません。"}</p>
@@ -73,6 +75,7 @@ async function ItemContent({ params, searchParams }: Props) {
       <Suspense fallback={<section role="status" aria-label="コメント" className="rounded-3xl border border-stone-200 bg-white p-6">コメントを読み込んでいます…</section>}>
         <ItemComments client={client} groupId={groupId} itemId={itemId} page={commentsPage} detailHref={currentHref} />
       </Suspense>
+      <Suspense fallback={<p role="status">訪問記録を読み込んでいます…</p>}><VisitHistory client={client} groupId={groupId} itemId={itemId} /></Suspense>
     </div>
   );
 }

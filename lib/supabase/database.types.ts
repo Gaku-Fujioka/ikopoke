@@ -9,6 +9,18 @@ export type GroupRow = {
 export type Database = {
   public: {
     Tables: {
+      visits: {
+        Row: { id: string; group_id: string; item_id: string; outing_id: string | null; item_title: string; visited_on: string; note: string; revision: number; created_by: string; created_at: string };
+        Insert: never; Update: never; Relationships: [];
+      };
+      visit_ratings: {
+        Row: { visit_id: string; user_id: string; value: number; updated_at: string };
+        Insert: never; Update: never; Relationships: [];
+      };
+      visit_photos: {
+        Row: { id: string; group_id: string; visit_id: string; slot: number; object_path: string; content_type: string; byte_size: number; status: "pending" | "ready" | "cancelling"; created_by: string; created_at: string };
+        Insert: never; Update: never; Relationships: [];
+      };
       outings: {
         Row: { id: string; group_id: string; title: string; outing_date: string; mode: "exact" | "period" | "order"; memo: string; revision: number; created_by: string; created_at: string; updated_at: string };
         Insert: never; Update: never; Relationships: [];
@@ -83,6 +95,14 @@ export type Database = {
       };
     };
     Functions: {
+      record_visit: { Args: { p_group_id: string; p_item_id: string; p_outing_id: string | null; p_visited_on: string; p_note: string; p_rating: number | null; p_request_id: string }; Returns: string };
+      update_visit: { Args: { p_group_id: string; p_visit_id: string; p_visited_on: string; p_note: string; p_expected_revision: number }; Returns: number };
+      set_visit_rating: { Args: { p_group_id: string; p_visit_id: string; p_value: number | null }; Returns: undefined };
+      get_visit_ratings: { Args: { p_group_id: string; p_visit_id: string }; Returns: { rating_count: number; average_rating: number | null; my_rating: number | null }[] };
+      reserve_visit_photo: { Args: { p_group_id: string; p_visit_id: string; p_request_id: string; p_content_type: string; p_byte_size: number }; Returns: { photo_id: string; object_path: string; status: "pending" | "ready" | "cancelling" }[] };
+      finish_visit_photo: { Args: { p_group_id: string; p_visit_id: string; p_photo_id: string }; Returns: undefined };
+      begin_cancel_visit_photo: { Args: { p_group_id: string; p_visit_id: string; p_photo_id: string }; Returns: string };
+      cancel_visit_photo: { Args: { p_group_id: string; p_visit_id: string; p_photo_id: string }; Returns: undefined };
       save_outing: { Args: { p_group_id: string; p_outing_id: string; p_expected_revision: number; p_title: string; p_date: string; p_mode: string; p_memo: string; p_items: { item_id: string; planned_time: string | null; period: string | null }[]; p_participants: string[] }; Returns: number };
       set_my_display_name: { Args: { p_name: string }; Returns: string };
       get_group_members: { Args: { p_group_id: string }; Returns: { user_id: string; display_name: string | null }[] };

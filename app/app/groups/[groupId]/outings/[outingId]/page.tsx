@@ -9,6 +9,7 @@ import { getGroupMembers } from "@/lib/profiles/repository";
 import { getOuting, listCandidateOptions } from "@/lib/outings/repository";
 import { AuthSetupNotice } from "@/components/auth-setup-notice";
 import { OutingForm } from "@/components/outings/outing-form";
+import { VisitHistory } from "@/components/visits/visit-sections";
 
 async function OutingContent({ params }: { params: Promise<{ groupId: string; outingId: string }> }) {
   const { groupId, outingId } = await params;
@@ -24,7 +25,10 @@ async function OutingContent({ params }: { params: Promise<{ groupId: string; ou
     return <p role="alert" className="rounded-3xl border bg-white p-6">計画を読み込めませんでした。計画一覧から開き直してください。</p>;
   }
   if (!group || !current) notFound();
-  return <div className="space-y-6"><Link href={`/app/groups/${groupId}/outings`} className="inline-flex min-h-11 items-center font-semibold text-orange-700 underline">← 計画一覧へ</Link><div><p className="text-sm font-semibold text-orange-700">{group.name}</p><h1 className="mt-2 break-words text-3xl font-bold">{current.outing.title}</h1><p className="mt-2 text-stone-600">計画を編集できます。保存するとグループ全員に反映されます。</p></div><OutingForm key={current.outing.revision} groupId={groupId} outingId={outingId} current={current} candidates={candidates} members={members} actorId={data.claims.sub} /></div>;
+  return <div className="space-y-6"><Link href={`/app/groups/${groupId}/outings`} className="inline-flex min-h-11 items-center font-semibold text-orange-700 underline">← 計画一覧へ</Link><div><p className="text-sm font-semibold text-orange-700">{group.name}</p><h1 className="mt-2 break-words text-3xl font-bold">{current.outing.title}</h1><p className="mt-2 text-stone-600">計画を編集できます。保存するとグループ全員に反映されます。</p></div><OutingForm key={current.outing.revision} groupId={groupId} outingId={outingId} current={current} candidates={candidates} members={members} actorId={data.claims.sub} />
+    <section className="space-y-4 rounded-3xl border border-stone-200 bg-white p-6"><h2 className="text-xl font-bold">このおでかけの訪問を記録</h2><ul className="space-y-2">{current.items.map(slot=><li key={slot.item_id}><Link href={`/app/groups/${groupId}/visits/new?item=${slot.item_id}&outing=${outingId}&date=${current.outing.outing_date}`} className="inline-flex min-h-11 items-center font-semibold text-orange-700 underline">{candidates.find(item=>item.id===slot.item_id)?.title??"候補"}の「行った！」を記録</Link></li>)}</ul></section>
+    <Suspense fallback={<p role="status">訪問記録を読み込んでいます…</p>}><VisitHistory client={client} groupId={groupId} outingId={outingId}/></Suspense>
+  </div>;
 }
 export default function OutingPage({ params }: { params: Promise<{ groupId: string; outingId: string }> }) {
   return <div className="mx-auto max-w-3xl"><Suspense fallback={<p role="status">計画を読み込んでいます…</p>}><OutingContent params={params} /></Suspense></div>;
