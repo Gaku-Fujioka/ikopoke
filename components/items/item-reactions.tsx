@@ -7,9 +7,9 @@ import { REACTION_OPTIONS, reactionLabel, type ReactionSummary } from "@/lib/ite
 export function ItemReactions({ groupId, itemId, summary }: { groupId: string; itemId: string; summary: ReactionSummary }) {
   const [state, action, pending] = useActionState(setReactionAction, { error: null });
   return (
-    <section aria-labelledby="reaction-heading" className="space-y-5 rounded-3xl border border-stone-200 bg-white p-6 sm:p-8">
+    <section aria-labelledby="reaction-heading" className="space-y-5">
       <div>
-        <h2 id="reaction-heading" className="text-xl font-semibold">あなたの気持ち</h2>
+        <h2 id="reaction-heading" className="text-xl font-semibold">この行き先、どう？</h2>
         <p className="mt-2 text-sm leading-6 text-stone-600">現在の反応：{reactionLabel(summary.my_reaction)}</p>
       </div>
       <dl aria-label="みんなの反応" className="flex flex-wrap gap-x-6 gap-y-3 text-sm">

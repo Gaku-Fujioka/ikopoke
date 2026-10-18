@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { revalidateSharedHome } from "@/lib/home/revalidate";
+import { selectedCandidateIds } from "@/lib/outings/selection";
 import { parseTrip } from "@/lib/outings/trips";
 import { isGroupId } from "@/lib/groups/validation";
 type State={error:string|null;saved?:boolean};
@@ -14,7 +15,8 @@ export async function saveTripAction(_previous:State,form:FormData):Promise<Stat
     const {error}=await client.rpc("save_trip",{p_group_id:input.groupId,p_outing_id:input.outingId,p_expected_revision:input.expectedRevision,p_title:input.title,p_start:input.start,p_end:input.end,p_memo:input.memo,p_days:input.days,p_participants:input.participants,p_removed_ids:input.removedIds});
     if(error)return {error:error.code==="40001"?"ほかの画面で変更されています。入力を控えて再読み込みしてください。":error.code==="22023"?"日ごとの参加者・時間と旅行期間をご確認ください。期間外の行き先は先に移すか外してください。中止・終了済みの計画は再開してから編集できます。":"計画を保存できませんでした。所属と候補の状態をご確認ください。"};
   }catch{return {error:"計画を保存できませんでした。もう一度お試しください。"};}
-  refresh(input.groupId,input.outingId);redirect(`/app/groups/${input.groupId}/outings/${input.outingId}`);
+  const selected = selectedCandidateIds(form.get("selectedIds"));
+  refresh(input.groupId,input.outingId);redirect(`/app/groups/${input.groupId}/outings/${input.outingId}${selected.length ? "?planned=" + encodeURIComponent(selected.join(",")) : ""}`);
 }
 export async function cancelOutingAction(_previous:State,form:FormData):Promise<State>{
   const group=form.get('groupId'),id=form.get('outingId'),cancelled=form.get('cancelled'),revision=Number(form.get('revision'));
