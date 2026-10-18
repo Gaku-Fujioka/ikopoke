@@ -5,12 +5,22 @@ const url=s=>`data:text/javascript,${encodeURIComponent(s)}`;
 const provider=url(`export const calls=[];let config={};export function configure(c={}){config=c;calls.length=0;}export async function createClient(){return {auth:{getClaims:async()=>({data:config.signedOut?null:{claims:{sub:'verified-user'}},error:null})},rpc:async(name,args)=>{calls.push({name,args});if(config.throw)throw Error('private-token');return {data:config.missing?null:1,error:config.code?{code:config.code,message:'private-token'}:null};}};}`);
 const cache=url(`export const paths=[];export function revalidatePath(...args){paths.push(args);}`);
 const env=url(`export let hasEnvVars=true;export function configure(v){hasEnvVars=v;}`);
-registerHooks({resolve(s,c,next){const mapped={'@/lib/supabase/server':provider,'@/lib/utils':env,'next/cache':cache,'next/navigation':url(`export function redirect(location){throw Object.assign(Error('redirect'),{location});}`)}[s];if(mapped)return {url:mapped,shortCircuit:true};if(s.startsWith('@/'))return {url:new URL('../'+s.slice(2)+'.ts',import.meta.url).href,shortCircuit:true};return next(s,c);}});
-const backend=await import(provider),invalidations=await import(cache),environment=await import(env),actions=await import('../app/app/finance/actions.ts');
+const request=url(`let wait=null,release;export function pause(){wait=new Promise(done=>{release=done;});}export function finish(){release?.();wait=null;}export async function connection(){await wait;}`);
+registerHooks({resolve(s,c,next){const mapped={'@/lib/supabase/server':provider,'@/lib/utils':env,'next/cache':cache,'next/server':request,'next/navigation':url(`export function redirect(location){throw Object.assign(Error('redirect'),{location});}`)}[s];if(mapped)return {url:mapped,shortCircuit:true};if(s.startsWith('@/'))return {url:new URL('../'+s.slice(2)+'.ts',import.meta.url).href,shortCircuit:true};return next(s,c);}});
+const backend=await import(provider),invalidations=await import(cache),environment=await import(env),requestBoundary=await import(request),actions=await import('../app/app/finance/actions.ts'),{financeSession}=await import('../lib/finance/session.ts');
 const id=n=>`a0000000-0000-4000-8000-${String(n).padStart(12,'0')}`;
 function form(values={}){const f=new FormData();for(const[k,v]of Object.entries({id:id(1),revision:'0',contextId:id(2),kind:'expense',title:' ランチ ',amount:'１，０００',date:'2026-10-18',categoryId:id(3),memo:'',entryId:id(4),paymentRevision:'0',operation:'save',paidOn:'2026-10-19',...values}))if(v!==null)f.set(k,v);return f;}
 const state={error:null};
 beforeEach(()=>{backend.configure();invalidations.paths.length=0;environment.configure(true);});
+
+test('personal pages defer environment and authentication until a request, including missing-settings builds',async()=>{
+ environment.configure(false);requestBoundary.pause();let finished=false;
+ const pending=financeSession().catch(error=>{finished=true;throw error;});
+ await new Promise(resolve=>setImmediate(resolve));assert.equal(finished,false);
+ requestBoundary.finish();await assert.rejects(pending,error=>/準備中/.test(error.message));assert.deepEqual(backend.calls,[]);
+ environment.configure(true);assert.ok((await financeSession()).rpc);
+ backend.configure({signedOut:true});await assert.rejects(financeSession('/app/finance/categories'),error=>error.location==='/auth/login?next=%2Fapp%2Ffinance%2Fcategories');
+});
 
 test('invalid amounts/dates/context/party and signed-out requests never mutate or invalidate',async()=>{
  for(const values of [{amount:'0'},{amount:'-1'},{amount:'1.5'},{amount:'1,2'},{amount:'1000000001'},{date:'2026-02-30'},{contextId:'https://evil.invalid'},{kind:'receive',partyName:''}])assert.ok((await actions.saveFinanceEntryAction(state,form(values))).error);

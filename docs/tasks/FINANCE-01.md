@@ -24,5 +24,6 @@
 - ローカル：全350件のNodeテスト、追加後の会計DB8件、`npm run lint`、`npm run build`、build後の`npx tsc --noEmit`成功。現在は既存330＋会計21の計351件（DB8/Action5/取得3/SSR表示5）。CIにも4テストファイルを追加。追加DBテストは61明細・25履歴のページ送りと重複/欠落防止、大きな合計額、分類上限と上限到達後の再送を確認。
 - DBテストはPGliteの実ロール/RLSで本人・同グループの他人・非所属・匿名、直接CRUD、部分精算と月境界、再送/改訂競合、分類/相手/記録先の改ざん、連鎖削除、退出/削除後の保持、アカウント削除ガードを検証した。実サービスのJWT検証や別接続の同時実行とは区別する。
 - 自己レビュー実施。独立レビューと実ブラウザ操作は未実施（接続可能なブラウザ/アプリ一覧が空）。UIテストはSSRの出力確認で、モバイル描画や実タップの確認ではない。Nextの既存partialPrefetching警告とNodeのmodule形式警告は継続。
+- 初回CIで接続設定なしの事前生成が会計認証チェックで失敗。`financeSession`をリクエスト境界の後で実行し、認証/環境チェックが境界より先に走らない回帰テストを追加した。[Next.js connection](https://nextjs.org/docs/app/api-reference/functions/connection)の用法を確認。環境ファイルを変更せず子プロセスの公開接続設定だけ空にし、CI相当の本番build成功。修正後のlintとAction/Session6件も成功。現在のテスト数は352件。修正後のCI結果はPRの最新Checksで確認する。
 - ローカルHTTPで会計一覧/追加/分類の3URLの未ログイン応答と、元URLを保つログイン誘導307を確認。既存のlocalhost:3000開発サーバーを利用し、別サーバーは起動しない。
 - 実装commit `6b4a202`を専用branchへpushし、[Draft PR #35](https://github.com/Gaku-Fujioka/kokoiko/pull/35)を作成。最新commitのCI結果はPRのChecksで追跡する。ユーザー指示どおりmainへマージしない。
