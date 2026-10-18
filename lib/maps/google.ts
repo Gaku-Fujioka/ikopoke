@@ -11,7 +11,8 @@ type RawPlace = {
   attributions?: { provider?: string; providerURI?: string }[];
 };
 type SearchRequest = { textQuery: string; fields: string[]; maxResultCount: number; language: string; region: string };
-type MapsLibrary = { Map: new (host: HTMLElement, options: object) => MapHandle; LatLngBounds: new () => Bounds };
+type MapsLibrary = { Map: new (host: HTMLElement, options: object) => MapHandle };
+type CoreLibrary = { LatLngBounds: new () => Bounds };
 type MarkerHandle = { map: MapHandle | null; zIndex: number; addEventListener(event: string, callback: () => void): void; removeEventListener(event: string, callback: () => void): void };
 type MarkerLibrary = { AdvancedMarkerElement: new (options: { map: MapHandle; position: Point; title: string; gmpClickable: boolean }) => MarkerHandle };
 type RawAuthor = { displayName?: string; uri?: string; photoURI?: string };
@@ -21,6 +22,7 @@ type DetailedPlace = { rating?: number; userRatingCount?: number; photos?: RawPh
 type PlacesLibrary = { Place: { new (options: { id: string; requestedLanguage: string }): DetailedPlace; searchByText(request: SearchRequest): Promise<{ places?: RawPlace[] }> } };
 type MapsSDK = {
   importLibrary(name: "maps"): Promise<MapsLibrary>;
+  importLibrary(name: "core"): Promise<CoreLibrary>;
   importLibrary(name: "marker"): Promise<MarkerLibrary>;
   importLibrary(name: "places"): Promise<PlacesLibrary>;
   event: { addListenerOnce(instance: MapHandle, event: string, callback: () => void): Listener; clearInstanceListeners(instance: MapHandle): void };
@@ -156,6 +158,7 @@ export function createGoogleMapStarter(pageLoader: ReturnType<typeof createGoogl
       if (pageLoader.failed || disposed) throw genericFailure();
       let places: PlacesLibrary | null = null;
       let markers: Promise<MarkerLibrary> | null = null;
+      let core: Promise<CoreLibrary> | null = null;
       return {
         async search(query) {
           if (disposed || !config.placesEnabled || pageLoader.failed) throw genericFailure();
@@ -169,7 +172,9 @@ export function createGoogleMapStarter(pageLoader: ReturnType<typeof createGoogl
           const results = (result.places ?? []).map(placeResult).filter((value): value is PlaceResult => value !== null).slice(0, 5);
           if (results.length) {
             markers ??= sdk!.importLibrary("marker");
-            const markerLibrary = await deadline(markers);
+            // Coordinates belong to the core library, not the maps library.
+            core ??= sdk!.importLibrary("core");
+            const [markerLibrary, coordinates] = await Promise.all([deadline(markers), deadline(core)]);
             if (disposed || pageLoader.failed || selection !== currentSelection) throw genericFailure();
             try {
               for (const place of results) {
@@ -178,7 +183,7 @@ export function createGoogleMapStarter(pageLoader: ReturnType<typeof createGoogl
                 marker.addEventListener("gmp-click", click); pins.push({ marker, click, id: place.id });
               }
               if (results.length === 1) { currentMap.panTo(results[0].position); currentMap.setZoom(15); }
-              else { const bounds = new maps.LatLngBounds(); results.forEach(place => bounds.extend(place.position)); currentMap.fitBounds(bounds, 32); }
+              else { const bounds = new coordinates.LatLngBounds(); results.forEach(place => bounds.extend(place.position)); currentMap.fitBounds(bounds, 32); }
             } catch { clearPins(); throw genericFailure(); }
           }
           return results;

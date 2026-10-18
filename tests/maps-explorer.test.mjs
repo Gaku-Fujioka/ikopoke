@@ -105,7 +105,8 @@ function fakeSDK({search=async()=>({places:[]}),markerPromise=null,fetchDetails=
   const imports=[],requests=[],markers=[],pans=[],fits=[],detailRequests=[];let maps=0,cleared=0;
   const sdk={
     async importLibrary(name){imports.push(name);
-      if(name==='maps')return {Map:class{constructor(){maps++;}panTo(point){pans.push(point);}setZoom(){}fitBounds(bounds,padding){fits.push({points:bounds.points,padding});}},LatLngBounds:class{points=[];extend(point){this.points.push(point);}}};
+      if(name==='maps')return {Map:class{constructor(){maps++;}panTo(point){pans.push(point);}setZoom(){}fitBounds(bounds,padding){fits.push({points:bounds.points,padding});}}};
+      if(name==='core')return {LatLngBounds:class{points=[];extend(point){this.points.push(point);}}};
       if(name==='places')return {Place:class{
         constructor(options){this.id=options.id;}
         static searchByText(request){requests.push(request);return search(request);}
@@ -124,7 +125,7 @@ test('new Places search is lazy and uses limited fields/count; repeated searches
   const fake=fakeSDK({search:async()=>({places:[raw]})}),element=host();
   const session=await fake.start(element,config,()=>{});assert.deepEqual(fake.imports,['maps']);
   assert.deepEqual(await session.search('吉祥寺'),[place]);await session.search('東京');assert.equal(fake.maps,1);
-  assert.deepEqual(fake.imports,['maps','places','marker']);assert.equal(fake.requests.length,2);
+  assert.deepEqual(fake.imports,['maps','places','marker','core']);assert.equal(fake.requests.length,2);
   const request=fake.requests[0];assert.equal(request.textQuery,'吉祥寺');assert.equal(request.maxResultCount,5);
   assert.deepEqual(request.fields,['id','displayName','formattedAddress','location','attributions']);
   assert.ok(!JSON.stringify(request).includes('photos'));assert.ok(!JSON.stringify(request).includes('rating'));
