@@ -41,8 +41,9 @@ async function GroupContent({ params }: { params: Promise<{ groupId: string }> }
       <Link href={`/app/groups/${groupId}/items`} className="inline-flex min-h-12 items-center rounded-full bg-orange-700 px-6 font-semibold text-white hover:bg-orange-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-700 focus-visible:ring-offset-2">みんなの候補へ</Link>
       <Link href={`/app/groups/${groupId}/outings`} className="ml-3 inline-flex min-h-12 items-center font-semibold text-orange-700 underline underline-offset-4">おでかけ計画へ</Link>
       <Link href={`/app/groups/${groupId}/visits`} className="ml-3 inline-flex min-h-12 items-center font-semibold text-orange-700 underline underline-offset-4">訪問記録へ</Link>
+      <Link href={`/app/groups/${groupId}/memories`} className="ml-3 inline-flex min-h-12 items-center font-semibold text-orange-700 underline underline-offset-4">みんなの思い出へ</Link>
       <Link href={`/app/groups/${groupId}/lists`} className="ml-3 inline-flex min-h-12 items-center font-semibold text-orange-700 underline underline-offset-4">リストを管理</Link>
-      <p className="text-sm leading-6 text-stone-500">このグループの候補と計画はメンバー間で共有されます。「思い出」は現在デモ画面です。</p>
+      <p className="text-sm leading-6 text-stone-500">このグループの候補・計画・訪問記録・思い出はメンバー間で共有されます。</p>
     </section>
     <RenameGroupForm groupId={groupId} name={group.name} />
     <Suspense fallback={<p role="status" className="rounded-3xl border border-stone-200 bg-white p-6 text-sm text-stone-600">招待を読み込んでいます…</p>}>

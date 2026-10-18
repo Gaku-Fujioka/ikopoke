@@ -40,7 +40,7 @@ test("invalid or signed-out submissions never mutate the provider",async()=>{
 });
 test("record creation derives actor in the DB, preserves the request and redirects only on success",async()=>{
   await assert.rejects(actions.recordVisitAction({error:null},form({userId:"spoofed"})),error=>error.location===`/app/groups/${group}/visits/saved-id`);
-  const call=provider.calls.find(call=>call[0]==="rpc");assert.equal(call[1],"record_visit");assert.equal(call[2].p_request_id,visit);assert.equal(call[2].p_outing_id,null);assert.ok(!JSON.stringify(call).includes("spoofed"));
+  const call=provider.calls.find(call=>call[0]==="rpc");assert.equal(call[1],"record_timed_visit");assert.equal(call[2].p_request_id,visit);assert.equal(call[2].p_outing_id,null);assert.ok(!JSON.stringify(call).includes("spoofed"));
   provider.configure({rpc:()=>({data:null,error:{code:"40001",message:"private provider detail"}})});
   const result=await actions.updateVisitAction({error:null},form());assert.match(result.error,/別の画面/);assert.ok(!result.error.includes("private"));assert.equal(provider.calls.some(call=>call[0]==="revalidate"),false);
 });

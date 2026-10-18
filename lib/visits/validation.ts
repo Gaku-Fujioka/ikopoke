@@ -8,11 +8,15 @@ export function visitIds(form: FormData): { groupId: string; visitId: string } {
   if (!uuid(groupId) || !uuid(visitId)) throw new Error("画面を開き直して、もう一度お試しください。");
   return { groupId,visitId };
 }
-export function visitFields(form: FormData): { date: string; note: string } {
+export function visitFields(form: FormData): { date: string; note: string; time: string | null; period: "morning" | "noon" | "afternoon" | "night" | null } {
   const date=form.get("date"), note=form.get("note");
   if (typeof date!=="string" || !/^\d{4}-\d{2}-\d{2}$/.test(date) || date.startsWith("0000") || Number.isNaN(Date.parse(`${date}T00:00:00Z`)) || new Date(`${date}T00:00:00Z`).toISOString().slice(0,10)!==date) throw new Error("有効な訪問日を選んでください。");
   if (typeof note!=="string" || Array.from(note).length>2000) throw new Error("メモは2,000文字以内で入力してください。");
-  return { date,note };
+  const time=form.get("time") || null, period=form.get("period") || null;
+  if (time!==null && (typeof time!=="string" || !/^([01]\d|2[0-3]):[0-5]\d$/.test(time))) throw new Error("訪問時刻を確認してください。");
+  if (period!==null && period!=="morning" && period!=="noon" && period!=="afternoon" && period!=="night") throw new Error("訪問の時間帯を確認してください。");
+  if (time!==null && period!==null) throw new Error("時刻か時間帯のどちらかを選んでください。");
+  return { date,note,time,period };
 }
 export function visitRating(value: unknown): number | null {
   if (value === "" || value === null) return null;

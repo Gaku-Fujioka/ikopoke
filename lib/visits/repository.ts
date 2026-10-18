@@ -4,7 +4,7 @@ import type { recordVisitInput } from "./validation";
 export type SavedVisit = Omit<Database["public"]["Tables"]["visits"]["Row"],"created_by">;
 export type VisitPhoto = Omit<Database["public"]["Tables"]["visit_photos"]["Row"],"created_by">;
 export type VisitRatings = { rating_count: number; average_rating: number | null; my_rating: number | null };
-const columns="id,group_id,item_id,outing_id,item_title,visited_on,note,revision,created_at";
+const columns="id,group_id,item_id,outing_id,item_title,visited_on,visited_time,visited_period,note,revision,created_at";
 export class VisitStoreError extends Error {
   constructor(code?: string) {
     super(code==="40001" ? "この記録は別の画面で変更されました。入力を控えてから再読み込みしてください。" : code==="54000" ? "写真は1回の訪問につき10枚までです。未完了の送信がある場合は、確認か中断をしてください。" : "訪問記録を読み書きできませんでした。所属や通信状態をご確認のうえ、もう一度お試しください。");
@@ -24,7 +24,7 @@ export async function getVisit(client: SupabaseClient<Database>, groupId: string
   if(error)throw new VisitStoreError(error.code);return data;
 }
 export async function recordVisit(client: SupabaseClient<Database>, input: ReturnType<typeof recordVisitInput>): Promise<string> {
-  const {data,error}=await client.rpc("record_visit",{p_group_id:input.groupId,p_item_id:input.itemId,p_outing_id:input.outingId,p_visited_on:input.date,p_note:input.note,p_rating:input.rating,p_request_id:input.visitId});
+  const {data,error}=await client.rpc("record_timed_visit",{p_group_id:input.groupId,p_item_id:input.itemId,p_outing_id:input.outingId,p_visited_on:input.date,p_note:input.note,p_rating:input.rating,p_request_id:input.visitId,p_time:input.time,p_period:input.period});
   if(error||!data)throw new VisitStoreError(error?.code);return data;
 }
 export async function getVisitRatings(client: SupabaseClient<Database>,groupId:string,visitId:string):Promise<VisitRatings>{

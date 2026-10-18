@@ -32,7 +32,7 @@ export default function MockAppLayout({ children }: { children: ReactNode }) {
       <main id="main-content" tabIndex={-1} className="mx-auto w-full max-w-5xl px-5 pb-28 pt-9 outline-none sm:px-6 sm:pt-12 md:pb-16">
         {children}
         <p className="mt-12 border-t border-stone-200 pt-5 text-xs leading-6 text-stone-500">
-          グループ内の候補・計画・訪問記録はアカウントに保存されます。グループ外のデモ画面と「思い出」は、このブラウザにだけ保存されます。
+          グループ内の候補・計画・訪問記録・思い出はアカウントに保存されます。グループ外のデモ画面は、このブラウザにだけ保存されます。
         </p>
       </main>
     </div>
