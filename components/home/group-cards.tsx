@@ -5,7 +5,7 @@ import { groupTone } from "@/lib/home/navigation";
 
 export function GroupCards({ groups, selected }: { groups: SavedGroup[]; selected: string | null }) {
   const current = groups.find(group => group.id === selected);
-  return <section aria-label="マイグループ" className="kk-groups-section">
+  return <section aria-label="マイグループ" className="kk-groups-section" data-home-section="groups">
     <div className="kk-row"><h2 className="kk-section-label">一緒に、たのしむ人たち</h2><Link href="/app" className="kk-text-link" aria-current={!selected ? "page" : undefined}>すべて</Link></div>
     <div className="kk-group-strip">
       {groups.map(group => <Link key={group.id} href={`/app/groups/${group.id}`} className="kk-group-card" data-tone={groupTone(group.id)} aria-current={selected === group.id ? "page" : undefined}><UsersRound aria-hidden="true" size={21} /><span>{group.name}</span><small>{selected === group.id ? "いま開いています" : "一緒に見つける →"}</small></Link>)}

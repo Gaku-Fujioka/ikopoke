@@ -67,8 +67,17 @@ test('real home orders groups, next outing, map and activity with independent re
   assert.deepEqual(provider.calls,['auth','groups']);
   const children=tree.props.children.flatMap(child=>child?.type===Symbol.for('react.fragment')?child.props.children:child).flat(Infinity).filter(Boolean);
   assert.equal(children[1].type.name,'GroupCards');
-  assert.equal(children[2].type,Suspense);assert.equal(children[2].props.children.type.name,'NextEnjoyment');
+  assert.equal(children[2].props['data-home-section'],'next');
+  const nextBoundary=children[2].props.children;
+  assert.equal(nextBoundary.type,Suspense);assert.equal(nextBoundary.props.children.type.name,'NextEnjoyment');
   assert.equal(children[3].type.name,'MapSpace');assert.equal(children[4].props['aria-labelledby'],'home-activity-title');
+  const slots=children.map(child=>typeof child.type==='function'?child.type(child.props):child);
+  assert.deepEqual(slots.map(slot=>slot.props['data-home-section']),['intro','groups','next','map','activity']);
+  // Loading and an empty next outing occupy the same slot; later map/activity reads stay independent.
+  const nextSlot=children[2];
+  assert.match(renderToStaticMarkup(createElement(nextBoundary.props.fallback.type,nextBoundary.props.fallback.props)),/次の楽しみを読み込んでいます/);
+  const emptyNext=await nextBoundary.props.children.type(nextBoundary.props.children.props);
+  assert.equal(nextSlot.props['data-home-section'],'next');assert.match(renderToStaticMarkup(emptyNext),/次の楽しみをつくろう/);
   const boundary=nodes(children[4],node=>node.type===Suspense)[0];
   provider.configure({groups,activityError:true});
   const error=await boundary.props.children.type(boundary.props.children.props);

@@ -57,21 +57,20 @@
 .kk-color-preview .kk-chat-send:hover { background: var(--kk-brand-hover); }
 .kk-color-preview .kk-tab[aria-current="page"] { background: var(--kk-soft); color: var(--kk-ink); }
 .kk-color-preview .kk-tab[aria-current="page"] svg { stroke-width: 2.5; }
-.kk-color-preview .kk-tab[aria-current="page"]::after { content: ""; width: 15px; height: 3px; border-radius: 2px; background: var(--kk-brand); }
 .kk-color-preview .kk-add { color: var(--kk-ink); }
 .kk-color-preview .kk-add-dialog { box-shadow: 0 -10px 50px #20212426; }
 .kk-color-preview .kk-add-dialog::backdrop { background: #20212466; }
 .kk-color-preview .kk-option-icon { background: var(--kk-soft); color: var(--kk-ink); }
 
-.kk-color-preview .kk-group-card { background: var(--kk-surface); border: 1px solid var(--kk-line); border-top: 3px solid var(--kk-tone); }
-.kk-color-preview .kk-new-group { border: 1px dashed var(--kk-muted); }
+.kk-color-preview .kk-group-card { background: var(--kk-surface); box-shadow: inset 0 0 0 1px var(--kk-line); }
+.kk-color-preview .kk-new-group { border-color: var(--kk-muted); box-shadow: none; }
 .kk-color-preview .kk-group-card[aria-current="page"] { background: var(--kk-tint); box-shadow: inset 0 0 0 1px var(--kk-tone); }
-.kk-color-preview .kk-new-group-choice { background: var(--kk-surface); border: 1px solid var(--kk-line); border-left: 4px solid var(--kk-tone); }
+.kk-color-preview .kk-new-group-choice { background: var(--kk-surface); box-shadow: inset 0 0 0 1px var(--kk-line); }
 .kk-color-preview .kk-next,
 .kk-color-preview .kk-next-empty { background: var(--kk-soft); box-shadow: none; }
 .kk-color-preview .kk-next-soon { background: var(--kk-brand); color: var(--kk-ink); }
 .kk-color-preview .kk-next-soon :is(.kk-next-label, .kk-next-meta) { color: var(--kk-ink); }
-.kk-color-preview .kk-date-block { border: 1px solid var(--kk-line); }
+.kk-color-preview .kk-date-block { box-shadow: inset 0 0 0 1px var(--kk-line); }
 .kk-color-preview .kk-date-block strong { color: var(--kk-ink); }
 .kk-color-preview .kk-loading,
 .kk-color-preview .kk-label { background: var(--kk-neutral); color: var(--kk-muted); }
@@ -86,7 +85,7 @@
 .kk-color-preview .kk-map-doodle > svg:last-child { color: var(--kk-accent); }
 
 /* Preserve the playful collage, without tinting every card. */
-.kk-color-preview .kk-activity-card { background: var(--kk-surface); border: 1px solid var(--kk-line); border-top: 3px solid var(--kk-tone); box-shadow: 0 3px 0 #2021240d; }
+.kk-color-preview .kk-activity-card { background: var(--kk-surface); box-shadow: inset 0 0 0 1px var(--kk-line), 0 3px 0 #2021240d; }
 .kk-color-preview .kk-activity-meta { color: var(--kk-muted); }
 .kk-color-preview .kk-avatar { background: var(--kk-tint); }
 .kk-color-preview .kk-activity-action .lucide-heart { stroke: var(--kk-heart-ink); fill: var(--kk-heart); }
