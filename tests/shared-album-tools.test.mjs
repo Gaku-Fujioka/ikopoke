@@ -20,11 +20,12 @@ test('photo deletion denies other members, waits for Storage removal and clears 
   await as(bob,()=>fails(db.query('select public.finish_remove_photo($1,$2,$3)',[group,visit,photo2]),'55000'));
   await as(bob,()=>db.query("delete from storage.objects where bucket_id='visit-photos' and name=$1",[path]));await as(bob,()=>db.query('select public.finish_remove_photo($1,$2,$3)',[group,visit,photo2]));await as(bob,()=>db.query('select public.finish_remove_photo($1,$2,$3)',[group,visit,photo2]));assert.equal((await db.query('select cover_photo_id from public.memories')).rows[0].cover_photo_id,null);
 });
-test('visit creator deletes the whole visit, freezes edits/uploads, verifies bytes gone and retries safely',async()=>{
+test('visit creator deletes the whole visit, including another uploader photos, freezes edits and retries safely',async()=>{
+  await as(bob,async()=>{const r=(await db.query("select * from public.reserve_visit_photo($1,$2,$3,'image/jpeg',12)",[group,visit,photo2])).rows[0];await db.query("insert into storage.objects(bucket_id,name,metadata) values('visit-photos',$1,$2)",[r.object_path,{size:12,mimetype:'image/jpeg'}]);await db.query('select public.finish_visit_photo($1,$2,$3)',[group,visit,photo2]);});
   await as(bob,()=>fails(db.query('select public.begin_remove_visit($1,$2,1)',[group,visit]),'42501'));
-  const rows=(await as(alice,()=>db.query('select * from public.begin_remove_visit($1,$2,1)',[group,visit]))).rows;assert.equal(rows.length,1);
+  const rows=(await as(alice,()=>db.query('select * from public.begin_remove_visit($1,$2,1)',[group,visit]))).rows;assert.equal(rows.length,2);
   await as(alice,()=>fails(db.query("select public.update_visit($1,$2,'2026-10-18','変更',1)",[group,visit]),'55000'));
-  await as(alice,()=>fails(db.query("select * from public.reserve_visit_photo($1,$2,$3,'image/png',12)",[group,visit,photo2]),'55000'));
+  await as(alice,()=>fails(db.query("select * from public.reserve_visit_photo($1,$2,$3,'image/png',12)",[group,visit,"50000000-0000-4000-8000-000000000003"]),'55000'));
   await as(alice,()=>fails(db.query('select public.finish_remove_visit($1,$2)',[group,visit]),'55000'));
-  await as(alice,()=>db.query("delete from storage.objects where bucket_id='visit-photos' and name=$1",[rows[0].object_path]));await as(alice,()=>db.query('select public.finish_remove_visit($1,$2)',[group,visit]));await as(alice,()=>db.query('select public.finish_remove_visit($1,$2)',[group,visit]));assert.equal((await db.query('select count(*)::int n from public.visits')).rows[0].n,0);assert.equal((await db.query('select count(*)::int n from public.memories')).rows[0].n,1);
+  await as(alice,()=>db.query("delete from storage.objects where bucket_id='visit-photos' and name=any($1)",[rows.map(r=>r.object_path)]));await as(alice,()=>db.query('select public.finish_remove_visit($1,$2)',[group,visit]));await as(alice,()=>db.query('select public.finish_remove_visit($1,$2)',[group,visit]));assert.equal((await db.query('select count(*)::int n from public.visits')).rows[0].n,0);assert.equal((await db.query('select count(*)::int n from public.memories')).rows[0].n,1);
 });

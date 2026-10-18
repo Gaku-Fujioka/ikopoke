@@ -25,6 +25,11 @@ begin
     if tg_table_name='visit_photos' and tg_op='INSERT' then
       select coalesce(max(display_order),0)+1 into new.display_order from public.visit_photos where visit_id=new.visit_id;
     end if;
+    if tg_table_name='visit_photos' and tg_op='UPDATE' then
+      if old.status='pending' and new.status='ready' then
+        select coalesce(max(display_order),0)+1 into new.display_order from public.visit_photos where visit_id=new.visit_id and id<>new.id;
+      end if;
+    end if;
   end if;
   return new;
 end; $$;
