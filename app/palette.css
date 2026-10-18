@@ -1,0 +1,174 @@
+/* UI-COLOR-01: scoped preview. Keep brand fills distinct from readable text colors. */
+.kk-app.kk-color-preview {
+  --kk-paper: #ffffff;
+  --kk-surface: #ffffff;
+  --kk-ink: #202124;
+  --kk-muted: #62666b;
+  --kk-line: #d8dadd;
+  --kk-outline: #343536;
+  --kk-brand: #ffae45;
+  --kk-brand-hover: #ffa32b;
+  --kk-accent: #8b4b00;
+  --kk-soft: #fff5e7;
+  --kk-neutral: #f5f6f4;
+  --kk-heart: #ff725c;
+  --kk-heart-ink: #8f2b1e;
+  --kk-heart-soft: #fff1ee;
+  --background: 0 0% 100%;
+  --foreground: 225 6% 13%;
+  --card: 0 0% 100%;
+  --card-foreground: 225 6% 13%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 225 6% 13%;
+  --primary: 34 100% 64%;
+  --primary-foreground: 225 6% 13%;
+  --secondary: 90 10% 96%;
+  --secondary-foreground: 225 6% 13%;
+  --muted: 90 10% 96%;
+  --muted-foreground: 213 4% 40%;
+  --accent: 35 100% 95%;
+  --accent-foreground: 225 6% 13%;
+  --border: 216 7% 86%;
+  --input: 216 7% 65%;
+  --ring: 225 6% 13%;
+  --destructive: 7 67% 40%;
+  --destructive-foreground: 0 0% 100%;
+}
+
+/* Group identity is a small accent; large surfaces stay white. */
+.kk-color-preview [data-tone="0"] { --kk-tone: #8b4b00; --kk-tint: #fff5e7; }
+.kk-color-preview [data-tone="1"] { --kk-tone: #246351; --kk-tint: #edf6f1; }
+.kk-color-preview [data-tone="2"] { --kk-tone: #5b4b8a; --kk-tint: #f4f1fa; }
+.kk-color-preview [data-tone="3"] { --kk-tone: #9b3c32; --kk-tint: #fff1ee; }
+
+.kk-color-preview .kk-header { background: #ffffffed; border-color: var(--kk-line); }
+.kk-color-preview .kk-nav { background: #fffffff5; }
+.kk-color-preview .kk-brand > span,
+.kk-color-preview .kk-add > span,
+.kk-color-preview .kk-primary-link,
+.kk-color-preview .kk-chat-send {
+  background: var(--kk-brand);
+  color: var(--kk-ink);
+  box-shadow: none;
+}
+.kk-color-preview .kk-brand small { color: var(--kk-heart-ink); }
+.kk-color-preview .kk-profile-link { color: var(--kk-ink); background: var(--kk-neutral); }
+.kk-color-preview .kk-primary-link:hover,
+.kk-color-preview .kk-chat-send:hover { background: var(--kk-brand-hover); }
+.kk-color-preview .kk-tab[aria-current="page"] { background: var(--kk-soft); color: var(--kk-ink); }
+.kk-color-preview .kk-tab[aria-current="page"] svg { stroke-width: 2.5; }
+.kk-color-preview .kk-add { color: var(--kk-ink); }
+.kk-color-preview .kk-add-dialog { box-shadow: 0 -10px 50px #20212426; }
+.kk-color-preview .kk-add-dialog::backdrop { background: #20212466; }
+.kk-color-preview .kk-option-icon { background: var(--kk-soft); color: var(--kk-ink); }
+
+.kk-color-preview .kk-group-card { background: var(--kk-surface); box-shadow: inset 0 0 0 1px var(--kk-line); }
+.kk-color-preview .kk-new-group { border-color: var(--kk-muted); box-shadow: none; }
+.kk-color-preview .kk-group-card[aria-current="page"] { background: var(--kk-tint); box-shadow: inset 0 0 0 1px var(--kk-tone); }
+.kk-color-preview .kk-new-group-choice { background: var(--kk-surface); box-shadow: inset 0 0 0 1px var(--kk-line); }
+.kk-color-preview .kk-next,
+.kk-color-preview .kk-next-empty { background: var(--kk-soft); box-shadow: none; }
+.kk-color-preview .kk-next-soon { background: var(--kk-brand); color: var(--kk-ink); }
+.kk-color-preview .kk-next-soon :is(.kk-next-label, .kk-next-meta) { color: var(--kk-ink); }
+.kk-color-preview .kk-date-block { box-shadow: inset 0 0 0 1px var(--kk-line); }
+.kk-color-preview .kk-date-block strong { color: var(--kk-ink); }
+.kk-color-preview .kk-loading,
+.kk-color-preview .kk-label { background: var(--kk-neutral); color: var(--kk-muted); }
+.kk-color-preview .kk-map-card,
+.kk-color-preview .kk-candidate-card,
+.kk-color-preview .kk-choice-card { box-shadow: none; }
+.kk-color-preview .kk-map-search { border-color: var(--kk-outline); background: var(--kk-surface); }
+.kk-color-preview .kk-new-place-search .kk-map-search { border-color: var(--kk-outline); }
+.kk-color-preview .kk-map-search button { background: var(--kk-brand); color: var(--kk-ink); }
+.kk-color-preview .kk-map-unconnected { background: var(--kk-neutral); }
+.kk-color-preview .kk-map-doodle { color: var(--kk-ink); }
+.kk-color-preview .kk-map-doodle > svg:last-child { color: var(--kk-accent); }
+
+/* Preserve the playful collage, without tinting every card. */
+.kk-color-preview .kk-activity-card { background: var(--kk-surface); box-shadow: inset 0 0 0 1px var(--kk-line), 0 3px 0 #2021240d; }
+.kk-color-preview .kk-activity-meta { color: var(--kk-muted); }
+.kk-color-preview .kk-avatar { background: var(--kk-tint); }
+.kk-color-preview .kk-activity-action .lucide-heart { stroke: var(--kk-heart-ink); fill: var(--kk-heart); }
+.kk-color-preview .kk-candidate-art { background: var(--kk-neutral); }
+.kk-color-preview .kk-album-card { background: var(--kk-surface); }
+.kk-color-preview .kk-chip[aria-current="page"] { background: var(--kk-soft); color: var(--kk-ink); border-color: var(--kk-outline); }
+.kk-color-preview .kk-stop-number { background: var(--kk-brand); color: var(--kk-ink); }
+
+/* Candidate, list and trip editing share a small, consistent set of surfaces. */
+.kk-color-preview .kk-group-launch > a { background: var(--kk-brand); border-color: var(--kk-brand); color: var(--kk-ink); }
+.kk-color-preview .kk-group-launch > a + a { background: var(--kk-surface); border-color: var(--kk-outline); color: var(--kk-ink); }
+.kk-color-preview .kk-conversation-space,
+.kk-color-preview .kk-choice-select,
+.kk-color-preview .kk-editor-people,
+.kk-color-preview .kk-plan-overview { background: var(--kk-neutral); border-color: var(--kk-line); }
+.kk-color-preview .kk-overview-label { color: var(--kk-muted); }
+.kk-color-preview .kk-selection-tray { background: var(--kk-surface); border-color: var(--kk-outline); box-shadow: 0 -4px 30px #20212412; }
+.kk-color-preview .kk-selection-summary { background: var(--kk-soft); }
+.kk-color-preview .kk-field,
+.kk-color-preview .kk-chat-input { background: var(--kk-surface); border-color: #898d92; color: var(--kk-ink); }
+.kk-color-preview .kk-editor-basics,
+.kk-color-preview .kk-add-candidate { border-top-color: var(--kk-brand); }
+.kk-color-preview .kk-editor-route { border-top-color: var(--kk-outline); }
+.kk-color-preview .kk-people-choices label { background: var(--kk-surface); }
+.kk-color-preview .kk-people-choices label[data-selected="true"] { background: var(--kk-soft); border-color: var(--kk-outline); }
+.kk-color-preview .kk-day-tabs button { background: var(--kk-surface); }
+.kk-color-preview .kk-day-tabs button[aria-pressed="true"] { background: var(--kk-brand); border-color: var(--kk-outline); color: var(--kk-ink); }
+.kk-color-preview .kk-route-empty > svg { color: var(--kk-muted); }
+.kk-color-preview .kk-save-bar { background: var(--kk-surface); box-shadow: 0 -3px 20px #2021240d; }
+.kk-color-preview .kk-item-hero { background: var(--kk-surface); border-color: var(--kk-line); }
+.kk-color-preview .kk-item-doodle { color: var(--kk-accent); }
+.kk-color-preview .kk-edit-button,
+.kk-color-preview .kk-inline-editor[open] { background: var(--kk-surface); border-color: var(--kk-line); color: var(--kk-ink); }
+.kk-color-preview .kk-reaction-feature { background: var(--kk-surface); border-color: var(--kk-line); }
+.kk-color-preview .kk-reaction-feature .kk-reaction-members { border-color: var(--kk-line); }
+.kk-color-preview .kk-list-feature { background: var(--kk-surface); border-color: var(--kk-line); border-top-color: var(--kk-brand); }
+.kk-color-preview .kk-list-feature h2 { color: var(--kk-ink); }
+.kk-color-preview .kk-list-choices > li { background: var(--kk-surface); border-color: var(--kk-line); }
+.kk-color-preview .kk-list-toggle { color: var(--kk-ink); }
+.kk-color-preview .kk-list-toggle[aria-pressed="true"] { background: var(--kk-soft); color: var(--kk-ink); border-color: var(--kk-outline); }
+.kk-color-preview .kk-list-browse { color: var(--kk-accent); }
+
+/* Coral signals a positive social reaction, not every primary action. */
+.kk-color-preview :is(.kk-reaction-pill, .kk-reaction-button)[aria-pressed="true"] { background: var(--kk-neutral); border-color: var(--kk-outline); color: var(--kk-ink); }
+.kk-color-preview :is(.kk-reaction-pill, .kk-reaction-button)[data-reaction="want_to_go"] .lucide-heart { stroke: var(--kk-heart-ink); }
+.kk-color-preview :is(.kk-reaction-pill, .kk-reaction-button)[data-reaction="want_to_go"][aria-pressed="true"] { background: var(--kk-heart-soft); color: var(--kk-heart-ink); border-color: var(--kk-heart-ink); }
+.kk-color-preview :is(.kk-reaction-pill, .kk-reaction-button)[data-reaction="want_to_go"][aria-pressed="true"] .lucide-heart { fill: var(--kk-heart); }
+
+.kk-color-preview .kk-item-conversation { background: var(--kk-neutral); border-color: var(--kk-line); }
+.kk-color-preview .kk-chat-avatar { background: var(--kk-line); color: var(--kk-ink); }
+.kk-color-preview :is(.kk-chat-name, .kk-chat-time, .kk-chat-empty),
+.kk-color-preview .kk-chat-content > details > summary { color: var(--kk-muted); }
+.kk-color-preview .kk-chat-bubble { background: var(--kk-surface); color: var(--kk-ink); box-shadow: 0 1px 2px #20212412; }
+.kk-color-preview .kk-chat-row[data-mine="true"] .kk-chat-bubble { background: var(--kk-soft); }
+.kk-color-preview .kk-chat-content > details[open] { background: var(--kk-surface); border-color: var(--kk-line); }
+.kk-color-preview .kk-chat-compose { border-color: var(--kk-line); }
+
+/* Only the surrounding app UI changes; Google map tiles and credits are untouched. */
+.kk-color-preview .kk-google-map { background: var(--kk-neutral); }
+.kk-color-preview .kk-place-save { background: var(--kk-neutral); }
+.kk-color-preview .kk-place-results > li[data-selected="true"] .kk-place-select,
+.kk-color-preview .kk-saved-map-list > li[data-selected="true"] { background: var(--kk-soft); }
+.kk-color-preview .kk-saved-map-number { background: var(--kk-brand); color: var(--kk-ink); }
+.kk-color-preview .kk-item-location,
+.kk-color-preview .kk-plan-day .kk-saved-map { background: var(--kk-surface); }
+
+/* Bridge older utility-based forms to the same palette, including auth and albums. */
+.kk-color-preview :is(.text-stone-900, .text-stone-800, .text-stone-700) { color: var(--kk-ink); }
+.kk-color-preview :is(.text-stone-600, .text-stone-500) { color: var(--kk-muted); }
+.kk-color-preview :is(.bg-stone-50, .bg-stone-100) { background-color: var(--kk-neutral); }
+.kk-color-preview :is(.border-stone-200, .border-stone-300, .divide-stone-200 > :not([hidden]) ~ :not([hidden])) { border-color: var(--kk-line); }
+.kk-color-preview :is(.text-orange-700, .text-orange-800) { color: var(--kk-accent); }
+.kk-color-preview :is(.bg-orange-50, .bg-orange-100) { background-color: var(--kk-soft); }
+.kk-color-preview :is(.border-orange-200, .bg-orange-600) { border-color: var(--kk-brand); }
+.kk-color-preview .bg-orange-600 { background-color: var(--kk-brand); }
+.kk-color-preview .border-orange-700 { border-color: var(--kk-outline); }
+.kk-color-preview .bg-orange-700 { background-color: var(--kk-brand); color: var(--kk-ink); }
+.kk-color-preview .hover\:bg-orange-800:hover { background-color: var(--kk-brand-hover); color: var(--kk-ink); }
+.kk-color-preview .hover\:bg-orange-50:hover { background-color: var(--kk-soft); }
+.kk-color-preview .hover\:text-orange-700:hover { color: var(--kk-accent); }
+.kk-color-preview .focus-visible\:ring-orange-700:focus-visible { --tw-ring-color: var(--kk-ink); }
+.kk-color-preview .ring-orange-50 { --tw-ring-color: var(--kk-soft); }
+.kk-color-preview .accent-orange-700,
+.kk-color-preview .kk-choice-select input,
+.kk-color-preview .kk-people-choices input { accent-color: var(--kk-accent); }
+.kk-color-preview :is(a, button, input, select, textarea, summary):focus-visible { outline-color: var(--kk-ink); }

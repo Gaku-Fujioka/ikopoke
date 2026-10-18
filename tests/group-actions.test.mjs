@@ -22,6 +22,8 @@ registerHooks({resolve(specifier, context, next) {
     "@/lib/supabase/server": providerModule,
     "@/lib/groups/repository": new URL("../lib/groups/repository.ts", import.meta.url).href,
     "@/lib/groups/validation": new URL("../lib/groups/validation.ts", import.meta.url).href,
+    "@/lib/presentation/repository": new URL("../lib/presentation/repository.ts", import.meta.url).href,
+    "@/lib/presentation/colors": new URL("../lib/presentation/colors.ts", import.meta.url).href,
     "next/navigation": navigationModule,
     "next/cache": cacheModule,
   }[specifier];
@@ -30,7 +32,7 @@ registerHooks({resolve(specifier, context, next) {
 const env = await import(envModule);
 const provider = await import(providerModule);
 const cache = await import(cacheModule);
-const {createGroupAction} = await import("../app/app/groups/actions.ts");
+const {createGroupAction,createGroupProfileAction} = await import("../app/app/groups/actions.ts");
 const requestId = "10000000-0000-4000-8000-000000000001";
 const initial = {error:null};
 function form(name = "  週末  ", id = requestId) {
@@ -74,4 +76,21 @@ test("a database failure stays on the form without a success redirect or raw det
 test("missing migrations are shown as unavailable rather than an empty saved list", async () => {
   provider.configure(true,{code:"PGRST202"});
   assert.equal((await createGroupAction(initial,form())).error,"グループ機能は準備中です。利用できるようになるまでお待ちください。");
+});
+
+test("group profile creation keeps optional description in the same RPC and ignores forged identities",async()=>{
+  const data=form();data.set('description','  みんなの週末\n次は海へ  ');data.set('created_by','forged-user');
+  assert.deepEqual(await createGroupProfileAction(data),{error:null,groupId:requestId});
+  assert.deepEqual(provider.calls,[{name:'create_group_with_profile',input:{p_name:'週末',p_request_id:requestId,p_description:'みんなの週末\n次は海へ'}}]);
+  assert.deepEqual(cache.paths,['/app/groups','/app']);
+});
+test("new group optional fields may be empty, but invalid descriptions and signed-out requests do not persist",async()=>{
+  assert.equal((await createGroupProfileAction(form())).groupId,requestId);
+  provider.configure(true);cache.paths.length=0;
+  const data=form();data.set('description','😀'.repeat(501));assert.ok((await createGroupProfileAction(data)).error);assert.deepEqual(provider.calls,[]);
+  data.set('description','説明');provider.configure(false);assert.ok((await createGroupProfileAction(data)).error);assert.deepEqual(provider.calls,[]);assert.deepEqual(cache.paths,[]);
+});
+test("new group storage errors never return a group ID, redirect or invalidate",async()=>{
+  provider.configure(true,{code:'42501',message:'private-provider-detail'});
+  const result=await createGroupProfileAction(form());assert.ok(result.error);assert.ok(!result.groupId);assert.ok(!result.error.includes('private'));assert.deepEqual(cache.paths,[]);
 });

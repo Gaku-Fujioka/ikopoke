@@ -1,3 +1,5 @@
+import type {CSSProperties} from "react";
+import {groupColorStyle} from "@/lib/presentation/colors";
 import { ItemExtraFilters } from "@/components/items/item-extra-filters";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -36,24 +38,25 @@ export async function GlobalCollection({ type, searchParams }: { type: Collectio
   let groups;
   try { groups = await listGroups(client); } catch { return <HomeError />; }
   const groupName = (id: string) => groups.find(group => group.id === id)?.name ?? "グループ";
+  const groupColor = (id: string) => groups.find(group => group.id === id)?.presentation?.color;
   const heading = headings[type];
   let body, total = 0;
   try {
     if (type === "items" && !validItemSearch(text)) body = <p role="alert" className="kk-notice">検索語は100文字以内で入力してください。</p>;
     else if (type === "items") {
       const result = await globalItems(client, page, text, kind, filters); total = result.total;
-      body = result.rows.length ? <ul className="kk-collection-grid">{result.rows.map(item => <li key={item.id}><CandidateCard item={item} groupName={groupName(item.group_id)} href={`/app/groups/${item.group_id}/items/${item.id}?${new URLSearchParams({ ...Object.fromEntries(query), origin: "all", page: String(page) })}`} /></li>)}</ul> : null;
+      body = result.rows.length ? <ul className="kk-collection-grid">{result.rows.map(item => <li key={item.id}><CandidateCard item={item} groupName={groupName(item.group_id)} groupColor={groupColor(item.group_id)} href={`/app/groups/${item.group_id}/items/${item.id}?${new URLSearchParams({ ...Object.fromEntries(query), origin: "all", page: String(page) })}`} /></li>)}</ul> : null;
     } else if (type === "outings") {
       const result = await globalOutings(client, page, completed, cancelled); total = result.total;
-      body = result.rows.length ? <ul className="kk-collection-grid">{result.rows.map(outing => <li key={outing.id}><OutingCard outing={outing} groupName={groupName(outing.group_id)} /></li>)}</ul> : null;
+      body = result.rows.length ? <ul className="kk-collection-grid">{result.rows.map(outing => <li key={outing.id}><OutingCard outing={outing} groupName={groupName(outing.group_id)} groupColor={groupColor(outing.group_id)} /></li>)}</ul> : null;
     } else {
       const result = await globalMemories(client, page); total = result.total;
-      body = result.rows.length ? <ul className="kk-collection-grid">{result.rows.map(memory => <li key={memory.id}><MemoryCard memory={memory} groupName={groupName(memory.group_id)} /></li>)}</ul> : null;
+      body = result.rows.length ? <ul className="kk-collection-grid">{result.rows.map(memory => <li key={memory.id}><MemoryCard memory={memory} groupName={groupName(memory.group_id)} groupColor={groupColor(memory.group_id)} /></li>)}</ul> : null;
     }
   } catch { body = <HomeError />; }
   return <div className="kk-collection">
     <div className="kk-page-heading"><p className="kk-eyebrow">{heading.eyebrow}</p><h1>{heading.title}</h1><p>{heading.description}</p></div>
-    <nav aria-label="表示するグループ" className="kk-chips"><Link href={href()} className="kk-chip" aria-current="page">すべてのグループ</Link>{groups.map(group => <Link href={`/app/groups/${group.id}/${type}${type === "items" && query.size ? `?${query}` : ""}`} key={group.id} data-tone={groupTone(group.id)} className="kk-chip">{group.name}</Link>)}</nav>
+    <nav aria-label="表示するグループ" className="kk-chips"><Link href={href()} className="kk-chip" aria-current="page">すべてのグループ</Link>{groups.map(group => <Link href={`/app/groups/${group.id}/${type}${type === "items" && query.size ? `?${query}` : ""}`} key={group.id} style={groupColorStyle(group.presentation?.color) as CSSProperties} data-tone={groupTone(group.id)} className="kk-chip kk-personal-chip">{group.name}</Link>)}</nav>
     {type === "items" && <form action="/app/items" role="search" className="kk-surface flex flex-wrap items-end gap-3"><div className="flex-1 basis-40"><label htmlFor="all-items-q" className="mb-2 block text-xs font-semibold">候補の名前</label><input key={text} id="all-items-q" type="search" name="q" defaultValue={text} placeholder="名前の一部を入力" className="min-h-12 w-full rounded-xl border bg-white px-3 text-base" /></div><div><label htmlFor="all-items-kind" className="mb-2 block text-xs font-semibold">種類</label><select key={kind} id="all-items-kind" name="kind" defaultValue={kind} className="min-h-12 rounded-xl border bg-white px-3 text-base"><option value="">すべて</option><option value="spot">スポット</option><option value="activity">やりたいこと</option></select></div><ItemExtraFilters filters={filters} /><button type="submit" className="kk-primary-link">探す</button>{(text || kind || query.size > 0) && <Link href="/app/items" className="kk-text-link">条件を解除</Link>}</form>}
     {type === "outings" && <nav aria-label="計画の状態" className="kk-chips"><Link href="/app/outings" aria-current={!completed && !cancelled ? "page" : undefined} className="kk-chip">計画中のおでかけ</Link><Link href="/app/outings?status=completed" aria-current={completed ? "page" : undefined} className="kk-chip">終了したおでかけ</Link><Link href="/app/outings?status=cancelled" aria-current={cancelled ? "page" : undefined} className="kk-chip">中止したおでかけ</Link></nav>}
     <div className="kk-row"><p className="kk-muted">{type === "memories" ? "一緒に残したアルバム" : type === "items" && text ? `「${text}」の候補` : "参加グループの共有データ"}</p><Link href={addHref(type === "outings" ? "outing" : type === "memories" ? "visit" : "item")} className="kk-text-link">＋ {type === "outings" ? "計画を作る" : type === "memories" ? "訪問を残す" : "候補を追加"}</Link></div>

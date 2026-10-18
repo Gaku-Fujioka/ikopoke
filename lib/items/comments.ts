@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../supabase/database.types";
 import { isGroupId } from "@/lib/groups/validation";
+import {socialAvatars} from "@/lib/presentation/repository";
 
 export const COMMENT_LIMIT = 2000;
 export const COMMENT_PAGE_SIZE = 20;
@@ -46,13 +47,15 @@ export async function getComments(client: SupabaseClient<Database>, groupId: str
   return { comments, total: result.total_count };
 }
 
-export type NamedComment = SavedComment & { display_name: string; revision: number; can_delete: boolean };
+export type NamedComment = SavedComment & { display_name: string; revision: number; can_delete: boolean;avatar_path?:string };
 export async function getNamedComments(client: SupabaseClient<Database>, groupId: string, itemId: string, page: number): Promise<{ comments: NamedComment[]; total: number }> {
   const { data, error } = await client.rpc("get_named_item_comments", { p_group_id: groupId, p_item_id: itemId, p_page: page });
   const row = data?.[0];
   if (error || !row || !Array.isArray(row.comments) || row.comments.length > 20 || !Number.isSafeInteger(row.total_count) || row.total_count < 0) throw new CommentError(error);
-  return { total: row.total_count, comments: row.comments.map(c => {
+  const comments=row.comments.map(c => {
     if (!isGroupId(c.id) || typeof c.body !== "string" || typeof c.display_name !== "string" || typeof c.is_mine !== "boolean" || typeof c.can_delete !== "boolean" || !Number.isInteger(c.revision) || c.revision < 1 || !Number.isFinite(Date.parse(c.created_at))) throw new CommentError(null);
     return { id:c.id,body:c.body,created_at:c.created_at,is_mine:c.is_mine,display_name:c.display_name,revision:c.revision,can_delete:c.can_delete };
-  }) };
+  });
+  const photos=await socialAvatars(client,groupId,comments.map(comment=>comment.id),true);
+  return {total:row.total_count,comments:comments.map(comment=>photos[comment.id]?{...comment,avatar_path:photos[comment.id]}:comment)};
 }

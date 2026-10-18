@@ -4,7 +4,7 @@ import { AppNav } from "@/components/layout/app-nav";
 import { AppAccountMenu } from "@/components/app-account-menu";
 
 export default function AppLayout({ children }: { children: ReactNode }) {
-  return <div className="kk-app">
+  return <div className="kk-app kk-color-preview">
     <a href="#main-content" className="kk-skip">本文へスキップ</a>
     <header className="kk-header"><div className="kk-header-inner">
       <Link href="/app" className="kk-brand" aria-label="ここいこ 全グループのホーム"><span aria-hidden="true">こ</span>ここいこ<small aria-hidden="true">✦</small></Link>

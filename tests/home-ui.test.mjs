@@ -29,6 +29,9 @@ export async function globalItems(){return {rows:[],total:0};}export async funct
 const navigationURL=sourceURL(`export {usePathname,useSearchParams} from ${JSON.stringify(providerURL)};export function notFound(){throw Object.assign(Error('not found'),{navigation:'not-found'});}export function redirect(location){throw Object.assign(Error('redirect'),{location});}`);
 registerHooks({
   resolve(specifier,context,next){
+    if(specifier==='next/image')return {url:sourceURL('export default function Image(){return null;}'),shortCircuit:true};
+    if(specifier==='@/app/app/groups/actions')return {url:sourceURL('export async function createGroupProfileAction(){return {error:null};}'),shortCircuit:true};
+    if(specifier==='@/app/app/profile/presentation-actions')return {url:sourceURL('export async function profileMediaAction(){return {error:null};}'),shortCircuit:true};
     if(specifier==='@/app/app/map-actions')return {url:sourceURL('export async function placeListsAction(){return {lists:[]};}export async function savePlaceAction(){return {error:null};}export async function attachPlaceAction(){return {error:null};}'),shortCircuit:true};
     if(specifier==='@/components/maps/map-sections')return {url:sourceURL('export function SavedMapSection(){return null;}export function OutingMapSection(){return null;}export function ItemPlaceSection(){return null;}'),shortCircuit:true};
     if(specifier==='@/components/items/candidate-board')return {url:sourceURL('export function CandidateBoard(){return null;}export function PlanSelectionReceipt(){return null;}'),shortCircuit:true};
@@ -36,7 +39,7 @@ registerHooks({
     if(specifier==='@/lib/utils')return {url:sourceURL("export const hasEnvVars=true;"),shortCircuit:true};
     if(['@/lib/supabase/server','@/lib/groups/repository','@/lib/home/repository','@/lib/items/repository','@/lib/profiles/repository','@/lib/outings/repository','@/lib/memories/repository'].includes(specifier))return {url:providerURL,shortCircuit:true};
     if(['@/components/outings/outing-form','@/components/visits/visit-sections','@/components/memories/memory-forms','@/components/memories/cover-editor','@/components/memories/memory-book'].includes(specifier))return {url:sourceURL('export function CoverEditor(){return null;}export function MemoryBook(){return null;}export function MemoryEditForm(){return null;}export function OutingCancellation(){return null;}export function OutingForm(){return null;}export function VisitHistory(){return null;}export function CompletionForm(){return null;}'),shortCircuit:true};
-    if(specifier==='next/navigation')return {url:navigationURL,shortCircuit:true};
+    if(specifier==='next/navigation')return {url:sourceURL(`export * from ${JSON.stringify(navigationURL)};export function useRouter(){return {push(){},refresh(){}};}`),shortCircuit:true};
     if(specifier==='next/link')return {url:sourceURL("import {createElement} from 'react';export default function Link({href,children,...props}){return createElement('a',{...props,href},children);}"),shortCircuit:true};
     if(specifier==='@/components/home/refresh-button'||specifier==='./refresh-button')return {url:sourceURL("export function RefreshButton(){return '更新';}"),shortCircuit:true};
     if(specifier.startsWith('@/') || ((specifier.startsWith('./')||specifier.startsWith('../'))&&/\.tsx?$/.test(context.parentURL??''))){
@@ -67,8 +70,17 @@ test('real home orders groups, next outing, map and activity with independent re
   assert.deepEqual(provider.calls,['auth','groups']);
   const children=tree.props.children.flatMap(child=>child?.type===Symbol.for('react.fragment')?child.props.children:child).flat(Infinity).filter(Boolean);
   assert.equal(children[1].type.name,'GroupCards');
-  assert.equal(children[2].type,Suspense);assert.equal(children[2].props.children.type.name,'NextEnjoyment');
+  assert.equal(children[2].props['data-home-section'],'next');
+  const nextBoundary=children[2].props.children;
+  assert.equal(nextBoundary.type,Suspense);assert.equal(nextBoundary.props.children.type.name,'NextEnjoyment');
   assert.equal(children[3].type.name,'MapSpace');assert.equal(children[4].props['aria-labelledby'],'home-activity-title');
+  const slots=children.map(child=>typeof child.type==='function'?child.type(child.props):child);
+  assert.deepEqual(slots.map(slot=>slot.props['data-home-section']),['intro','groups','next','map','activity']);
+  // Loading and an empty next outing occupy the same slot; later map/activity reads stay independent.
+  const nextSlot=children[2];
+  assert.match(renderToStaticMarkup(createElement(nextBoundary.props.fallback.type,nextBoundary.props.fallback.props)),/次の楽しみを読み込んでいます/);
+  const emptyNext=await nextBoundary.props.children.type(nextBoundary.props.children.props);
+  assert.equal(nextSlot.props['data-home-section'],'next');assert.match(renderToStaticMarkup(emptyNext),/次の楽しみをつくろう/);
   const boundary=nodes(children[4],node=>node.type===Suspense)[0];
   provider.configure({groups,activityError:true});
   const error=await boundary.props.children.type(boundary.props.children.props);
@@ -141,4 +153,16 @@ test('home gives the primary entry to new places and nests saved-candidate navig
   const saved=nodes(map,node=>node.type==='details')[0];assert.ok(saved);assert.equal(saved.props.children[0].props.children,'保存した候補から探す');
   const form=nodes(saved,node=>node.type==='form')[0];assert.equal(form.props.action,'/app/items');assert.equal(form.props['aria-label'],'保存した候補を検索');assert.ok(nodes(form,node=>node.type==='button'&&node.props.children==='候補を検索').length);
   assert.equal(nodes(map,node=>node.type==='form').length,1);
+});
+
+const {CreateGroupForm}=await import('../components/groups/create-group-form.tsx');
+const {MemoryCard}=await import('../components/home/collection-cards.tsx');
+test('new group fields make only name required and explain optional shared photo and description',()=>{
+ const html=renderToStaticMarkup(createElement(CreateGroupForm,{requestId:groupId}));
+ assert.match(html,/グループの説明/);assert.match(html,/グループの写真/);assert.match(html,/name="description"/);assert.match(html,/accept="image\/jpeg,image\/png,image\/webp"/);
+ assert.match(html,/ログイン後・参加前/);assert.match(html,/10MB/);assert.equal((html.match(/required=""/g)??[]).length,1);assert.match(html,/名前だけでも/);
+});
+test('album cards carry the selected personal group mark for the book border and retain the album destination',()=>{
+ const tree=MemoryCard({memory:{id:'memory',group_id:groupId,title:'旅',memory_date:'2026-10-18'},groupName:'友達',groupColor:'mint'});
+ assert.equal(tree.props.style['--kk-group-mark'],'#2d8050');assert.equal(tree.props.style['--kk-tone'],'#2d8050');assert.equal(tree.props.href,'/app/groups/'+groupId+'/memories/memory');
 });

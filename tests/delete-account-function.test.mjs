@@ -29,3 +29,12 @@ test('changed membership and Storage failure fail closed without deleting Auth o
 test('Auth failure after data cleanup is resumable; retries do not require deleted photo bytes',async()=>{
  const {admin,calls}=backend({authFailure:true});assert.equal((await deleteAccount(request(),admin,now)).status,503);assert.equal((await deleteAccount(request(),admin,now)).status,200);assert.equal(calls.filter(c=>c[0]==='remove').length,1);assert.equal(calls.filter(c=>c[0]==='deleteUser').length,2);
 });
+
+test('profile cleanup accepts only the verified avatar or explicitly confirmed group covers',async()=>{
+ for(const path of [`profile-avatar/${user}/${photo}.jpg`,`profile-cover/${group}/${photo}.jpg`]){
+  const {admin}=backend({path});assert.equal((await deleteAccount(request(),admin,now)).status,200);
+ }
+ for(const path of [`profile-avatar/${group}/${photo}.jpg`,`profile-cover/${visit}/${photo}.jpg`,`profile-avatar/${user}/bad.jpg`]){
+  const {admin,calls}=backend({path});assert.equal((await deleteAccount(request(),admin,now)).status,503);assert.ok(!calls.some(c=>c[0]==='remove'));
+ }
+});

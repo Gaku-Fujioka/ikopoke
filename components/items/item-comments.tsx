@@ -7,6 +7,7 @@ import { getNamedComments, CommentError, COMMENT_PAGE_SIZE } from "@/lib/items/c
 import { CommentForm } from "@/components/items/comment-form";
 import { RetryItems } from "@/components/items/retry-items";
 import { sharedItemCommentsHref } from "@/lib/items/search";
+import {ProfileImage} from "@/components/profiles/profile-image";
 
 const commentDate = new Intl.DateTimeFormat("ja-JP", { timeZone: "Asia/Tokyo", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
 
@@ -31,7 +32,7 @@ export async function ItemComments({ client, groupId, itemId, page, detailHref }
       </nav>}
       {saved.comments.length ? <ol className="kk-chat-messages" aria-label="ここでの会話">
         {[...saved.comments].reverse().map(comment => <li key={comment.id} className="kk-chat-row" data-mine={comment.is_mine}>
-          {!comment.is_mine && <span className="kk-chat-avatar" aria-hidden="true">{Array.from(comment.display_name)[0] || '・'}</span>}
+          {!comment.is_mine && <ProfileImage path={comment.avatar_path} alt="" className="kk-chat-avatar" fallback={Array.from(comment.display_name)[0] || '・'}/>}
           <div className="kk-chat-content"><p className="kk-chat-name">{comment.display_name}{comment.is_mine ? '（あなた）' : ''}</p>
             <div className="kk-chat-bubble"><p>{comment.body}</p></div>
             <p className="kk-chat-time"><time dateTime={comment.created_at}>{commentDate.format(new Date(comment.created_at))}</time><span className="sr-only">（日本時間）</span></p>
