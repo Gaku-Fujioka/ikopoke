@@ -1,6 +1,6 @@
 # MEMORY-03：みんなで書き足す思い出の本
 
-2026-10-19。実装・自己確認済み、CI確認前。担当：本Agent単独。branch `feat/shared-memory-pages`、基準 `cb1f376`。
+2026-10-19。実装・自己レビュー・ローカル検証・開発DB適用済み。CI/統合の最新状態は[PR #36](https://github.com/Gaku-Fujioka/kokoiko/pull/36)を参照。担当：本Agent単独。branch `feat/shared-memory-pages`、基準 `cb1f376`。
 
 ## Goal・採用範囲
 
@@ -31,6 +31,6 @@ Done：追加/編集/削除/再読込、章名の元データ分離、挿入位�
 - 開発用ここいこのみへ新migrationを適用。実version `20261019100243_shared_memory_book.sql`にローカル名を同期。既存3関数の変更前と、追加/更新後11関数の本文ハッシュがローカルと実DBで一致。新3公開RPCはSECURITY INVOKER/空search_path、匿名実行不可。2新表のRLS/所属ポリシーと直接書込不可、内部ヘルパーの実行不可を確認。会計migrationの再適用なし。利用者データの取得/投入なし。
 - ローカル全369件のNodeテスト成功（既存352+追加17：DB8/Action5/SSR・並び4）。型検査・lint・本番build成功。DBテストはPGliteの実ロール/RLS・Storageメタデータであり、実サービスJWT・画像バイト転送・別接続での同時操作とは区別する。
 - 自己レビュー：要件対応、元データと章名の分離、所属/所有者/削除ガード、再送・改訂、自由写真と退出/最後のグループ削除の経路、エラー時の入力保持を確認。追加テストで写真トリガーと削除SQLを修正し、既存全件も再確認。依存とlockfileは無変更。
-- 接続ブラウザ/アプリ一覧は空で、in-app browserも利用不可。実ブラウザ操作、360/390px・実スマホ、複数利用者の操作は未確認。独立レビューは未実施（D-009）。CIとmain統合はPR作成後に確認する。既存NextのpartialPrefetchingとNodeのmodule形式の警告は継続。
+- 接続ブラウザ/アプリ一覧は空で、in-app browserも利用不可。実ブラウザ操作、360/390px・実スマホ、複数利用者の操作は未確認。独立レビューは未実施（D-009）。[PR #36](https://github.com/Gaku-Fujioka/kokoiko/pull/36)の最新headのCIと競合を確認してD-009に従い統合する。初回実装commitは`5b575c5`。既存NextのpartialPrefetchingとNodeのmodule形式の警告は継続。
 - Advisorで新規の公開SECURITY DEFINER警告なし。既存の権限付きRPC/rls_auto_enable/漏えいパスワード保護の警告と、意図的な直接アクセス全拒否表のINFOは今回の変更範囲に含めない。[RPCの警告](https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable)・[RLS全拒否](https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy)。
 - 会計の実操作はユーザーが本会話で確認済みと報告（スマホ/別アカウント等の詳細は未特定）。
