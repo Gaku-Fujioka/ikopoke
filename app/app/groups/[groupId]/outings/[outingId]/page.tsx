@@ -18,6 +18,7 @@ import { AuthSetupNotice } from "@/components/auth-setup-notice";
 import { OutingCancellation } from "@/components/outings/outing-form";
 import { VisitHistory } from "@/components/visits/visit-sections";
 import { CompletionForm } from "@/components/memories/memory-forms";
+import { OpenBookForm } from "@/components/memories/book-writing";
 
 type PageProps = { params: Promise<{ groupId: string; outingId: string }>; searchParams: Promise<{ planned?: string }> };
 async function OutingContent({ params, searchParams }: PageProps) {
@@ -56,6 +57,7 @@ async function OutingContent({ params, searchParams }: PageProps) {
     {!editable&&<p className="kk-muted">{outing.cancelled_at?"中止中です。下の管理メニューから再開できます。":"計画を直すときは、終了を取り消すと編集に戻れます。"}</p>}
     <Link href={'/app/finance/open?'+new URLSearchParams({source:'outing:'+outingId})} className="kk-surface block space-y-2"><strong>自分の会計 →</strong><p className="text-sm text-stone-600">このおでかけと訪問先の出費をまとめて振り返る。金額はあなただけに表示されます。</p></Link>
     <Suspense fallback={<p role="status" className="kk-loading">この日の訪問記録を読み込んでいます…</p>}><VisitHistory client={client} groupId={groupId} outingId={outingId}/></Suspense>
+    <OpenBookForm groupId={groupId} outingId={outingId}/>
     {!outing.cancelled_at&&<CompletionForm groupId={groupId} outingId={outingId} revision={outing.revision} completed={!!outing.completed_at}/>}
     {!outing.completed_at&&<details className="kk-inline-editor"><summary className="kk-edit-button">… おでかけの管理</summary><OutingCancellation groupId={groupId} outingId={outingId} revision={outing.revision} cancelled={Boolean(outing.cancelled_at)}/></details>}
     <Link href={base+'/memories'} className="kk-text-link">みんなの思い出へ →</Link>

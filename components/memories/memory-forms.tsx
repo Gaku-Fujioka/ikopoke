@@ -7,7 +7,7 @@ const field="min-h-12 w-full rounded-xl border border-stone-300 px-4 focus-visib
 export function CompletionForm({groupId,outingId,revision,completed}:{groupId:string;outingId:string;revision:number;completed:boolean}){
   const [state,action,pending]=useActionState(setOutingCompletedAction,{error:null});
   return <section className="space-y-4 rounded-3xl border border-stone-200 bg-white p-6"><h2 className="text-xl font-bold">{completed?"このおでかけは終了しました":"思い出の一冊にする"}</h2>
-    <p className="text-sm leading-6 text-stone-600">{completed?"間違えて終了した場合は取り消せます。写真・訪問記録とアルバムは残り、再び終了しても同じ一冊を使います。":"このおでかけの訪問記録だけをアルバムにまとめます。候補から直接記録した訪問は含めません。未訪問の候補を行ったことにはしません。写真やメモは後から追加・編集できます。"}</p>
+    <p className="text-sm leading-6 text-stone-600">{completed?"間違えて終了した場合は取り消せます。写真・訪問記録とアルバムは残り、再び終了しても同じ一冊を使います。":"このおでかけの訪問記録と、書き足したページやひとことを同じ一冊に残します。候補から直接記録した訪問は含めません。未訪問の候補を行ったことにはしません。写真やメモは後から追加・編集できます。"}</p>
     <form action={action} aria-busy={pending} className="space-y-4"><input type="hidden" name="groupId" value={groupId}/><input type="hidden" name="id" value={outingId}/><input type="hidden" name="revision" value={revision}/><input type="hidden" name="completed" value={String(!completed)}/>
       {!completed&&<label className="flex min-h-11 items-center gap-3 text-sm"><input type="checkbox" required className="h-5 w-5 accent-orange-700" disabled={pending}/>おでかけを終了してアルバムにする</label>}
       {state.error&&<p role="alert" className="text-sm text-red-700">{state.error}</p>}<button disabled={pending} className={button}>{pending?"保存中…":completed?"終了を取り消す":"終了して思い出を見る"}</button>
