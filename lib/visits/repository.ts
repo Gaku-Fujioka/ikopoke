@@ -2,7 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/database.types";
 import type { recordVisitInput } from "./validation";
 export type SavedVisit = Omit<Database["public"]["Tables"]["visits"]["Row"],"created_by">;
-export type VisitPhoto = Omit<Database["public"]["Tables"]["visit_photos"]["Row"],"created_by" | "deletion_actor">;
+export type VisitPhoto = Omit<Database["public"]["Tables"]["visit_photos"]["Row"],"created_by" | "deletion_actor" | "memory_page_id">;
 export type VisitRatings = { rating_count: number; average_rating: number | null; my_rating: number | null };
 const columns="id,group_id,item_id,outing_id,item_title,visited_on,visited_time,visited_period,note,revision,created_at,deleting,outing_stop_id";
 export class VisitStoreError extends Error {

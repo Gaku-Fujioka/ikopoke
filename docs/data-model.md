@@ -1,5 +1,7 @@
 # データモデル：現状と設計案
 
+MEMORY-03（D-031）：`memory_pages`は自由ページと訪問章名のメタデータ、`memory_words`はページへのひとこと/最後の寄せ書きを保持。所属RLSと直接書込拒否、公開SECURITY INVOKER/非公開検証処理、本人所有の言葉と改訂照合/再送保護を使用。自由写真は`visit_photos`を訪問または自由ページのいずれかに所属させ、既存のStorage制御とグループ/アカウント削除経路を再利用する。章名は訪問名を変更しない。自由ページは訪問を基準に挿入し、基準訪問削除時は先頭へ移す。適用/検証状況は[MEMORY-03](tasks/MEMORY-03.md)。
+
 2026-10-19追記：FINANCE-01はmain統合許可済み。下記の会計の未マージ表記は当初の試用記録で、最新の統合状態は[PR #35](https://github.com/Gaku-Fujioka/kokoiko/pull/35)を参照。今回は追加のDB適用や利用者データの変更を行わない。
 
 FINANCE-01（D-030、試用branch）：`finance_categories`/`finance_contexts`/`finance_entries`/`finance_payments`は本人SELECTだけのRLSと直接書込拒否を持つ。非公開処理が金額・記録先・相手・改訂を検証する。`finance_contexts`は共有表へのFKを持たず、退出/グループ削除後も名前と本人の会計を保持する。受取は出費へ任意に紐づけ、支払履歴の出費表示は複製行を作らない。再送用UUIDとハッシュは非公開表に保持し、アカウント削除の既存data_removed遷移で会計と共に削除する。開発DB適用version `20261018143100`、20関数本体一致確認済み。main未マージ。[詳細](tasks/FINANCE-01.md)。

@@ -1,3 +1,4 @@
+import type {BookContent} from '../memories/book';
 import type {FinanceOptions,FinanceDashboard,FinanceDetail,FinanceInput,FinanceHistoryInput} from '../finance/types';
 /** Types for repository-owned migrations. Auth remains SDK-managed. */
 export type GroupRow = {
@@ -28,7 +29,7 @@ export type Database = {
         Insert: never; Update: never; Relationships: [];
       };
       visit_photos: {
-        Row: { id: string; group_id: string; visit_id: string; slot: number; display_order: number; deletion_actor: string | null; object_path: string; content_type: string; byte_size: number; status: "pending" | "ready" | "cancelling"; created_by: string; created_at: string };
+        Row: { id: string; group_id: string; visit_id: string | null; memory_page_id: string | null; slot: number; display_order: number; deletion_actor: string | null; object_path: string; content_type: string; byte_size: number; status: "pending" | "ready" | "cancelling"; created_by: string; created_at: string };
         Insert: never; Update: never; Relationships: [];
       };
       outings: {
@@ -106,6 +107,9 @@ export type Database = {
       };
     };
     Functions: {
+      get_memory_book: {Args:{p_memory:string};Returns:BookContent};
+      mutate_memory_book: {Args:{p_memory:string;p_operation:string;p_data:Record<string,unknown>};Returns:{id?:string;revision?:number;object_path?:string;status?:string;paths?:string[]}};
+      open_memory_book: {Args:{p_group:string;p_outing:string};Returns:string};
       open_finance_context:{Args:{p_kind:string;p_source:string};Returns:string};
       get_finance_options:{Args:{p_context:string|null};Returns:FinanceOptions};
       get_finance_dashboard:{Args:{p_context:string|null;p_month:string|null;p_kind:string;p_page:number};Returns:FinanceDashboard};

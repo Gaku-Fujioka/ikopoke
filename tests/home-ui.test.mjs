@@ -19,6 +19,7 @@ export async function getGroup(client,id){return config.groups?.find(group=>grou
 export async function getGroupMembers(){return [{user_id:'synthetic',display_name:'参加者'}];}
 export async function getOuting(){const c=config.current;if(!c)return c;return {...c,outing:{...c.outing,end_date:c.outing.end_date??c.outing.outing_date},items:c.items.map((s,index)=>({...s,id:s.id??"stop-"+index,day_index:s.day_index??0})),days:c.days??[{day_index:0,mode:c.outing.mode,participants:c.participants}]};}
 export async function getMemory(){return config.memory;}export async function getMemoryContent(){return {visits:[],photos:[]};}
+export async function getBookContent(){return {pages:[],words:[],photos:[]};}
 export async function listCandidateOptions(){return [{id:'candidate',title:'訪問先',kind:'spot'}];}
 export async function getActivity(client,group){calls.push(['activity',group]);if(config.activityError)throw Error('private');return config.activity??[];}
 export async function nextOuting(client,group){calls.push(['next',group]);return config.next??null;}
@@ -30,6 +31,7 @@ const navigationURL=sourceURL(`export {usePathname,useSearchParams} from ${JSON.
 registerHooks({
   resolve(specifier,context,next){
     if(specifier==='next/image')return {url:sourceURL('export default function Image(){return null;}'),shortCircuit:true};
+    if(specifier==='@/components/memories/book-writing')return {url:sourceURL('export function OpenBookForm(){return "思い出の本を開く";}'),shortCircuit:true};
     if(specifier==='@/app/app/groups/actions')return {url:sourceURL('export async function createGroupProfileAction(){return {error:null};}'),shortCircuit:true};
     if(specifier==='@/app/app/profile/presentation-actions')return {url:sourceURL('export async function profileMediaAction(){return {error:null};}'),shortCircuit:true};
     if(specifier==='@/app/app/map-actions')return {url:sourceURL('export async function placeListsAction(){return {lists:[]};}export async function savePlaceAction(){return {error:null};}export async function attachPlaceAction(){return {error:null};}'),shortCircuit:true};
@@ -37,7 +39,7 @@ registerHooks({
     if(specifier==='@/components/items/candidate-board')return {url:sourceURL('export function CandidateBoard(){return null;}export function PlanSelectionReceipt(){return null;}'),shortCircuit:true};
     if(specifier==='react'&&context.parentURL?.startsWith('data:'))return next(specifier,{...context,parentURL:import.meta.url});
     if(specifier==='@/lib/utils')return {url:sourceURL("export const hasEnvVars=true;"),shortCircuit:true};
-    if(['@/lib/supabase/server','@/lib/groups/repository','@/lib/home/repository','@/lib/items/repository','@/lib/profiles/repository','@/lib/outings/repository','@/lib/memories/repository'].includes(specifier))return {url:providerURL,shortCircuit:true};
+    if(['@/lib/supabase/server','@/lib/groups/repository','@/lib/home/repository','@/lib/items/repository','@/lib/profiles/repository','@/lib/outings/repository','@/lib/memories/repository','@/lib/memories/book'].includes(specifier))return {url:providerURL,shortCircuit:true};
     if(['@/components/outings/outing-form','@/components/visits/visit-sections','@/components/memories/memory-forms','@/components/memories/cover-editor','@/components/memories/memory-book'].includes(specifier))return {url:sourceURL('export function CoverEditor(){return null;}export function MemoryBook(){return null;}export function MemoryEditForm(){return null;}export function OutingCancellation(){return null;}export function OutingForm(){return null;}export function VisitHistory(){return null;}export function CompletionForm(){return null;}'),shortCircuit:true};
     if(specifier==='next/navigation')return {url:sourceURL(`export * from ${JSON.stringify(navigationURL)};export function useRouter(){return {push(){},refresh(){}};}`),shortCircuit:true};
     if(specifier==='next/link')return {url:sourceURL("import {createElement} from 'react';export default function Link({href,children,...props}){return createElement('a',{...props,href},children);}"),shortCircuit:true};

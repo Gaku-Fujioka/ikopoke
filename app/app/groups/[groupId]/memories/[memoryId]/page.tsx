@@ -7,15 +7,17 @@ import {hasEnvVars} from "@/lib/utils";
 import {isGroupId} from "@/lib/groups/validation";
 import {getMemory,getMemoryContent,type SavedMemory} from "@/lib/memories/repository";
 import {orderMemoryVisits} from "@/lib/memories/order";
+import {getBookContent} from "@/lib/memories/book";
 import {getOuting} from "@/lib/outings/repository";
 import {AuthSetupNotice} from "@/components/auth-setup-notice";
 import {MemoryBook} from "@/components/memories/memory-book";
 import {MemoryEditForm,CompletionForm} from "@/components/memories/memory-forms";
 async function BookContent({memory}:{memory:SavedMemory}){
   try{
-    const client=await createClient();const [content,outing]=await Promise.all([getMemoryContent(client,memory),getOuting(client,memory.group_id,memory.outing_id)]);
+    const client=await createClient();const [content,outing,book]=await Promise.all([getMemoryContent(client,memory),getOuting(client,memory.group_id,memory.outing_id),getBookContent(client,memory.id)]);
     if(!outing)return <p role="alert">関連する計画を読み込めませんでした。もう一度お試しください。</p>;
-    return <><p className="rounded-2xl bg-orange-50 p-4 text-sm leading-6 text-stone-700">{outing.outing.cancelled_at?"このおでかけは中止中です。アルバムと記録は残っています。計画を再開してから終了できます。":outing.outing.completed_at?"終了したおでかけの思い出です。":"終了を取り消し、計画に戻しています。この一冊と記録は残っています。"}</p><MemoryBook memory={memory} visits={orderMemoryVisits(content.visits,outing.items)} photos={content.photos}/><CoverEditor key={memory.revision} memory={memory} photos={content.photos}/>{outing.outing.cancelled_at?<Link href={`/app/groups/${memory.group_id}/outings/${memory.outing_id}`} className="kk-text-link">計画を開いて再開する →</Link>:<CompletionForm groupId={memory.group_id} outingId={memory.outing_id} revision={outing.outing.revision} completed={!!outing.outing.completed_at}/>}</>;
+    const photos=[...content.photos,...book.photos.filter(p=>p.status==='ready')];
+    return <><p className="rounded-2xl bg-orange-50 p-4 text-sm leading-6 text-stone-700">{outing.outing.cancelled_at?"このおでかけは中止中です。アルバムと記録は残っています。計画を再開してから終了できます。":outing.outing.completed_at?"終了したおでかけの思い出です。これからも書き足せます。":"書きかけの一冊です。おでかけ中も帰ってからも、みんなで少しずつ。"}</p><MemoryBook memory={memory} visits={orderMemoryVisits(content.visits,outing.items)} photos={photos} book={book}/><CoverEditor key={memory.revision} memory={memory} photos={photos}/>{outing.outing.cancelled_at?<Link href={`/app/groups/${memory.group_id}/outings/${memory.outing_id}`} className="kk-text-link">計画を開いて再開する →</Link>:<CompletionForm groupId={memory.group_id} outingId={memory.outing_id} revision={outing.outing.revision} completed={!!outing.outing.completed_at}/>}</>;
   }catch{return <p role="alert">訪問や写真の情報を読み込めませんでした。思い出を開き直してください。</p>;}
 }
 async function Content({params}:{params:Promise<{groupId:string;memoryId:string}>}){
