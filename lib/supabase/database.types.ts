@@ -1,3 +1,4 @@
+import type {FinanceOptions,FinanceDashboard,FinanceDetail,FinanceInput,FinanceHistoryInput} from '../finance/types';
 /** Types for repository-owned migrations. Auth remains SDK-managed. */
 export type GroupRow = {
   id: string;
@@ -105,6 +106,14 @@ export type Database = {
       };
     };
     Functions: {
+      open_finance_context:{Args:{p_kind:string;p_source:string};Returns:string};
+      get_finance_options:{Args:{p_context:string|null};Returns:FinanceOptions};
+      get_finance_dashboard:{Args:{p_context:string|null;p_month:string|null;p_kind:string;p_page:number};Returns:FinanceDashboard};
+      get_finance_entry:{Args:{p_id:string;p_page:number};Returns:FinanceDetail};
+      save_finance_entry:{Args:{p_id:string;p_expected:number;p_data:FinanceInput};Returns:number};
+      save_finance_payment:{Args:{p_entry:string;p_id:string;p_expected:number;p_payment_revision:number;p_data:FinanceHistoryInput|Record<string,never>;p_delete:boolean};Returns:number};
+      delete_finance_entry:{Args:{p_id:string;p_expected:number;p_confirm:boolean};Returns:undefined};
+      save_finance_category:{Args:{p_id:string;p_name:string;p_expected:number};Returns:number};
       get_group_presentations: {Args:{p_ids:string[]};Returns:{group_id:string;description:string;cover_id:string|null;cover_path:string|null;revision:number;color:string|null}[]};
       save_group_presentation: {Args:{p_group:string;p_description:string|null;p_expected:number|null;p_color:string|null};Returns:undefined};
       edit_profile_media: {Args:{p_action:string;p_kind:string;p_group:string|null;p_id:string|null;p_expected:string|null;p_size:number|null};Returns:{id?:string|null;path?:string;status?:string}};

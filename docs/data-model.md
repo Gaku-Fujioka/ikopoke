@@ -1,5 +1,9 @@
 # データモデル：現状と設計案
 
+2026-10-19追記：FINANCE-01はmain統合許可済み。下記の会計の未マージ表記は当初の試用記録で、最新の統合状態は[PR #35](https://github.com/Gaku-Fujioka/kokoiko/pull/35)を参照。今回は追加のDB適用や利用者データの変更を行わない。
+
+FINANCE-01（D-030、試用branch）：`finance_categories`/`finance_contexts`/`finance_entries`/`finance_payments`は本人SELECTだけのRLSと直接書込拒否を持つ。非公開処理が金額・記録先・相手・改訂を検証する。`finance_contexts`は共有表へのFKを持たず、退出/グループ削除後も名前と本人の会計を保持する。受取は出費へ任意に紐づけ、支払履歴の出費表示は複製行を作らない。再送用UUIDとハッシュは非公開表に保持し、アカウント削除の既存data_removed遷移で会計と共に削除する。開発DB適用version `20261018143100`、20関数本体一致確認済み。main未マージ。[詳細](tasks/FINANCE-01.md)。
+
 SOCIAL-02：公開SECURITY INVOKERのcreate_group_with_profileは非公開処理へ委譲し、既存の本人確認・削除ガードを再利用して名前/説明/所属/初期表示色を原子的に保存する。再送はUUIDと作成者/名前を確認し、保存済みの説明を上書きしない。写真は既存の予約/送信/完了確認と非公開Storageを使い、同じ写真UUIDで再試行する。開発DBの実適用versionは20261018122340。[SOCIAL-02](tasks/SOCIAL-02.md)。
 
 SOCIAL-01（D-028）：`group_display_preferences`は所属を参照する本人用の色、`profile_media`は予約/公開/取消状態の画像メタデータ、`groups`は説明/表紙/改訂番号、`profiles`は共通アバター参照を保持する。画像は既存の非公開`visit-photos` bucket内の`profile-avatar/`と`profile-cover/`名前空間を使用し、訪問写真とは衝突させない。公開RPCはSECURITY INVOKERで、非公開schema内の処理が所属・本人・有効な招待・競合とStorageの実体を検証する。`profile_media`と招待閲覧許可表は直接アクセスを許さないためRLS有効・ポリシーなし。最後のグループ削除/アカウント削除も実体を先に削除する。開発DB適用versionは`20261018115447`、削除Edge Functionはversion 2へ反映。実ユーザーの写真操作は未確認。詳細は[SOCIAL-01](tasks/SOCIAL-01.md)。
