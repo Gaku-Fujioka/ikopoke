@@ -1,5 +1,7 @@
 # 構成と責務
 
+2026-10-19追記：FINANCE-01はmain統合許可済み。下記の試用時点の未マージ表記は当時の記録で、統合状況は[PR #35](https://github.com/Gaku-Fujioka/kokoiko/pull/35)、最新指示は[FINANCE-01](tasks/FINANCE-01.md)を参照する。
+
 FINANCE-01（2026-10-18、試用branch）：`lib/finance/`が入力検証・本人用RPC取得と型への射影、`app/app/finance/`がサーバー画面/Action、`components/finance/`が集計表示と入力フォームを担当。共有データと会計の寿命を分離し、本人用スナップショットへ保存する。公開RPCはSECURITY INVOKER、非公開処理で本人/状態/改訂を検証。開発DB適用・ローカル自動検証済み、実ユーザー操作は未確認、main未マージ。[詳細](tasks/FINANCE-01.md)。
 
 初回調査日：2026-10-03。統合後の更新日：2026-10-05。
