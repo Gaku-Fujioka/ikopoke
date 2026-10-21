@@ -8,7 +8,6 @@ import { notFound, redirect } from "next/navigation";
 import { ArrowLeft, ArrowRight, CalendarDays, Home, MapPin, Search, Sparkles } from "lucide-react";
 import { SearchWorkspace } from "@/components/maps/search-workspace";
 import { SavedMapSection } from "@/components/maps/map-sections";
-import {PocketMark} from "@/components/brand/pocket-mark";
 import { mapsConfig } from "@/lib/maps/saved";
 import { createClient } from "@/lib/supabase/server";
 import { hasEnvVars } from "@/lib/utils";
@@ -104,7 +103,7 @@ export async function SharedHome({ groupId = null }: { groupId?: string | null }
     </div>;
   }
   return <div className="kk-home">
-    <div className="kk-hero kk-pocket-hero" data-home-section="intro"><PocketMark className="kk-pocket-hero-mark"/><p className="kk-eyebrow">行きたいも、思い出も。ポケットに。</p><h1>次は、どこいこ？</h1><p>みんなの「いいね」が、次の楽しみに。</p><Link href="/app/install" className="kk-pocket-install-link">いこポケをホーム画面へ →</Link></div>
+    <div className="kk-hero kk-pocket-hero" data-home-section="intro"><p className="kk-eyebrow">行きたいも、思い出も。ポケットに。</p><h1>次は、どこいこ？</h1><p>みんなの「いいね」が、次の楽しみに。</p><Link href="/app/install" className="kk-pocket-install-link">いこポケをホーム画面へ →</Link></div>
     <GroupCards groups={groups} selected={groupId} />
     {groups.length ? <>
       <div data-home-section="next"><Suspense fallback={<HomeLoading>次の楽しみを読み込んでいます…</HomeLoading>}><NextEnjoyment client={client} groupId={groupId} groups={groups} /></Suspense></div>
