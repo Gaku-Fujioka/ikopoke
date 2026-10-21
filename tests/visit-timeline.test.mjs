@@ -9,6 +9,10 @@ import ts from 'typescript';
 const source=s=>`data:text/javascript,${encodeURIComponent(s)}`;
 registerHooks({resolve(s,c,next){
   if(s==='react'&&c.parentURL?.startsWith('data:'))return next(s,{...c,parentURL:import.meta.url});
+  if(s==='next/navigation')return {url:source('export function useRouter(){return {push(){},refresh(){}};}'),shortCircuit:true};
+  if(s==='next/image')return {url:source('export default function Image(){return null;}'),shortCircuit:true};
+  if(s==='@/app/app/groups/[groupId]/visits/actions')return {url:source('export async function saveNewVisitAction(){return {error:null};}export async function updateVisitAction(){return {error:null};}export async function rateVisitAction(){return {error:null};}export async function reservePhotoAction(){return {error:null};}export async function finishPhotoAction(){return {error:null};}'),shortCircuit:true};
+  if(s==='@/lib/supabase/client')return {url:source('export function createClient(){throw Error("Rendering a form must not upload a photo");}'),shortCircuit:true};
   if(s==='next/link')return {url:source("import {createElement} from 'react';export default function Link({href,children,...p}){return createElement('a',{...p,href},children);}"),shortCircuit:true};
   if(s==='@/components/visits/private-visit-image')return {url:source("import {createElement} from 'react';export function PrivatePhotoPreview({path,alt}){return createElement('span',{'data-private-photo':path,role:'img','aria-label':alt});}"),shortCircuit:true};
   if(s.startsWith('@/')||(s.startsWith('./')&&/\.tsx?$/.test(c.parentURL??''))){const base=s.startsWith('@/')?new URL('../'+s.slice(2),import.meta.url):new URL(s,c.parentURL);const url=['.ts','.tsx'].map(ext=>base.href+ext).find(url=>existsSync(fileURLToPath(url)));if(url)return {url,shortCircuit:true};}
@@ -49,4 +53,12 @@ test('memory switch always exposes both views, current state and direct recordin
     assert.ok(markup.includes(groupId?`/app/groups/${a}/visits`:'/app/memories?view=visits'));
     assert.ok(markup.includes(groupId?`/app/new?type=visit&amp;group=${a}`:'/app/new?type=visit'));
   }
+});
+test('actual visit creation form renders an optional multi-photo picker before the save button without sending file bytes through the action',async()=>{
+  const {CreateVisitForm}=await import('../components/visits/visit-forms.tsx');
+  const markup=renderToStaticMarkup(createElement(CreateVisitForm,{groupId:a,itemId:b,outingId:null,title:'公園',requestId:'40000000-0000-4000-8000-000000000001',initialDate:'2026-10-21'}));
+  assert.match(markup,/写真（任意）/);assert.match(markup,/<input type="file"[^>]*multiple=""/);assert.match(markup,/image\/jpeg,image\/png,image\/webp/);
+  assert.ok(markup.indexOf('type="file"')<markup.indexOf('行った！を記録'));
+  assert.ok(!markup.includes('写真は保存後に追加できます'));
+  const fileInput=markup.match(/<input type="file"[^>]*>/)[0];assert.ok(!fileInput.includes('name='));assert.ok(!fileInput.includes('disabled'));
 });
