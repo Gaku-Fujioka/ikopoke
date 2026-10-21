@@ -6,8 +6,12 @@ import "./palette.css";
 import "./social.css";
 import "./pocket.css";
 
-const defaultUrl = process.env.VERCEL_URL
-  ? `https://${process.env.VERCEL_URL}`
+// Use the public domain in production; keep preview metadata on its own deployment.
+const deploymentHost = process.env.VERCEL_ENV === "production"
+  ? process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL
+  : process.env.VERCEL_URL;
+const defaultUrl = deploymentHost
+  ? `https://${deploymentHost}`
   : "http://localhost:3000";
 
 const appName = "いこポケ";
