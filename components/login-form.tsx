@@ -1,5 +1,6 @@
 "use client";
 
+import {PocketMark} from "@/components/brand/pocket-mark";
 import { cn, hasEnvVars } from "@/lib/utils";
 import { appNextPath, authEntryPath } from "@/lib/auth/safe-next-path";
 import { AuthSetupNotice } from "@/components/auth-setup-notice";
@@ -57,7 +58,7 @@ export function LoginForm({
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
-        <CardHeader>
+        <CardHeader><PocketMark className="kk-pocket-login-mark"/>
           <CardTitle className="text-2xl">いこポケにログイン</CardTitle>
           <CardDescription>
             メールアドレスとパスワードを入力してください。

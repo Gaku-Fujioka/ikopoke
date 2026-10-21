@@ -32,11 +32,11 @@ async function NextEnjoyment({ client, groupId, groups }: { client: HomeClient; 
   let outing;
   const today = japanCalendarToday(new Date());
   try { outing = await nextOuting(client, groupId, today); } catch { return <HomeError message="次のおでかけを読み込めませんでした。おでかけタブからも確認できます。" />; }
-  if (!outing) return <section aria-labelledby="next-enjoyment" className="kk-next-empty"><span className="kk-option-icon"><CalendarDays aria-hidden="true" /></span><div><h2 id="next-enjoyment">次の楽しみをつくろう</h2><p>ためていた行きたいを、ひとつの予定に。</p><Link className="kk-text-link" href={addHref("outing", groupId)}>おでかけを計画する <ArrowRight size={15} aria-hidden="true" /></Link></div></section>;
+  if (!outing) return <section aria-labelledby="next-enjoyment" className="kk-next-empty"><span className="kk-option-icon"><CalendarDays aria-hidden="true" /></span><div><h2 id="next-enjoyment">次の楽しみをつくろう</h2><p>ポケットの「行きたい」を、次のおでかけに。</p><Link className="kk-text-link" href={addHref("outing", groupId)}>おでかけを計画する <ArrowRight size={15} aria-hidden="true" /></Link></div></section>;
   const days = Math.round((Date.parse(`${outing.outing_date}T00:00:00Z`) - Date.parse(`${today}T00:00:00Z`)) / 86400000);
   return <section aria-labelledby="next-enjoyment"><Link href={`/app/groups/${outing.group_id}/outings/${outing.id}`} className={`kk-next${days <= 3 ? " kk-next-soon" : ""}`}>
     <span className="kk-date-block"><span>{Number(outing.outing_date.slice(5, 7))}月</span><strong>{Number(outing.outing_date.slice(8, 10))}</strong></span>
-    <div><p className="kk-next-label">{days < 0 ? "旅のまっただ中！" : days === 0 ? "今日のおでかけ！" : days === 1 ? "明日が、たのしみ！" : days <= 3 ? `あと${days}日、もうすぐ！` : "次の楽しみ"}</p><h2 id="next-enjoyment">{outing.title}</h2><p className="kk-next-meta">{groups.find(group => group.id === outing.group_id)?.name} · <time dateTime={outing.outing_date}>{prettyDate(outing.outing_date)}</time>{outing.end_date && outing.end_date !== outing.outing_date && <>〜<time dateTime={outing.end_date}>{prettyDate(outing.end_date)}</time></>}</p></div><ArrowRight aria-hidden="true" size={20} />
+    <div><p className="kk-next-label">{days < 0 ? "おでかけのまっただ中！" : days === 0 ? "今日のおでかけ！" : days === 1 ? "明日が、たのしみ！" : days <= 3 ? `あと${days}日、もうすぐ！` : "次の楽しみ"}</p><h2 id="next-enjoyment">{outing.title}</h2><p className="kk-next-meta">{groups.find(group => group.id === outing.group_id)?.name} · <time dateTime={outing.outing_date}>{prettyDate(outing.outing_date)}</time>{outing.end_date && outing.end_date !== outing.outing_date && <>〜<time dateTime={outing.end_date}>{prettyDate(outing.end_date)}</time></>}</p></div><ArrowRight aria-hidden="true" size={20} />
   </Link></section>;
 }
 async function SavedPeek({ client, groupId, groups }: { client: HomeClient; groupId: string | null; groups: SavedGroup[] }) {
@@ -68,7 +68,7 @@ async function RecentActivity({ client, groupId, groups }: { client: HomeClient;
 async function GroupCandidates({ client, groupId }: { client: HomeClient; groupId: string }) {
   try {
     const saved = await listItems(client, groupId, 1, "", { sort: "recommended" });
-    return saved.items.length ? <CandidateBoard key={groupId} groupId={groupId} items={saved.items.slice(0,4)} links={Object.fromEntries(saved.items.slice(0,4).map(item => [item.id, '/app/groups/'+groupId+'/items/'+item.id]))} /> : <div className="kk-empty"><h3>最初の「ここ、行ってみない？」を。</h3><p>気になる場所をためたら、みんなで選んで計画へ。</p><Link href={'/app/groups/'+groupId+'/items/new'} className="kk-primary-link">最初の候補を追加</Link></div>;
+    return saved.items.length ? <CandidateBoard key={groupId} groupId={groupId} items={saved.items.slice(0,4)} links={Object.fromEntries(saved.items.slice(0,4).map(item => [item.id, '/app/groups/'+groupId+'/items/'+item.id]))} /> : <div className="kk-empty"><h3>ポケットに、最初の「行きたい」を。</h3><p>気になる場所をためたら、みんなで選んで計画へ。</p><Link href={'/app/groups/'+groupId+'/items/new'} className="kk-primary-link">最初の候補を追加</Link></div>;
   } catch { return <HomeError message="候補を読み込めませんでした。行きたいタブからも確認できます。" />; }
 }
 async function GroupConversations({ client, groupId, groups }: { client: HomeClient; groupId: string; groups: SavedGroup[] }) {
@@ -94,16 +94,16 @@ export async function SharedHome({ groupId = null }: { groupId?: string | null }
     return <div className="space-y-8">
       <Link href="/app" className="kk-global-home-link"><ArrowLeft size={18} aria-hidden="true"/><Home size={18} aria-hidden="true"/><span>全体ホームへ<small>すべてのグループを見る</small></span></Link>
       <header className="kk-group-header"><div>{group.presentation?.cover_path&&<ProfileImage path={group.presentation.cover_path} alt="" className="kk-group-hero-photo"/>}<p className="kk-eyebrow">わたしたちの、おでかけ帳</p><h1>{group.name}</h1><p className="whitespace-pre-wrap">{group.presentation?.description||"行きたいを持ち寄って、次の楽しみへ。"}</p></div><Link href={base+'/settings'} className="kk-secondary-link">メンバー・設定</Link></header>
-      <div className="kk-group-launch"><Link href={base+'/items/new'}><span aria-hidden="true">＋</span><strong>行きたいを追加</strong><small>名前だけでも、ひとつのきっかけ</small></Link><Link href={base+'/outings/new'}><CalendarDays aria-hidden="true" /><strong>おでかけを計画</strong><small>日程と行き先を、一緒に決めよう</small></Link></div>
+      <div className="kk-group-launch"><Link href={base+'/items/new'}><span aria-hidden="true">＋</span><strong>行きたいを追加</strong><small>見つけた行き先を、ポケットへ</small></Link><Link href={base+'/outings/new'}><CalendarDays aria-hidden="true" /><strong>おでかけを計画</strong><small>日程と行き先を、一緒に決めよう</small></Link></div>
       <Suspense fallback={<HomeLoading>次の楽しみを読み込んでいます…</HomeLoading>}><NextEnjoyment client={client} groupId={groupId} groups={groups} /></Suspense>
-      <section aria-labelledby="group-candidates"><div className="kk-section-heading"><div><p className="kk-eyebrow">気持ちが集まったら、出かけよう</p><h2 id="group-candidates">みんなの行きたい</h2></div><div className="flex flex-wrap gap-3"><Link href={base+'/lists'} className="kk-secondary-link">▤ リストで探す</Link><Link href={base+'/items'} className="kk-text-link">すべて見る →</Link></div></div><Suspense fallback={<HomeLoading>候補を読み込んでいます…</HomeLoading>}><GroupCandidates client={client} groupId={groupId} /></Suspense></section>
+      <section aria-labelledby="group-candidates" className="kk-pocket-section"><div className="kk-section-heading"><div><p className="kk-eyebrow">気持ちが集まったら、出かけよう</p><h2 id="group-candidates">みんなの行きたい</h2></div><div className="flex flex-wrap gap-3"><Link href={base+'/lists'} className="kk-secondary-link">▤ リストで探す</Link><Link href={base+'/items'} className="kk-text-link">すべて見る →</Link></div></div><Suspense fallback={<HomeLoading>候補を読み込んでいます…</HomeLoading>}><GroupCandidates client={client} groupId={groupId} /></Suspense></section>
       <section aria-labelledby="group-conversations" className="kk-conversation-space"><div className="kk-section-heading"><div><p className="kk-eyebrow">ひとことから、楽しみがふくらむ</p><h2 id="group-conversations">最近の会話と反応</h2></div><RefreshButton /></div><Suspense fallback={<HomeLoading>会話と反応を読み込んでいます…</HomeLoading>}><GroupConversations client={client} groupId={groupId} groups={groups} /></Suspense><Link href={base+'/activity'} className="kk-text-link">グループの近況をすべて見る →</Link></section>
       <MapSpace client={client} groupId={groupId} groups={groups} />
       <nav aria-label="グループのおでかけ帳" className="kk-group-shortcuts"><Link href={base+'/outings'}>おでかけ一覧 <ArrowRight size={16} aria-hidden="true" /></Link><Link href={base+'/memories'}>思い出をひらく <ArrowRight size={16} aria-hidden="true" /></Link><Link href={base+'/lists'}>リストで整理 <ArrowRight size={16} aria-hidden="true" /></Link><Link href={base+'/visits'}>行った！の記録 <ArrowRight size={16} aria-hidden="true" /></Link></nav>
     </div>;
   }
   return <div className="kk-home">
-    <div className="kk-hero" data-home-section="intro"><p className="kk-eyebrow">行きたいから、思い出まで。</p><h1>次は、どこいこ？<span aria-hidden="true">✦</span></h1><p>みんなの「いいね」が、次の楽しみに。</p></div>
+    <div className="kk-hero kk-pocket-hero" data-home-section="intro"><p className="kk-eyebrow">行きたいも、思い出も。ポケットに。</p><h1>次は、どこいこ？</h1><p>みんなの「いいね」が、次の楽しみに。</p><Link href="/app/install" className="kk-pocket-install-link">いこポケをホーム画面へ →</Link></div>
     <GroupCards groups={groups} selected={groupId} />
     {groups.length ? <>
       <div data-home-section="next"><Suspense fallback={<HomeLoading>次の楽しみを読み込んでいます…</HomeLoading>}><NextEnjoyment client={client} groupId={groupId} groups={groups} /></Suspense></div>

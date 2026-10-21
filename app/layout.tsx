@@ -1,9 +1,10 @@
-import type { Metadata } from "next";
+import type { Metadata,Viewport } from "next";
 import { Geist } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import "./globals.css";
 import "./palette.css";
 import "./social.css";
+import "./pocket.css";
 
 const defaultUrl = process.env.VERCEL_URL
   ? `https://${process.env.VERCEL_URL}`
@@ -17,6 +18,8 @@ export const metadata: Metadata = {
   applicationName: appName,
   title: appName,
   description: appDescription,
+  appleWebApp:{capable:true,title:appName,statusBarStyle:"default"},
+  formatDetection:{telephone:false},
   openGraph: {
     title: appName,
     description: appDescription,
@@ -29,6 +32,8 @@ export const metadata: Metadata = {
     description: appDescription,
   },
 };
+
+export const viewport:Viewport={width:"device-width",initialScale:1,viewportFit:"cover",themeColor:"#ffae45"};
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
