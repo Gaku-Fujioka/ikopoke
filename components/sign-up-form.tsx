@@ -83,7 +83,7 @@ export function SignUpForm({
       <Card>
         <CardHeader>
           <CardTitle className="text-2xl">アカウントを作成</CardTitle>
-          <CardDescription>メールで本人確認をして、ここいこを始めましょう。</CardDescription>
+          <CardDescription>メールで本人確認をして、いこポケを始めましょう。</CardDescription>
         </CardHeader>
         <CardContent>
           {!hasEnvVars && <AuthSetupNotice />}

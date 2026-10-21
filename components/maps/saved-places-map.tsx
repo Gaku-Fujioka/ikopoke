@@ -25,7 +25,7 @@ export function SavedPlacesMap({ candidates, groups, config, showGroups = true, 
     if (host.current) await explorer.loadSaved(host.current, shown.map(row => row.placeId));
   }
   return <section className="kk-saved-map" aria-label={ordered ? "この日の行き先の地図" : "保存した候補の地図"}>
-    <div className="kk-section-heading"><h3>{ordered ? "この日の「ここいこ」マップ" : "みんなの行きたいを、地図で"}</h3><span className="kk-label">{filtered.length}件</span></div>
+    <div className="kk-section-heading"><h3>{ordered ? "この日のおでかけマップ" : "みんなの行きたいを、地図で"}</h3><span className="kk-label">{filtered.length}件</span></div>
     {showGroups && groups.length > 1 && <label className="mt-3 block text-sm">表示するグループ<select aria-label="地図のグループ" value={groupId} disabled={busy} onChange={event => { setGroupId(event.target.value); setPage(0); setVisible(false); }} className="ml-2 min-h-11 rounded-xl border bg-white px-3"><option value="">すべてのグループ</option>{groups.map(group => <option value={group.id} key={group.id}>{group.name}</option>)}</select></label>}
     {!shown.length ? <p className="kk-map-note">場所が紐づいた候補はまだありません。検索結果から保存するか、候補詳細で場所を選んでください。</p> : <>
       <p className="kk-map-note">{ordered ? "ピンは場所ごとに表示します。訪問順は下の番号で確認できます。" : "場所を紐づけた通常の候補を表示します。"} 1回最大20件、表示するとGoogle Mapsから場所情報を取得します。</p>

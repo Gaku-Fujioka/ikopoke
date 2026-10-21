@@ -20,7 +20,7 @@ export function MemoryBook({memory,visits,photos,book={pages:[],words:[],photos:
  const pagePhotos=page?(page.visit_id?photos.filter(p=>p.visit_id===page.visit_id):book.photos.filter(p=>p.memory_page_id===page.id&&p.status==='ready')):[];
  return <section aria-label={`${memory.title}の思い出の本`} className="min-w-0 space-y-4">
   <div className="min-h-[28rem] overflow-hidden rounded-[2rem] border border-stone-200 bg-white shadow-sm"><div className="min-h-[28rem] border-l-[10px] border-orange-200 px-5 py-8 sm:border-l-[14px] sm:px-10">
-   <p className="text-xs font-semibold tracking-widest text-orange-700">{shown==='cover'?'ここいこ · 思い出の一冊':shown==='contents'?'CONTENTS':page?`CHAPTER ${String(chapter).padStart(2,'0')}`:'AFTERWORD'}</p>
+   <p className="text-xs font-semibold tracking-widest text-orange-700">{shown==='cover'?'いこポケ · 思い出の一冊':shown==='contents'?'CONTENTS':page?`CHAPTER ${String(chapter).padStart(2,'0')}`:'AFTERWORD'}</p>
    <h1 ref={heading} tabIndex={-1} className="mt-6 break-words text-3xl font-bold leading-tight tracking-tight outline-none sm:text-5xl">{title}</h1>
    {shown==='cover'?<div className="mt-8 space-y-5 border-t border-stone-200 pt-6 text-stone-600">
     {cover&&<PrivateVisitImage path={cover.object_path} contentType={cover.content_type} alt={`${memory.title}の表紙`}/>}

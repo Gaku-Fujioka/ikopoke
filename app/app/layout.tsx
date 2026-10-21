@@ -7,7 +7,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   return <div className="kk-app kk-color-preview">
     <a href="#main-content" className="kk-skip">本文へスキップ</a>
     <header className="kk-header"><div className="kk-header-inner">
-      <Link href="/app" className="kk-brand" aria-label="ここいこ 全グループのホーム"><span aria-hidden="true">こ</span>ここいこ<small aria-hidden="true">✦</small></Link>
+      <Link href="/app" className="kk-brand" aria-label="いこポケ 全グループのホーム"><span aria-hidden="true">い</span>いこポケ<small aria-hidden="true">✦</small></Link>
       <Suspense fallback={<span className="kk-muted">…</span>}><AppAccountMenu /></Suspense>
     </div></header>
     <main id="main-content" tabIndex={-1} className="kk-main">{children}</main>
