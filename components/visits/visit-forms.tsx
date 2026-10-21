@@ -1,6 +1,11 @@
 "use client";
-import {useActionState,useState} from "react";
-import {recordVisitAction,updateVisitAction,rateVisitAction,type VisitActionState} from "@/app/app/groups/[groupId]/visits/actions";
+import {useActionState,useRef,useState} from "react";
+import {useRouter} from "next/navigation";
+import Link from "next/link";
+import {saveNewVisitAction,updateVisitAction,rateVisitAction,type VisitActionState} from "@/app/app/groups/[groupId]/visits/actions";
+import {completeVisitCreation,type SelectedVisitPhoto} from "@/lib/visits/creation";
+import {VisitPhotoPicker} from "@/components/visits/visit-photo-picker";
+import {uploadVisitPhotos} from "@/components/visits/upload-visit-photos";
 import type {SavedVisit,VisitRatings} from "@/lib/visits/repository";
 import {VisitTimeFields} from "@/components/visits/visit-time-fields";
 const field="min-h-12 w-full rounded-xl border border-stone-300 bg-white px-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-700";
@@ -9,18 +14,30 @@ function RatingOptions(){return <><option value="">未評価</option>{[1,2,3,4,5
 export function CreateVisitForm({groupId,itemId,outingId,stopId,title,requestId,initialDate}:{groupId:string;itemId:string;outingId:string|null;stopId?:string|null;title:string;requestId:string;initialDate:string}){
   const [date,setDate]=useState(initialDate),[note,setNote]=useState(""),[rating,setRating]=useState("");
   const [time,setTime]=useState(""),[period,setPeriod]=useState("");
-  const [state,action,pending]=useActionState(recordVisitAction,{error:null});
-  return <form action={action} aria-busy={pending} className="space-y-5 rounded-3xl border border-stone-200 bg-white p-6 sm:p-8">
-    <input type="hidden" name="groupId" value={groupId}/><input type="hidden" name="itemId" value={itemId}/><input type="hidden" name="outingId" value={outingId??""}/><input type="hidden" name="stopId" value={stopId??""}/><input type="hidden" name="visitId" value={requestId}/>
-    <h2 className="break-words text-xl font-bold">{title}</h2><p className="text-sm text-stone-600">再訪は新しい記録として残ります。写真は保存後に追加できます。</p>
-    <fieldset disabled={pending} className="min-w-0 space-y-5">
+  const [visitRequestId]=useState(requestId);
+  const [photos,setPhotos]=useState<SelectedVisitPhoto[]>([]),[savedId,setSavedId]=useState<string>(),[pending,setPending]=useState(false),[error,setError]=useState<string|null>(null);
+  const submitting=useRef(false),router=useRouter();
+  async function submit(event:React.FormEvent<HTMLFormElement>){
+    event.preventDefault();if(submitting.current)return;
+    const form=new FormData(event.currentTarget);submitting.current=true;setPending(true);setError(null);
+    const result=await completeVisitCreation(savedId,()=>saveNewVisitAction(form),id=>uploadVisitPhotos(groupId,id,photos,photoId=>setPhotos(current=>current.map(photo=>photo.id===photoId?{...photo,done:true}:photo))),setSavedId);
+    if(result.error){setError(result.error);setPending(false);submitting.current=false;return;}
+    router.push(`/app/groups/${groupId}/visits/${result.visitId}`);router.refresh();
+  }
+  return <form onSubmit={submit} aria-busy={pending} className="space-y-5 rounded-3xl border border-stone-200 bg-white p-6 sm:p-8">
+    <input type="hidden" name="groupId" value={groupId}/><input type="hidden" name="itemId" value={itemId}/><input type="hidden" name="outingId" value={outingId??""}/><input type="hidden" name="stopId" value={stopId??""}/><input type="hidden" name="visitId" value={visitRequestId}/>
+    <h2 className="break-words text-xl font-bold">{title}</h2><p className="text-sm text-stone-600">写真とひとことを添えて、今日の思い出に。再訪も新しい記録として残せます。</p>
+    <fieldset disabled={pending||!!savedId} className="min-w-0 space-y-5">
       <label className="block space-y-2 font-semibold"><span>訪問日（必須）</span><input type="date" name="date" required value={date} onChange={e=>setDate(e.target.value)} className={field}/></label>
       <VisitTimeFields time={time} period={period} onChange={(t,p)=>{setTime(t);setPeriod(p);}}/>
       <label className="block space-y-2 font-semibold"><span>訪問メモ</span><textarea name="note" rows={4} value={note} onChange={e=>setNote(e.target.value)} className={`${field} py-3`}/><span className="block text-xs font-normal text-stone-500">2,000文字以内。グループで共有します。</span></label>
       <label className="block space-y-2 font-semibold"><span>自分の評価（任意）</span><select name="rating" value={rating} onChange={e=>setRating(e.target.value)} className={field}><RatingOptions/></select></label>
-      {state.error&&<p role="alert" className="text-sm text-red-700">{state.error}</p>}
-      <button className={button}>{pending?"保存中…":"行った！を記録"}</button>
     </fieldset>
+    <VisitPhotoPicker photos={photos} onChange={setPhotos} disabled={pending||!!savedId}/>
+    {error&&<p role="alert" className="text-sm text-red-700">{error}</p>}
+    <div role="status" className="text-sm text-stone-600">{pending&&(savedId?`写真を保存しています…（${photos.filter(photo=>photo.done).length} / ${photos.length}枚）`:"訪問記録を保存しています…")}</div>
+    <button disabled={pending} className={button}>{pending?"保存中…":savedId?"残りの写真を再試行":"行った！を記録"}</button>
+    {savedId&&!pending&&<p className="text-sm leading-6 text-stone-600">保存済みの内容は記録の詳細で編集できます。<Link href={`/app/groups/${groupId}/visits/${savedId}`} className="inline-flex min-h-11 items-center font-semibold text-orange-700 underline">写真をあとで追加して、記録を見る →</Link><span className="block text-xs">移動すると未送信の写真選択は消えます。未完了の送信は詳細で確認・中断できます。</span></p>}
   </form>;
 }
 export function EditVisitForm({visit}:{visit:SavedVisit}){

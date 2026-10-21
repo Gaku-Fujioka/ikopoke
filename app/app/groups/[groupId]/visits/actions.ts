@@ -14,11 +14,18 @@ async function clientForAction(){
   if(error||!data?.claims?.sub)throw new VisitStoreError();return client;
 }
 function refreshVisit(groupId:string,visitId:string){
+  revalidatePath("/app/memories");
   revalidatePath(`/app/groups/${groupId}/visits`);
   revalidatePath(`/app/groups/${groupId}/visits/${visitId}`);
   revalidatePath("/app/groups/[groupId]/memories/[memoryId]","page");
 }
 export async function recordVisitAction(_previous:VisitActionState,form:FormData):Promise<VisitActionState>{
+  const result=await saveNewVisitAction(form);
+  if(result.error||!result.visitId)return {error:result.error??"保存できませんでした。"};
+  redirect(`/app/groups/${recordVisitInput(form).groupId}/visits/${result.visitId}`);
+}
+/** Metadata first; the browser uploads bytes directly to private Storage before navigating. */
+export async function saveNewVisitAction(form:FormData):Promise<{error:string|null;visitId?:string}>{
   let input;
   try{input=recordVisitInput(form);}catch(cause){return {error:cause instanceof Error?cause.message:"入力内容をご確認ください。"};}
   let id;
@@ -29,7 +36,7 @@ export async function recordVisitAction(_previous:VisitActionState,form:FormData
   revalidatePath("/app/items");
   revalidatePath(`/app/groups/${input.groupId}/items/${input.itemId}`);
   if(input.outingId)revalidatePath(`/app/groups/${input.groupId}/outings/${input.outingId}`);
-  redirect(`/app/groups/${input.groupId}/visits/${id}`);
+  return {error:null,visitId:id};
 }
 export async function updateVisitAction(_previous:VisitActionState,form:FormData):Promise<VisitActionState>{
   let input;

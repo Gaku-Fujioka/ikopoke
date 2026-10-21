@@ -19,6 +19,8 @@ export async function getGroup(client,id){return config.groups?.find(group=>grou
 export async function getGroupMembers(){return [{user_id:'synthetic',display_name:'参加者'}];}
 export async function getOuting(){const c=config.current;if(!c)return c;return {...c,outing:{...c.outing,end_date:c.outing.end_date??c.outing.outing_date},items:c.items.map((s,index)=>({...s,id:s.id??"stop-"+index,day_index:s.day_index??0})),days:c.days??[{day_index:0,mode:c.outing.mode,participants:c.participants}]};}
 export async function getMemory(){return config.memory;}export async function getMemoryContent(){return {visits:[],photos:[]};}
+export async function listMemories(){return {memories:[],total:0};}
+export async function listVisitSummaries(client,group,page,filter){calls.push(['visits',group,page,filter]);return {visits:config.visits??[],total:config.visitTotal??0,photosUnavailable:false};}
 export async function getBookContent(){return {pages:[],words:[],photos:[]};}
 export async function listCandidateOptions(){return [{id:'candidate',title:'訪問先',kind:'spot'}];}
 export async function getActivity(client,group){calls.push(['activity',group]);if(config.activityError)throw Error('private');return config.activity??[];}
@@ -39,7 +41,7 @@ registerHooks({
     if(specifier==='@/components/items/candidate-board')return {url:sourceURL('export function CandidateBoard(){return null;}export function PlanSelectionReceipt(){return null;}'),shortCircuit:true};
     if(specifier==='react'&&context.parentURL?.startsWith('data:'))return next(specifier,{...context,parentURL:import.meta.url});
     if(specifier==='@/lib/utils')return {url:sourceURL("export const hasEnvVars=true;"),shortCircuit:true};
-    if(['@/lib/supabase/server','@/lib/groups/repository','@/lib/home/repository','@/lib/items/repository','@/lib/profiles/repository','@/lib/outings/repository','@/lib/memories/repository','@/lib/memories/book'].includes(specifier))return {url:providerURL,shortCircuit:true};
+    if(['@/lib/supabase/server','@/lib/groups/repository','@/lib/home/repository','@/lib/items/repository','@/lib/profiles/repository','@/lib/outings/repository','@/lib/memories/repository','@/lib/memories/book','@/lib/visits/repository'].includes(specifier))return {url:providerURL,shortCircuit:true};
     if(['@/components/outings/outing-form','@/components/visits/visit-sections','@/components/memories/memory-forms','@/components/memories/cover-editor','@/components/memories/memory-book'].includes(specifier))return {url:sourceURL('export function CoverEditor(){return null;}export function MemoryBook(){return null;}export function MemoryEditForm(){return null;}export function OutingCancellation(){return null;}export function OutingForm(){return null;}export function VisitHistory(){return null;}export function CompletionForm(){return null;}'),shortCircuit:true};
     if(specifier==='next/navigation')return {url:sourceURL(`export * from ${JSON.stringify(navigationURL)};export function useRouter(){return {push(){},refresh(){}};}`),shortCircuit:true};
     if(specifier==='next/link')return {url:sourceURL("import {createElement} from 'react';export default function Link({href,children,...props}){return createElement('a',{...props,href},children);}"),shortCircuit:true};
@@ -94,8 +96,38 @@ test('signed-out and non-member home requests stop before fetching sensitive sec
 });
 test('scoped home gives each independent read the same selected group',async()=>{
   const tree=await SharedHome({groupId});
+  const back=nodes(tree,node=>node.props?.href==='/app'&&node.props?.className==='kk-global-home-link');
+  assert.equal(back.length,1);assert.match(renderToStaticMarkup(back[0]),/全体ホームへ/);
   const parts=nodes(tree,node=>node.props?.groupId!==undefined);
   assert.ok(parts.length>=3);assert.ok(parts.every(node=>node.props.groupId===groupId));
+});
+
+test('global memory visit view preserves its active mode in group and page navigation and auth return',async()=>{
+  const {GlobalCollection}=await import('../components/home/global-collection.tsx');
+  const visit={id:'visit',group_id:groupId,item_title:'公園',visited_on:'2026-10-21',visited_time:null,visited_period:null,note:'秋の午後',photoCount:0};
+  provider.configure({groups,visits:[visit],visitTotal:21});
+  const markup=renderToStaticMarkup(await GlobalCollection({type:'memories',searchParams:Promise.resolve({view:'visits'})}));
+  assert.match(markup,/みんなの訪問記録/);assert.match(markup,/秋の午後/);
+  assert.ok(markup.includes(`href="/app/groups/${groupId}/visits"`));assert.ok(markup.includes('/app/memories?view=visits&amp;page=2'));
+  assert.ok(provider.calls.some(call=>Array.isArray(call)&&call[0]==='visits'&&call[1]===null&&call[2]===1));
+  provider.configure({groups,signedOut:true});
+  await assert.rejects(GlobalCollection({type:'memories',searchParams:Promise.resolve({view:'visits',page:'2'})}),error=>error.location.includes(encodeURIComponent('/app/memories?view=visits&page=2')));
+});
+
+test('group memory and visit pages share navigation and filtered visit paging keeps both filters',async()=>{
+  const {default:VisitsPage}=await import('../app/app/groups/[groupId]/visits/page.tsx');
+  const {default:MemoriesPage}=await import('../app/app/groups/[groupId]/memories/page.tsx');
+  provider.configure({groups,visits:[],visitTotal:21});
+  const itemId='20000000-0000-4000-8000-000000000001',outingId='30000000-0000-4000-8000-000000000001';
+  const tree=VisitsPage({params:Promise.resolve({groupId}),searchParams:Promise.resolve({item:itemId,outing:outingId})});
+  const content=nodes(tree,node=>node.type===Suspense)[0].props.children;
+  const markup=renderToStaticMarkup(await content.type(content.props));
+  assert.ok(markup.includes(`item=${itemId}&amp;outing=${outingId}&amp;page=2`));assert.match(markup,/絞り込みを解除/);assert.match(markup,/思い出の表示/);
+  assert.ok(provider.calls.some(call=>Array.isArray(call)&&call[0]==='visits'&&call[1]===groupId&&call[3].itemId===itemId&&call[3].outingId===outingId));
+  const albums=MemoriesPage({params:Promise.resolve({groupId}),searchParams:Promise.resolve({})});
+  const albumContent=nodes(albums,node=>node.type===Suspense)[0].props.children;
+  const albumMarkup=renderToStaticMarkup(await albumContent.type(albumContent.props));
+  assert.match(albumMarkup,/思い出の表示/);assert.ok(albumMarkup.includes(`/app/groups/${groupId}/visits`));
 });
 test('four bottom tabs stay inside the current group and add links carry the correct destination',()=>{
   provider.configure({pathname:`/app/groups/${groupId}/items/example`});
