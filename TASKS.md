@@ -7,7 +7,7 @@ P0〜P5は段階案。以下も将来作業の提案で、全件実装の指示�
 
 ## 現在の作業と次の順序（2026-10-21）
 
-**DEPLOY-01：独自ドメインでの少人数向け公開**。ユーザーが公開準備を依頼。Vercel登録済み、公開時は空のデータで始めたいとの希望。既存Supabaseを継続し、データ整理は公開前に相談する方針を選択。Node.js 22系と本番用metadataの準備を進め、Vercel連携・環境変数・DNS・認証・地図設定を順に確認する。既存データの削除は実施しない。[範囲と結果](docs/tasks/DEPLOY-01.md)。
+**DEPLOY-01：独自ドメインでの少人数向け公開**。Node.js 22系・metadata・共有画像の準備はPR #41でmain統合、統合後CI成功。ユーザーが既存Supabaseの継続とアカウントを含む試用データ削除を許可し、初期化・0件確認済み。VercelのImport画面でProduction選択を確認。次はプロジェクト作成・DNS・公開用認証URL・地図設定。[範囲と結果](docs/tasks/DEPLOY-01.md)。
 
 **POCKET-PWA-01：ポケットのアイコン・UIとPWA**。D-035のアイコン/UI/PWAを実装。ユーザーの許可に従いホーム右側の装飾を削除し、[PR #40](https://github.com/Gaku-Fujioka/kokoiko/pull/40)でmainへ統合済み。統合後CIも393テスト・lint・型検査・build成功。スマホ実機・公開HTTPSでの操作確認は後続。[範囲と検証](docs/tasks/POCKET-PWA-01.md)。
 

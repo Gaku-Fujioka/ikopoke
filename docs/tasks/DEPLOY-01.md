@@ -1,13 +1,14 @@
 # DEPLOY-01：独自ドメインでの少人数向け公開
 
-2026-10-21。状態：公開準備中。外部設定・公開HTTP・実ユーザー操作は未確認。本Agent単独。
+2026-10-21。状態：コード準備のmain統合・試用データ初期化済み。Vercelの作成前設定はユーザー報告、公開HTTP・実ユーザー操作は未確認。本Agent単独。
 branch：`chore/production-deployment`、基準main：`27241f943bcc627639429888d613e97c6e259337`。
+初期化結果の記録branch：`docs/production-data-reset`、基準main：`b51b6ffc14c4c80dc2e5cac39501b8e2c40db71d`。
 F-01/02/11/12、N-04/05/07/09/11、D-036。前提：AUTH-06、POCKET-PWA-01。
 
 ## Goal・採用範囲
 
 - ユーザーが取得済みの `ikopoke.app` でアプリを使えるようにする。Vercel登録済みとの報告あり。
-- 公開時は空の状態で少人数利用を始めたいという希望。新規DB案に対し、ユーザーは既存プロジェクト継続と、公開前のデータ整理の相談を選択。既存アカウント・候補・写真を今すぐ削除する意味ではなく、新しいDBは作らない。
+- 公開時は空の状態で少人数利用を始めたいという希望。新規DB案に対し、ユーザーは既存プロジェクト継続を選択。データ整理の範囲を提示した後、「アカウント含めて削除して大丈夫」と明示許可し、試用データを初期化した。新しいDBは作らない。
 - Node.jsは既存CIと同じ22系をpackage.jsonとlockfileで指定し、依存自体は更新しない。
 - 本番metadataは `VERCEL_PROJECT_PRODUCTION_URL`、なければ `VERCEL_URL` を利用。Previewは `VERCEL_URL`、ローカルは従来のlocalhostに戻る。
 - 公開リンクに残っていたNext.js/SupabaseスターターのOG/Twitter画像を、承認済みポケットの静的1200×630px画像と日本語の代替文へ置換。既存生成scriptに含め、フォントや新しい依存を使わない。
@@ -15,7 +16,7 @@ F-01/02/11/12、N-04/05/07/09/11、D-036。前提：AUTH-06、POCKET-PWA-01。
 
 ## 対象外・制約
 
-- 公開前の試用データ削除、既存開発DBのmigration再適用、有料契約、Push通知、新しい機能や依存の追加は含めない。
+- 当初は試用データ削除を含めなかったが、今回の明示許可でアカウント込みの初期化を実施。既存DBのmigration再適用、有料契約、Push通知、新しい機能や依存の追加は含めない。
 - 既存プロジェクト `gszekiwwrxlkorqfrdvd` の27件のmigrationとdelete-account v2 ACTIVE・verify_jwt=trueを確認。既存migrationとFunctionは再適用しない。
 - Productionだけに既存DBの設定値を登録し、Previewへ流用しない。ローカルと公開版が同じデータへ反映される点をユーザーへ説明済み。
 - APIキー・パスワード・メールアドレス・利用者データを記録しない。環境変数は名前と用途のみ扱う。
@@ -36,9 +37,19 @@ F-01/02/11/12、N-04/05/07/09/11、D-036。前提：AUTH-06、POCKET-PWA-01。
 - Supabaseの変更履歴を確認。現在のAuth/Storage利用に変更が必要な項目は今回の準備で検出していない。
 - ローカル：lint・型検査・関連27テスト・本番build成功。metadataの本番/Preview/本番URLなし/ローカル4条件とpackage/lockのNode指定を一時チェックで確認。恒久的なテストの追加は行っていない。
 - 共有画像置換後もlint・PWA10テスト・本番build成功。1200×630pxと代替文を確認し、画像を目視確認。一時本番サーバーでログイン画面のOG/Twitter代替文と画像のHTTP200/PNG配信（3リクエスト）を確認して停止。公開サイトや実ブラウザの検証とは区別する。
-- 既存DBを件数のみ照会：アカウント3、グループ1、候補2、訪問1、アルバム0、Storage実体0。本文・名前・メールは取得していない。データ整理の最終対象・アカウントを残すかは未決定。
+- 初期化前に件数のみ照会：アカウント3（利用中2・削除済み残存1）、グループ1、候補2、訪問1、アルバム/会計明細/Storage実体0。本文・名前・メールは取得していない。
 - 公開schemaの通常テーブル26件は全件RLS有効、Storage bucketは1件で非公開。Advisorは従来の限定RPCに関する認証済みSECURITY DEFINER 49件、匿名のrls_auto_enable 1件、漏えいパスワード保護無効を警告。権限の変更は実施せず、警告ゼロと報告しない。参照：[匿名実行](https://supabase.com/docs/guides/database/database-linter?lint=0028_anon_security_definer_function_executable)、[認証済み実行](https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable)、[パスワード保護](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection)。
 - ローカル検証・CI・外部設定・HTTP・実ユーザー操作の最終結果は本タスクのPR/会話へ記録する。未実行を成功扱いしない。
+
+## 2026-10-21：公開前の初期化
+
+- ユーザーがアカウント込みの削除を明示許可。対象は既知の既存プロジェクト `gszekiwwrxlkorqfrdvd` のみで、プロジェクト情報と外部キー・トリガーを再確認した。
+- Supabase公式のユーザー削除とStorage所有・JWTの注意点を確認。Storage実体が0件であることをガードし、同じトランザクションで対象29テーブルを明示してCASCADEなしで空にし、Authのセッション・更新トークン・ログインフローと全3アカウントを削除。個別のAuth識別情報は取得/出力せず、アカウントに紐づくidentity等は既存の外部キーで連鎖削除する。
+- テーブル一覧・承認時点の主な件数が変わった場合は中断するガードと、ロック待ち/実行時間の上限を設定。まず実処理をROLLBACKして元の件数に戻ることを確認し、同じ処理を本実行した。
+- 結果：アプリのpublic 26表と非公開3表すべて0件、Auth users/identities/sessions/refresh_tokens/flow_stateとStorage実体も0件を確認。テーブル・RLS・DB関数の定義を集約したハッシュは前後一致。migration 27件、非公開bucket 1件、公開表のRLS欠落0件を確認。
+- スキーマ変更・migration・メール設定・キー・Functionの更新は行っていない。既存JWTの有効期限はアカウント削除だけで短縮されないが、更新用セッションは削除済み。新規利用は新しいアカウントで登録する。
+- VercelのImport画面でユーザーが環境変数設定完了を報告、スクリーンショットはProduction選択を確認できた。値の内容・初回デプロイ・DNS接続・公開URLでの認証はまだ未確認。
+- 文書のみの差分は内容・参照リンク・git diffを自己レビュー。アプリコードの変更はなく、この記録のためにローカルbuild/テストは実行しない。PR #41の統合後CIは成功確認済み。この記録のCI/統合状態は記録PRのChecksに従う。
 
 ## 根拠
 
@@ -48,3 +59,4 @@ F-01/02/11/12、N-04/05/07/09/11、D-036。前提：AUTH-06、POCKET-PWA-01。
 - [Vercel domain](https://vercel.com/docs/domains/working-with-domains/add-a-domain)
 - [Supabase redirect URLs](https://supabase.com/docs/guides/auth/redirect-urls)
 - [Supabase billing](https://supabase.com/docs/guides/platform/billing-on-supabase)
+- [Supabase user management](https://supabase.com/docs/guides/auth/managing-user-data)
