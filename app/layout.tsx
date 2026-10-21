@@ -9,10 +9,25 @@ const defaultUrl = process.env.VERCEL_URL
   ? `https://${process.env.VERCEL_URL}`
   : "http://localhost:3000";
 
+const appName = "いこポケ";
+const appDescription = "行きたい候補を共有し、おでかけと思い出につなげるアプリ";
+
 export const metadata: Metadata = {
   metadataBase: new URL(defaultUrl),
-  title: "ここいこ",
-  description: "行きたい候補を共有し、おでかけと思い出につなげるアプリ",
+  applicationName: appName,
+  title: appName,
+  description: appDescription,
+  openGraph: {
+    title: appName,
+    description: appDescription,
+    siteName: appName,
+    locale: "ja_JP",
+    type: "website",
+  },
+  twitter: {
+    title: appName,
+    description: appDescription,
+  },
 };
 
 const geistSans = Geist({

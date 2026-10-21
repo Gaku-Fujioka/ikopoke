@@ -31,7 +31,7 @@ export function PlaceExplorer({ config, addHref, renderPlaceAction }: { config: 
     </div>}
     {state.phase === "closed" && <div className="kk-map-unconnected">
       <span className="kk-map-doodle" aria-hidden="true"><Map size={48} strokeWidth={1.3} /><Sparkles size={20} /></span>
-      <strong>次の「ここいこ」を、見つけよう。</strong>
+      <strong>次の「行きたい」を、見つけよう。</strong>
       <p>{available ? "地図をひらいて、気になる街やお店へ。" : "地図は準備中。いまは名前だけでも残しておこう。"}</p>
       {available ? <><button type="button" className="kk-primary-link" onClick={() => { if (host.current) void explorer.open(host.current); }}><MapPin size={17} aria-hidden="true" />地図をひらく</button><small>ひらくとGoogle Mapsに接続します。</small></> : <Link href={addHref} className="kk-primary-link">行きたいを追加</Link>}
     </div>}

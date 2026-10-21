@@ -92,7 +92,7 @@ function MemoryBook({ memory, date, visits }: { memory: Memory; date: string | n
           {page === 0 ? (
             <div className="flex flex-1 flex-col justify-between gap-10">
               <div>
-                <p className="text-xs font-semibold tracking-[0.3em] text-orange-700">ここいこ · 思い出の一冊</p>
+                <p className="text-xs font-semibold tracking-[0.3em] text-orange-700">いこポケ · 思い出の一冊</p>
                 <div aria-hidden="true" className="mt-12 h-16 w-16 rounded-full bg-orange-100 ring-8 ring-orange-50 sm:mt-16" />
                 <h1 ref={pageHeadingRef} tabIndex={-1} className="mt-8 break-words text-4xl font-bold leading-tight tracking-tight outline-none sm:text-6xl">{memory.title}</h1>
               </div>

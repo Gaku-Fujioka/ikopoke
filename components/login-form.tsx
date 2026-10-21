@@ -58,7 +58,7 @@ export function LoginForm({
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
         <CardHeader>
-          <CardTitle className="text-2xl">ここいこにログイン</CardTitle>
+          <CardTitle className="text-2xl">いこポケにログイン</CardTitle>
           <CardDescription>
             メールアドレスとパスワードを入力してください。
           </CardDescription>
