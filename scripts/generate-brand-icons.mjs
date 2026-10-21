@@ -16,4 +16,12 @@ const header=Buffer.alloc(6+16*sizes.length);header.writeUInt16LE(1,2);header.wr
 let offset=header.length;
 for(let i=0;i<sizes.length;i++){const entry=6+16*i;header[entry]=sizes[i];header[entry+1]=sizes[i];header.writeUInt16LE(1,entry+4);header.writeUInt16LE(32,entry+6);header.writeUInt32LE(images[i].length,entry+8);header.writeUInt32LE(offset,entry+12);offset+=images[i].length;}
 await writeFile(new URL('../app/favicon.ico',import.meta.url),Buffer.concat([header,...images]));
-console.log('Generated pocket SVG, 192/512px PNG, Apple icon and favicon.');
+// Public link previews use the approved mark, without depending on system fonts.
+const shareMark=await sharp(smallSvg).resize(512,512).png().toBuffer();
+const shareImage=await sharp({create:{width:1200,height:630,channels:4,background:'#fff5e7'}})
+  .composite([{input:shareMark,left:344,top:59}]).png().toBuffer();
+for(const name of ['opengraph-image','twitter-image']){
+  await writeFile(new URL(`../app/${name}.png`,import.meta.url),shareImage);
+  await writeFile(new URL(`../app/${name}.alt.txt`,import.meta.url),'いこポケ：行きたいも、思い出も。ポケットに。\n');
+}
+console.log('Generated pocket SVG, launcher icons, favicon and link preview images.');
