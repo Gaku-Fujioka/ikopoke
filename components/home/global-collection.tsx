@@ -12,13 +12,14 @@ import { itemSearchQuery, validItemSearch, itemFilters, appendItemFilters } from
 import { AuthSetupNotice } from "@/components/auth-setup-notice";
 import { CandidateCard, MemoryCard, OutingCard } from "./collection-cards";
 import { HomeError } from "./shared-home";
+import {PocketMark} from "@/components/brand/pocket-mark";
 import {MemoryNavigation} from "@/components/memories/memory-navigation";
 import {VisitTimeline} from "@/components/visits/visit-timeline";
 import {listVisitSummaries} from "@/lib/visits/repository";
 
 export type CollectionSearch = { page?: string | string[]; q?: string | string[]; kind?: string | string[]; status?: string | string[]; archived?: string; visited?: string; priority?: string; sort?: string;view?:string|string[] };
 const headings = {
-  items: { title: "みんなの行きたい", eyebrow: "小さな、いいねの種", description: "気になる場所も、やってみたいことも。", empty: "行きたいを、ひとつ残そう。" },
+  items: { title: "みんなの行きたい", eyebrow: "みんなの、行きたいポケット", description: "気になる場所も、やってみたいことも。", empty: "ポケットに、最初の「行きたい」を。" },
   outings: { title: "おでかけ", eyebrow: "次の楽しみを、一緒に", description: "ためていた行きたいを、カレンダーの楽しみに。", empty: "次は、いつ会おう？" },
   memories: { title: "みんなの思い出", eyebrow: "楽しかった日が、一冊に", description: "一緒に過ごした日を、何度でも。", empty: "これから増える、思い出たち。" },
 };
@@ -66,6 +67,7 @@ export async function GlobalCollection({ type, searchParams }: { type: Collectio
     <div className="kk-page-heading"><p className="kk-eyebrow">{showVisits?"日々の「行った！」を、思い出に":heading.eyebrow}</p><h1>{showVisits?"みんなの訪問記録":heading.title}</h1><p>{heading.description}</p></div>
     <nav aria-label="表示するグループ" className="kk-chips"><Link href={href()} className="kk-chip" aria-current="page">すべてのグループ</Link>{groups.map(group => <Link href={`/app/groups/${group.id}/${showVisits?"visits":type}${type === "items" && query.size ? `?${query}` : ""}`} key={group.id} style={groupColorStyle(group.presentation?.color) as CSSProperties} data-tone={groupTone(group.id)} className="kk-chip kk-personal-chip">{group.name}</Link>)}</nav>
     {type==="memories"&&<MemoryNavigation active={showVisits?"visits":"albums"}/>}
+    {type === "items" && <div className="kk-pocket-intro"><PocketMark/><p><strong>見つけた「行きたい」を、ポケットへ。</strong><span>気になる場所も、やってみたいことも。ためた候補から、次のおでかけを選ぼう。</span></p></div>}
     {type === "items" && <form action="/app/items" role="search" className="kk-surface flex flex-wrap items-end gap-3"><div className="flex-1 basis-40"><label htmlFor="all-items-q" className="mb-2 block text-xs font-semibold">候補の名前</label><input key={text} id="all-items-q" type="search" name="q" defaultValue={text} placeholder="名前の一部を入力" className="min-h-12 w-full rounded-xl border bg-white px-3 text-base" /></div><div><label htmlFor="all-items-kind" className="mb-2 block text-xs font-semibold">種類</label><select key={kind} id="all-items-kind" name="kind" defaultValue={kind} className="min-h-12 rounded-xl border bg-white px-3 text-base"><option value="">すべて</option><option value="spot">スポット</option><option value="activity">やりたいこと</option></select></div><ItemExtraFilters filters={filters} /><button type="submit" className="kk-primary-link">探す</button>{(text || kind || query.size > 0) && <Link href="/app/items" className="kk-text-link">条件を解除</Link>}</form>}
     {type === "outings" && <nav aria-label="計画の状態" className="kk-chips"><Link href="/app/outings" aria-current={!completed && !cancelled ? "page" : undefined} className="kk-chip">計画中のおでかけ</Link><Link href="/app/outings?status=completed" aria-current={completed ? "page" : undefined} className="kk-chip">終了したおでかけ</Link><Link href="/app/outings?status=cancelled" aria-current={cancelled ? "page" : undefined} className="kk-chip">中止したおでかけ</Link></nav>}
     <div className="kk-row"><p className="kk-muted">{type === "memories" ? showVisits?`${total}件の訪問記録 · 訪問日が新しい順`:`${total}冊のアルバム` : type === "items" && text ? `「${text}」の候補` : "参加グループの共有データ"}</p>{type!=="memories"&&<Link href={addHref(type === "outings" ? "outing" : "item")} className="kk-text-link">＋ {type === "outings" ? "計画を作る" : "候補を追加"}</Link>}</div>

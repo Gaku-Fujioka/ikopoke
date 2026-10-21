@@ -17,6 +17,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
+import {PocketMark} from "@/components/brand/pocket-mark";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 
@@ -81,7 +82,7 @@ export function SignUpForm({
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
-        <CardHeader>
+        <CardHeader><PocketMark className="kk-pocket-login-mark"/>
           <CardTitle className="text-2xl">アカウントを作成</CardTitle>
           <CardDescription>メールで本人確認をして、いこポケを始めましょう。</CardDescription>
         </CardHeader>

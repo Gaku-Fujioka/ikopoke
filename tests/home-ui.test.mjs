@@ -12,6 +12,7 @@ const providerURL=sourceURL(`
 export let config={};export const calls=[];export function configure(value){config=value;calls.length=0;}
 export function usePathname(){return config.pathname??'/app';}
 export function useSearchParams(){return new URLSearchParams(config.search??'');}
+export function usePwa(){return {state:config.pwa??{installed:false,ios:false,offline:false,canInstall:false,busy:false,error:null},install:async()=>{},update:()=>{}};}
 export async function createClient(){return {auth:{getClaims:async()=>{calls.push('auth');return {data:config.signedOut?null:{claims:{sub:'synthetic'}},error:null};}}};}
 export async function listGroups(){calls.push('groups');if(config.groupError)throw Error('private');return config.groups??[];}
 export class ItemStoreError extends Error{};export async function listItems(client,group){calls.push(['items',group]);return {items:config.items??[],total:config.items?.length??0};}
@@ -32,6 +33,7 @@ export async function globalItems(){return {rows:[],total:0};}export async funct
 const navigationURL=sourceURL(`export {usePathname,useSearchParams} from ${JSON.stringify(providerURL)};export function notFound(){throw Object.assign(Error('not found'),{navigation:'not-found'});}export function redirect(location){throw Object.assign(Error('redirect'),{location});}`);
 registerHooks({
   resolve(specifier,context,next){
+    if(specifier==='./pwa-provider'&&context.parentURL?.includes('/components/pwa/install-card'))return {url:providerURL,shortCircuit:true};
     if(specifier==='next/image')return {url:sourceURL('export default function Image(){return null;}'),shortCircuit:true};
     if(specifier==='@/components/memories/book-writing')return {url:sourceURL('export function OpenBookForm(){return "思い出の本を開く";}'),shortCircuit:true};
     if(specifier==='@/app/app/groups/actions')return {url:sourceURL('export async function createGroupProfileAction(){return {error:null};}'),shortCircuit:true};
@@ -100,6 +102,15 @@ test('scoped home gives each independent read the same selected group',async()=>
   assert.equal(back.length,1);assert.match(renderToStaticMarkup(back[0]),/全体ホームへ/);
   const parts=nodes(tree,node=>node.props?.groupId!==undefined);
   assert.ok(parts.length>=3);assert.ok(parts.every(node=>node.props.groupId===groupId));
+});
+
+test('install screen gives iPhone instructions, supported-browser action and truthful installed states',async()=>{
+  const {InstallCard}=await import('../components/pwa/install-card.tsx');
+  const base={installed:false,ios:false,offline:false,canInstall:false,busy:false,error:null};
+  provider.configure({pwa:{...base,ios:true}});let markup=renderToStaticMarkup(createElement(InstallCard));assert.match(markup,/Safari/);assert.match(markup,/共有メニュー/);assert.match(markup,/ホーム画面に追加/);assert.ok(!markup.includes('ホーム画面への追加はできています'));
+  provider.configure({pwa:{...base,canInstall:true}});markup=renderToStaticMarkup(createElement(InstallCard));assert.match(markup,/<button[^>]*>.*ホーム画面に追加する/s);assert.match(markup,/インターネット接続が必要/);
+  provider.configure({pwa:{...base,installed:true}});markup=renderToStaticMarkup(createElement(InstallCard));assert.match(markup,/ホーム画面への追加はできています/);assert.ok(!markup.includes('<button'));assert.ok(!markup.includes('Safari'));
+  provider.configure({pwa:base});markup=renderToStaticMarkup(createElement(InstallCard));assert.match(markup,/ブラウザのメニュー/);assert.ok(!markup.includes('<button'));
 });
 
 test('global memory visit view preserves its active mode in group and page navigation and auth return',async()=>{
