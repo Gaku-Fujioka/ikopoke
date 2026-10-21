@@ -64,6 +64,17 @@ F-01/02/11/12、N-04/05/07/09/11、D-036。前提：AUTH-06、POCKET-PWA-01。
 - 認証・招待・登録エラーの関連37テスト、lint・型検査・本番build成功。差分を自己レビューし、外部転送/秘密情報の保持、Cookieの送信範囲と参加時の認証/所属確認が変わらないことを確認。独立レビューは未実施。既存のNode module形式・Next.js partialPrefetching警告は残る。最新CI/統合は本branchのPR Checksへ記録する。
 - 外部テンプレートへの戻り先追加、公開された修正の招待復帰、スマホのパスワード再設定、地図、PWAインストールと写真付き一連操作は未確認。パスワード再設定メールのTokenHash方式への変更もまだ案内/保存していない。
 
+## 2026-10-21：LINE内ブラウザからの招待受け渡し
+
+- PR #43は `12f6d8ca7deafea9af566280fea0b89b8485871b` でmain統合。PR CIと統合後CI `39617300733` は全397テスト・lint・型・build成功。ユーザーが戻り先付き確認メールの保存を報告した。自動本番デプロイが一覧に現れず、ユーザーがmainから手動作成して完了を報告。Agentは当該commitのVercel成功と公開ログイン画面HTTP200を確認。自動デプロイ未作成の原因は未特定。
+- ユーザー報告：招待をLINE内ブラウザで開いてから別ブラウザへ移ると「招待リンクを送り主から開き直してください」。元のメッセージのリンクを長押しコピーし、Safariに貼り付けると招待画面が表示された。登録/参加完了の成功報告とは区別する。
+- コードで確認：初回表示のeffectがfragmentをURLから消して当該ブラウザのHttpOnly Cookieへ移す。別ブラウザにはこのCookieがなく、除去後のURLだけを渡すとtokenを受け取れない。LINEのブラウザ操作そのものはAgentの実機で再現していないが、この経路を独立した2つのURL状態で回帰検証する。
+- branch：`fix/invite-browser-handoff`、基準main：`12f6d8ca7deafea9af566280fea0b89b8485871b`。F-02、N-02/03/04/05、D-010/036。本Agent単独。対象はJoinGroup、受信URLの処理helper、新規NodeテストとCI、TASKS/decisions/本書。既存のREADME・旧スターター・未追跡ファイルは保全。
+- Goal/Done：元のfragmentを受け取った画面では、別ブラウザ用に同一origin・招待参加パス・token fragmentだけの完全なリンクをコピーできる。アドレス欄のfragmentは従来どおり除去する。クリップボード拒否時は明示した入力欄から手動コピーでき、すでにtokenを失った画面にはLINE等の元のメッセージからコピーする案内を表示する。ブラウザのメニューから移動する際の自動引継ぎを保証する変更ではない。
+- tokenは当該画面のReact stateだけに保持し、永続ストレージや別のCookieへ保存しない。コピーは明示クリック時だけ行い、手動コピー欄は失敗時だけ表示する。未認証のグループ情報公開、Cookieの送信範囲、DB・RLS・有効期限・参加処理・認証メールの変更は対象外。
+- 検証計画：受信後のURL除去、別ブラウザへの完全なリンクの受渡し、Cookie復帰時の空fragment、不正fragment拒否、クエリのコピー除外をNodeテストで確認。既存の招待/認証テスト・lint・型・build・自己レビュー・最新CIを確認し、LINE/iPhoneの実機コピーや権限拒否・登録から参加の一連操作はユーザー確認と区別する。
+- ローカル結果：新規4件を含む関連36テスト・lint・型検査・本番build成功。自己レビューで、コピーするorigin/path/tokenの制約、元のURL除去、メモリだけの保持、明示クリックと権限拒否時の分岐、Cookie/参加権限の維持、新規テストのCI登録、既存変更の除外を確認した。独立レビュー・LINE/iPhoneの実機コピー・権限拒否操作・参加完了は未実施。最新CI/統合/公開状況は本branchのPR Checksと会話へ記録する。
+
 ## 参照資料
 
 - [Vercel Hobby](https://vercel.com/docs/plans/hobby)
@@ -75,3 +86,4 @@ F-01/02/11/12、N-04/05/07/09/11、D-036。前提：AUTH-06、POCKET-PWA-01。
 - [Supabase user management](https://supabase.com/docs/guides/auth/managing-user-data)
 - [Supabase email templates](https://supabase.com/docs/guides/auth/auth-email-templates)
 - [Go template URL query escaping](https://pkg.go.dev/text/template#hdr-Functions)
+- [Clipboard writeText](https://developer.mozilla.org/en-US/docs/Web/API/Clipboard/writeText)
