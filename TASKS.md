@@ -7,7 +7,7 @@ P0〜P5は段階案。以下も将来作業の提案で、全件実装の指示�
 
 ## 現在の作業と次の順序（2026-10-21）
 
-**DEPLOY-01：独自ドメインでの少人数向け公開**。Node.js 22系・metadata・共有画像の準備はPR #41でmain統合、統合後CI成功。ユーザーが既存Supabaseの継続とアカウントを含む試用データ削除を許可し、初期化・0件確認済み。VercelのImport画面でProduction選択を確認。次はプロジェクト作成・DNS・公開用認証URL・地図設定。[範囲と結果](docs/tasks/DEPLOY-01.md)。
+**DEPLOY-01：独自ドメインでの少人数向け公開**。コード準備・試用データ初期化はPR #41/42でmain統合。Vercelで公開し、独自ドメインのHTTPSをAgent確認済み。ユーザーがTokenHash方式への確認メール変更後、公開版Safariで登録・メール確認・ログアウト・再ログイン成功を報告。メール認証後の招待復帰を調整中。次は招待経由・再設定の実操作、地図設定、PWA実機確認。[範囲と結果](docs/tasks/DEPLOY-01.md)。
 
 **POCKET-PWA-01：ポケットのアイコン・UIとPWA**。D-035のアイコン/UI/PWAを実装。ユーザーの許可に従いホーム右側の装飾を削除し、[PR #40](https://github.com/Gaku-Fujioka/kokoiko/pull/40)でmainへ統合済み。統合後CIも393テスト・lint・型検査・build成功。スマホ実機・公開HTTPSでの操作確認は後続。[範囲と検証](docs/tasks/POCKET-PWA-01.md)。
 

@@ -5,11 +5,28 @@ import type { EmailOtpType } from "@supabase/supabase-js";
 import { redirect } from "next/navigation";
 import type { NextRequest } from "next/server";
 
+/** Unwrap only our signup callback, never redirect to a supplied absolute URL. */
+function callbackNextPath(redirectTo: string | null, origin: string): string | null {
+  if (!redirectTo) return null;
+  try {
+    const callback = new URL(redirectTo);
+    if (callback.origin !== origin || callback.username || callback.password || callback.pathname !== "/auth/callback") {
+      return null;
+    }
+    return callback.searchParams.get("next");
+  } catch {
+    return null;
+  }
+}
+
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
+  const { searchParams, origin } = new URL(request.url);
   const token_hash = searchParams.get("token_hash");
   const type = searchParams.get("type") as EmailOtpType | null;
-  const next = confirmationNextPath(searchParams.get("next"), type);
+  const next = confirmationNextPath(
+    searchParams.get("next") ?? callbackNextPath(searchParams.get("redirect_to"), origin),
+    type,
+  );
 
   if (!hasEnvVars) redirect("/auth/error?reason=configuration");
 
