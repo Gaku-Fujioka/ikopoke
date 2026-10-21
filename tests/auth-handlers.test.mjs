@@ -113,3 +113,53 @@ test("token failures do not expose tokens or provider details in redirects", asy
     await redirectsTo(confirmation.GET, "/auth/confirm?token_hash=test-token&type=email", "/auth/error?reason=confirmation");
   }
 });
+
+// The email template passes RedirectTo through Go's urlquery function. Use the
+// real signup callback shape, including a nested next query, to exercise parsing.
+function emailLink(redirectTo, type = "email") {
+  return `/auth/confirm?${new URLSearchParams({ token_hash: "test-token", type, redirect_to: redirectTo })}`;
+}
+
+test("token confirmation resumes an invitation without a PKCE exchange", async () => {
+  await redirectsTo(confirmation.GET, emailLink("http://localhost:3000/auth/callback?next=%2Fapp%2Fgroups%2Fjoin"), "/app/groups/join");
+  assert.deepEqual(provider.calls, [{ method: "verifyOtp", input: { type: "email", token_hash: "test-token" } }]);
+  const productionLink = new URL(emailLink("https://www.ikopoke.app/auth/callback?next=%2Fapp%2Fgroups%2Fjoin"), "https://www.ikopoke.app");
+  await redirectsTo(confirmation.GET, productionLink.href, "/app/groups/join");
+});
+
+test("email return parsing preserves nested app queries without leaking callback parameters", async () => {
+  const next = "/app/items?q=cafe&kind=spot";
+  const callbackUrl = new URL("http://localhost:3000/auth/callback");
+  callbackUrl.searchParams.set("next", next);
+  callbackUrl.searchParams.set("code", "private-code");
+  await redirectsTo(confirmation.GET, emailLink(callbackUrl.href), next);
+  await redirectsTo(confirmation.GET, `${emailLink(callbackUrl.href)}&next=/app/outings`, "/app/outings");
+});
+
+test("email returns reject foreign origins, credentials, unexpected routes and unsafe nested destinations", async () => {
+  for (const redirectTo of [
+    "https://example.com/auth/callback?next=/app/groups/join",
+    "http://localhost:3000.example.com/auth/callback?next=/app/groups/join",
+    "http://localhost:3001/auth/callback?next=/app/groups/join",
+    "http://user:password@localhost:3000/auth/callback?next=/app/groups/join",
+    "//localhost:3000/auth/callback?next=/app/groups/join",
+    "/auth/callback?next=/app/groups/join",
+    "not a URL",
+    "http://localhost:3000/auth/confirm?next=/app/groups/join",
+    "http://localhost:3000/auth/callback?next=https://example.com",
+    "http://localhost:3000/auth/callback?next=%2F%2Fexample.com",
+    "http://localhost:3000/auth/callback?next=%2Fapp%2F..%2Fauth%2Flogin",
+    "http://localhost:3000/auth/callback",
+  ]) {
+    await redirectsTo(confirmation.GET, emailLink(redirectTo), "/app");
+  }
+});
+
+test("recovery keeps its dedicated destination and invalid tokens cannot resume invitations", async () => {
+  const callbackUrl = "http://localhost:3000/auth/callback?next=/app/groups/join";
+  await redirectsTo(confirmation.GET, emailLink(callbackUrl, "recovery"), "/auth/update-password");
+  for (const outcome of ["error", "throw"]) {
+    provider.configure(outcome);
+    await redirectsTo(confirmation.GET, emailLink(callbackUrl), "/auth/error?reason=confirmation");
+  }
+});

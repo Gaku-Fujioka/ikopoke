@@ -84,6 +84,8 @@ GROUP-03はD-010の複数人向け招待。`group_invites`にはtokenハッシ�
 
 ## AUTH-01：実接続前のコード棚卸し（2026-10-03）
 
+2026-10-21の公開版：確認メールをTokenHashと既存の `/auth/confirm` に接続した後、ユーザーがSafariで新規登録・メール確認・ログアウト・再ログイン成功を報告。招待への復帰用にメールの `redirect_to` から同一originの `/auth/callback` の `next` だけを取り出し、既存の許可パス検証へ渡す。招待tokenは従来の参加画面限定HttpOnly Cookieに保持し、メールへ追加しない。別ブラウザでは招待リンクを開き直す。PKCE callbackも継続する。外部メール設定と招待の実操作完了は別に扱う。[結果と未確認事項](tasks/DEPLOY-01.md)。
+
 **以下は当時の履歴**。2026-10-17のAUTH-03でログイン・パスワード更新後を`/app`へ接続し、
 PKCE callback・日本語UI・未設定時の案内・ログアウト導線を追加する。
 登録メールは`/auth/callback`、再設定メールは`/auth/callback?next=/auth/update-password`へ進み、codeを交換してから画面へ移る。
