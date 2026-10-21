@@ -5,7 +5,7 @@ import { listItems } from "@/lib/items/repository";
 import { Suspense } from "react";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ArrowRight, CalendarDays, MapPin, Search, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, CalendarDays, Home, MapPin, Search, Sparkles } from "lucide-react";
 import { SearchWorkspace } from "@/components/maps/search-workspace";
 import { SavedMapSection } from "@/components/maps/map-sections";
 import { mapsConfig } from "@/lib/maps/saved";
@@ -92,6 +92,7 @@ export async function SharedHome({ groupId = null }: { groupId?: string | null }
     const group = groups.find(group=>group.id===groupId)!;
     const base = '/app/groups/'+groupId;
     return <div className="space-y-8">
+      <Link href="/app" className="kk-global-home-link"><ArrowLeft size={18} aria-hidden="true"/><Home size={18} aria-hidden="true"/><span>全体ホームへ<small>すべてのグループを見る</small></span></Link>
       <header className="kk-group-header"><div>{group.presentation?.cover_path&&<ProfileImage path={group.presentation.cover_path} alt="" className="kk-group-hero-photo"/>}<p className="kk-eyebrow">わたしたちの、おでかけ帳</p><h1>{group.name}</h1><p className="whitespace-pre-wrap">{group.presentation?.description||"行きたいを持ち寄って、次の楽しみへ。"}</p></div><Link href={base+'/settings'} className="kk-secondary-link">メンバー・設定</Link></header>
       <div className="kk-group-launch"><Link href={base+'/items/new'}><span aria-hidden="true">＋</span><strong>行きたいを追加</strong><small>名前だけでも、ひとつのきっかけ</small></Link><Link href={base+'/outings/new'}><CalendarDays aria-hidden="true" /><strong>おでかけを計画</strong><small>日程と行き先を、一緒に決めよう</small></Link></div>
       <Suspense fallback={<HomeLoading>次の楽しみを読み込んでいます…</HomeLoading>}><NextEnjoyment client={client} groupId={groupId} groups={groups} /></Suspense>

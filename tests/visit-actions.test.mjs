@@ -45,6 +45,13 @@ test("record creation derives actor in the DB, preserves the request and redirec
   provider.configure({rpc:()=>({data:null,error:{code:"40001",message:"private provider detail"}})});
   const result=await actions.updateVisitAction({error:null},form());assert.match(result.error,/別の画面/);assert.ok(!result.error.includes("private"));assert.equal(provider.calls.some(call=>call[0]==="revalidate"),false);
 });
+test("inline creation returns the committed visit without navigating and invalidates the global timeline",async()=>{
+  assert.deepEqual(await actions.saveNewVisitAction(form()),{error:null,visitId:'saved-id'});
+  assert.equal(provider.calls.find(call=>call[0]==='rpc')[2].p_request_id,visit);
+  assert.ok(provider.calls.some(call=>call[0]==='revalidate'&&call[1]==='/app/memories'));
+  provider.configure({signedOut:true});assert.ok((await actions.saveNewVisitAction(form())).error);
+  assert.ok(!provider.calls.some(call=>call[0]==='rpc'));
+});
 test("photo cancellation removes actual object through Storage before releasing the reservation",async()=>{
   provider.configure({rpc:name=>({data:name==="begin_cancel_visit_photo"?"reserved/path.jpg":null,error:null})});
   assert.equal((await actions.cancelPhotoAction(form())).saved,true);
