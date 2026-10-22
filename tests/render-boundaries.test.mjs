@@ -30,7 +30,7 @@ registerHooks({
     if(specifier==="@/lib/utils")return {url:moduleURL("export const hasEnvVars=true;"),shortCircuit:true};
     if(["@/lib/supabase/server","@/lib/groups/repository","@/lib/items/repository","@/lib/items/reactions","@/lib/items/comments","@/lib/groups/invitations","@/lib/lists/repository"].includes(specifier))return {url:providerURL,shortCircuit:true};
     if(specifier==="next/navigation")return {url:navigationURL,shortCircuit:true};
-    if(specifier==="next/link"||(specifier.startsWith("@/components/")&& !["@/components/items/item-comments","@/components/items/item-reaction-section","@/components/lists/item-lists","@/components/home/collection-cards"].includes(specifier)))return {url:leafURL,shortCircuit:true};
+    if(specifier==="next/link"||(specifier.startsWith("@/components/")&& !["@/components/items/item-comments","@/components/items/item-reaction-section","@/components/lists/item-lists","@/components/home/collection-cards","@/components/layout/tab-loading"].includes(specifier)))return {url:leafURL,shortCircuit:true};
     if(specifier.startsWith("@/"))return {url:new URL(`../${specifier.slice(2)}${specifier.startsWith("@/components/")?".tsx":".ts"}`,import.meta.url).href,shortCircuit:true};
     return next(specifier,context);
   },

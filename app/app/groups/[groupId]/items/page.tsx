@@ -1,5 +1,6 @@
 import { ItemExtraFilters } from "@/components/items/item-extra-filters";
 import { Suspense } from "react";
+import { TabLoading } from "@/components/layout/tab-loading";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { hasEnvVars } from "@/lib/utils";
@@ -108,7 +109,7 @@ async function ItemsContent({ params, searchParams }: Props) {
 }
 
 export default function SharedItemsPage(props: Props) {
-  return <Suspense fallback={<p role="status">候補を読み込んでいます…</p>}>
+  return <Suspense fallback={<TabLoading label="行きたい" />}>
     <ItemsContent {...props} />
   </Suspense>;
 }

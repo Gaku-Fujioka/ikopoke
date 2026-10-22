@@ -9,13 +9,14 @@ import ts from "typescript";
 
 const sourceURL=source=>`data:text/javascript,${encodeURIComponent(source)}`;
 const providerURL=sourceURL(`
-export let config={};export const calls=[];export function configure(value){config=value;calls.length=0;}
+export let config={};export const calls=[],links=[];export function configure(value){config=value;calls.length=0;links.length=0;}
 export function usePathname(){return config.pathname??'/app';}
 export function useSearchParams(){return new URLSearchParams(config.search??'');}
 export function usePwa(){return {state:config.pwa??{installed:false,ios:false,offline:false,canInstall:false,busy:false,error:null},install:async()=>{},update:()=>{}};}
 export async function createClient(){return {auth:{getClaims:async()=>{calls.push('auth');return {data:config.signedOut?null:{claims:{sub:'synthetic'}},error:null};}}};}
 export async function listGroups(){calls.push('groups');if(config.groupError)throw Error('private');return config.groups??[];}
 export class ItemStoreError extends Error{};export async function listItems(client,group){calls.push(['items',group]);return {items:config.items??[],total:config.items?.length??0};}
+export class GroupStoreError extends Error{};export class OutingStoreError extends Error{};export const ITEM_PAGE_SIZE=20;export async function listOutings(){return [];}
 export async function getGroup(client,id){return config.groups?.find(group=>group.id===id)??null;}
 export async function getGroupMembers(){return [{user_id:'synthetic',display_name:'参加者'}];}
 export async function getOuting(){const c=config.current;if(!c)return c;return {...c,outing:{...c.outing,end_date:c.outing.end_date??c.outing.outing_date},items:c.items.map((s,index)=>({...s,id:s.id??"stop-"+index,day_index:s.day_index??0})),days:c.days??[{day_index:0,mode:c.outing.mode,participants:c.participants}]};}
@@ -46,7 +47,7 @@ registerHooks({
     if(['@/lib/supabase/server','@/lib/groups/repository','@/lib/home/repository','@/lib/items/repository','@/lib/profiles/repository','@/lib/outings/repository','@/lib/memories/repository','@/lib/memories/book','@/lib/visits/repository'].includes(specifier))return {url:providerURL,shortCircuit:true};
     if(['@/components/outings/outing-form','@/components/visits/visit-sections','@/components/memories/memory-forms','@/components/memories/cover-editor','@/components/memories/memory-book'].includes(specifier))return {url:sourceURL('export function CoverEditor(){return null;}export function MemoryBook(){return null;}export function MemoryEditForm(){return null;}export function OutingCancellation(){return null;}export function OutingForm(){return null;}export function VisitHistory(){return null;}export function CompletionForm(){return null;}'),shortCircuit:true};
     if(specifier==='next/navigation')return {url:sourceURL(`export * from ${JSON.stringify(navigationURL)};export function useRouter(){return {push(){},refresh(){}};}`),shortCircuit:true};
-    if(specifier==='next/link')return {url:sourceURL("import {createElement} from 'react';export default function Link({href,children,...props}){return createElement('a',{...props,href},children);}"),shortCircuit:true};
+    if(specifier==='next/link')return {url:sourceURL(`import {createElement,createContext,useContext} from 'react';import {config,links} from ${JSON.stringify(providerURL)};const status=createContext({pending:false});export function useLinkStatus(){return useContext(status);}export default function Link({href,children,prefetch,...props}){links.push({href,prefetch});return createElement(status.Provider,{value:{pending:config.pendingHref===href}},createElement('a',{...props,href},children));}`),shortCircuit:true};
     if(specifier==='@/components/home/refresh-button'||specifier==='./refresh-button')return {url:sourceURL("export function RefreshButton(){return '更新';}"),shortCircuit:true};
     if(specifier.startsWith('@/') || ((specifier.startsWith('./')||specifier.startsWith('../'))&&/\.tsx?$/.test(context.parentURL??''))){
       const base=specifier.startsWith('@/')?new URL(`../${specifier.slice(2)}`,import.meta.url):new URL(specifier,context.parentURL);
@@ -148,6 +149,55 @@ test('four bottom tabs stay inside the current group and add links carry the cor
   for(const type of ['item','outing','visit'])assert.ok(markup.includes(`href="/app/new?type=${type}&amp;group=${groupId}"`));
   assert.match(markup,/<dialog[^>]+aria-labelledby="quick-add-title"/);
   provider.configure({pathname:'/app'});const global=renderToStaticMarkup(createElement(AppNav));assert.ok(global.includes('href="/app/new?type=item"'));assert.ok(!global.includes(`group=${groupId}`));
+});
+
+test('tab prefetch stays within four main destinations and skips the current page and invitation landing',()=>{
+  for(const base of ['/app',`/app/groups/${groupId}`]){
+    provider.configure({pathname:`${base}/items`});
+    renderToStaticMarkup(createElement(AppNav));
+    assert.deepEqual(provider.links.filter(link=>link.prefetch!==undefined),[
+      {href:base,prefetch:true},{href:`${base}/items`,prefetch:false},
+      {href:`${base}/outings`,prefetch:true},{href:`${base}/memories`,prefetch:true},
+    ]);
+    assert.equal(provider.links.filter(link=>link.prefetch===true).length,3);
+  }
+  provider.configure({pathname:'/app/groups/join'});
+  renderToStaticMarkup(createElement(AppNav));
+  assert.ok(provider.links.filter(link=>link.prefetch!==undefined).every(link=>link.prefetch===false));
+});
+
+test('only the pending tab announces navigation while current content keeps its truthful active tab',()=>{
+  const base=`/app/groups/${groupId}`;
+  provider.configure({pathname:`${base}/items`,pendingHref:`${base}/memories`});
+  const markup=renderToStaticMarkup(createElement(AppNav));
+  assert.equal((markup.match(/data-pending="true"/g)??[]).length,1);
+  assert.match(markup,/role="status"[^>]*>思い出へ移動しています…/);
+  const active=markup.match(/<a[^>]*aria-current="page"[^>]*>[\s\S]*?<\/a>/)?.[0];
+  assert.match(active,/行きたい/);
+  assert.doesNotMatch(active,/移動しています/);
+  provider.configure({pathname:`${base}/memories`});
+  const settled=renderToStaticMarkup(createElement(AppNav));
+  assert.doesNotMatch(settled,/data-pending="true"|移動しています/);
+});
+
+test('global and group tab shells render static accessible placeholders without waiting for data',async()=>{
+  const {TabLoading}=await import('../components/layout/tab-loading.tsx');
+  const {default:RootLoading}=await import('../app/app/loading.tsx');
+  assert.equal(RootLoading().type,TabLoading);
+  for(const base of ['../app/app/','../app/app/groups/[groupId]/']){
+    for(const suffix of ['','items/','outings/','memories/']){
+      const {default:Page}=await import(`${base}${suffix}page.tsx`);
+      const tree=Page({params:Promise.resolve({groupId}),searchParams:Promise.resolve({})});
+      const boundary=nodes(tree,node=>node.type===Suspense)[0];
+      assert.equal(boundary.props.fallback.type,TabLoading);
+      const shell=renderToStaticMarkup(boundary.props.fallback);
+      assert.match(shell,/role="status"/);
+      assert.match(shell,/読み込んでいます…/);
+      assert.match(shell,/aria-hidden="true"/);
+      assert.doesNotMatch(shell,/<img|<button|href=|synthetic|友達|家族/);
+    }
+  }
+  assert.deepEqual(provider.calls,[]);
 });
 test('activity density switches at five, cards navigate to actual group content, and expanded feed keeps full text',()=>{
   for(const count of [4,5,12]){

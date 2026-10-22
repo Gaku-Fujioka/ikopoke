@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { TabLoading } from "@/components/layout/tab-loading";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { hasEnvVars } from "@/lib/utils";
@@ -33,5 +34,5 @@ async function OutingsContent({ params, searchParams }: { params: Promise<{ grou
 }
 
 export default function OutingsPage({ params, searchParams }: { params: Promise<{ groupId: string }>; searchParams: Promise<{status?:string}> }) {
-  return <div className="mx-auto max-w-3xl"><Suspense fallback={<p role="status">計画を読み込んでいます…</p>}><OutingsContent params={params} searchParams={searchParams} /></Suspense></div>;
+  return <div className="mx-auto max-w-3xl"><Suspense fallback={<TabLoading label="おでかけ" />}><OutingsContent params={params} searchParams={searchParams} /></Suspense></div>;
 }
