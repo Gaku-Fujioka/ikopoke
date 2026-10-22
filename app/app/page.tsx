@@ -1,6 +1,7 @@
 import { Suspense } from "react";
-import { SharedHome, HomeLoading } from "@/components/home/shared-home";
+import { SharedHome } from "@/components/home/shared-home";
+import { TabLoading } from "@/components/layout/tab-loading";
 
 export default function AppHomePage() {
-  return <Suspense fallback={<HomeLoading>ホームを読み込んでいます…</HomeLoading>}><SharedHome /></Suspense>;
+  return <Suspense fallback={<TabLoading label="ホーム" />}><SharedHome /></Suspense>;
 }

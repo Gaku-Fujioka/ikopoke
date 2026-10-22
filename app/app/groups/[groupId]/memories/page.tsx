@@ -1,4 +1,5 @@
 import {Suspense} from "react";
+import { TabLoading } from "@/components/layout/tab-loading";
 import Link from "next/link";
 import {notFound,redirect} from "next/navigation";
 import {createClient} from "@/lib/supabase/server";
@@ -23,4 +24,4 @@ async function Content({params,searchParams}:{params:Promise<{groupId:string}>;s
     <nav aria-label="思い出一覧のページ" className="flex flex-wrap gap-6">{page>1&&<Link href={`${base}/memories?page=${page-1}`} className="inline-flex min-h-11 items-center font-semibold text-orange-700 underline">前の20冊</Link>}{page*20<result.total&&<Link href={`${base}/memories?page=${page+1}`} className="inline-flex min-h-11 items-center font-semibold text-orange-700 underline">次の20冊</Link>}</nav><Link href={`${base}/outings`} className="inline-flex min-h-11 items-center font-semibold text-orange-700 underline">おでかけ計画へ</Link>
   </div>;
 }
-export default function MemoriesPage(props:{params:Promise<{groupId:string}>;searchParams:Promise<{page?:string}>}){return <div className="mx-auto max-w-3xl"><Suspense fallback={<p role="status">思い出を読み込んでいます…</p>}><Content {...props}/></Suspense></div>;}
+export default function MemoriesPage(props:{params:Promise<{groupId:string}>;searchParams:Promise<{page?:string}>}){return <div className="mx-auto max-w-3xl"><Suspense fallback={<TabLoading label="思い出" />}><Content {...props}/></Suspense></div>;}

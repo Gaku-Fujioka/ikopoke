@@ -1,11 +1,23 @@
 "use client";
 
 import { useRef } from "react";
-import Link from "next/link";
+import Link, { useLinkStatus } from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { Bookmark, CalendarDays, House, Images, MapPin, Plus, X } from "lucide-react";
+import { Bookmark, CalendarDays, House, Images, LoaderCircle, MapPin, Plus, X, type LucideIcon } from "lucide-react";
 import { addHref, pathGroup } from "@/lib/home/navigation";
 import { isGroupId } from "@/lib/groups/validation";
+
+function TabContents({ label, icon: Icon, active }: { label: string; icon: LucideIcon; active: boolean }) {
+  const { pending } = useLinkStatus();
+  return <>
+    <span className="kk-tab-glyph" data-pending={pending}>
+      <Icon aria-hidden="true" size={21} strokeWidth={active ? 2.5 : 1.8} className={pending ? "opacity-0" : undefined} />
+      {pending && <LoaderCircle aria-hidden="true" size={21} className="absolute inset-0 motion-safe:animate-spin" />}
+    </span>
+    <span>{label}</span>
+    {pending && <span role="status" className="sr-only">{label}へ移動しています…</span>}
+  </>;
+}
 
 export function AppNav() {
   const pathname = usePathname();
@@ -22,7 +34,8 @@ export function AppNav() {
   ];
   const tab = (index: number) => {
     const { href, label, icon: Icon, active } = tabs[index];
-    return <Link key={href} href={href} aria-current={active ? "page" : undefined} className="kk-tab"><Icon aria-hidden="true" size={21} strokeWidth={active ? 2.5 : 1.8} /><span>{label}</span></Link>;
+    // Keep the main destinations ready, without prefetching protected pages during an invitation.
+    return <Link key={href} href={href} prefetch={pathname !== "/app/groups/join" && pathname !== href} aria-current={active ? "page" : undefined} className="kk-tab"><TabContents label={label} icon={Icon} active={Boolean(active)} /></Link>;
   };
   return <>
     <nav aria-label="アプリのメインナビゲーション" className="kk-nav"><div className="kk-nav-inner">
