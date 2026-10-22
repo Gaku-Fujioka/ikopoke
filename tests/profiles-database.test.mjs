@@ -29,6 +29,9 @@ before(async () => {
   const profileMigration = migrations.find(name => name.endsWith("_account_display_names.sql"));
   assert.ok(profileMigration);
   await db.exec(await readFile(new URL(`../supabase/migrations/${profileMigration}`, import.meta.url), "utf8"));
+  const onboardingMigration = migrations.find(name => name.endsWith("_account_onboarding_guide.sql"));
+  assert.ok(onboardingMigration);
+  await db.exec(await readFile(new URL(`../supabase/migrations/${onboardingMigration}`, import.meta.url), "utf8"));
   await db.query("insert into auth.users(id,raw_user_meta_data) values($1,$2),($3,$4),($5,$6)", [alice, {display_name:"  アリス  "}, bob, {}, outsider, {display_name:"第三者"}]);
   await asUser(alice, () => db.query("select public.create_group('A',$1)", [group]));
   await asUser(outsider, () => db.query("select public.create_group('B',$1)", [otherGroup]));
@@ -61,4 +64,24 @@ test("members see names only within their own group, including names added after
   await asUser(outsider, () => fails(db.query("select * from public.get_group_members($1)",[group]),"42501"));
   await asUser(alice, () => fails(db.query("select * from public.get_group_members($1)",[otherGroup]),"42501"));
   await asUser(null, () => fails(db.query("select * from public.get_group_members($1)",[group]),"42501"),"anon");
+});
+
+test("onboarding defaults to unseen and each account can read and acknowledge only its own guide", async () => {
+  await asUser(alice, async () => {
+    assert.deepEqual((await db.query("select onboarding_version from public.profiles")).rows, [{onboarding_version:0}]);
+    await db.query("update public.profiles set onboarding_version=1 where user_id=$1", [alice]);
+    assert.deepEqual((await db.query("select onboarding_version from public.profiles")).rows, [{onboarding_version:1}]);
+    assert.equal((await db.query("update public.profiles set onboarding_version=1 where user_id=$1", [bob])).affectedRows, 0);
+    assert.deepEqual((await db.query("select onboarding_version from public.profiles where user_id=$1", [bob])).rows, []);
+  });
+  await asUser(bob, async () => {
+    assert.deepEqual((await db.query("select onboarding_version from public.profiles")).rows, [{onboarding_version:0}]);
+  });
+});
+
+test("anonymous users cannot read or mark onboarding and invalid versions are rejected", async () => {
+  await asUser(null, () => fails(db.query("select onboarding_version from public.profiles"), "42501"), "anon");
+  await asUser(null, () => fails(db.query("update public.profiles set onboarding_version=1"), "42501"), "anon");
+  await asUser(alice, () => fails(db.query("update public.profiles set onboarding_version=-1"), "23514"));
+  assert.equal((await db.query("select onboarding_version from public.profiles where user_id=$1", [alice])).rows[0].onboarding_version, 1);
 });

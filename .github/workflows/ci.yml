@@ -24,6 +24,7 @@ jobs:
       - run: node --experimental-strip-types --test tests/auth-redirect.test.mjs tests/auth-handlers.test.mjs tests/auth-proxy.test.mjs tests/sign-up-error.test.mjs tests/mock-repository.test.mjs tests/group-actions.test.mjs tests/group-database.test.mjs tests/group-invitations-database.test.mjs tests/group-invitation-actions.test.mjs tests/item-actions.test.mjs tests/item-database.test.mjs tests/item-repository.test.mjs tests/item-search.test.mjs tests/reaction-actions.test.mjs tests/reaction-database.test.mjs tests/reaction-repository.test.mjs
       - run: node --experimental-strip-types --test tests/item-tools-database.test.mjs tests/item-tools-actions.test.mjs tests/group-rename.test.mjs tests/list-database.test.mjs tests/list-repository.test.mjs
       - run: node --experimental-strip-types --test tests/group-invite-entry.test.mjs
+      - run: node --experimental-strip-types --test tests/onboarding.test.mjs
       - run: node --experimental-strip-types --test tests/render-boundaries.test.mjs tests/profiles-database.test.mjs tests/outings-database.test.mjs tests/outings-validation.test.mjs tests/outings-calendar.test.mjs
       - run: node --experimental-strip-types --test tests/visits-database.test.mjs tests/visit-actions.test.mjs tests/visit-creation.test.mjs tests/visit-timeline.test.mjs
       - run: node --experimental-strip-types --test tests/memories-database.test.mjs tests/memories.test.mjs

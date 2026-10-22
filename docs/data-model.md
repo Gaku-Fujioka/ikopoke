@@ -84,6 +84,8 @@ GROUP-03はD-010の複数人向け招待。`group_invites`にはtokenハッシ�
 
 ## AUTH-01：実接続前のコード棚卸し（2026-10-03）
 
+ONBOARD-01（2026-10-22）：ユーザーの明示依頼で検証用のAuthユーザーとアプリデータを再初期化し、設定/定義保持と0件を確認。初回ガイドの表示済み状態は `profiles.onboarding_version`（既定0、非負integer）で管理する。本人用の既存RLSに列のSELECT/UPDATE権限だけを加え、認証から取得した本人IDで更新する。初回モーダルの完了/あとで見るでversionを保存し、プロフィールからの見返しは読取のみとする。migrationの適用・検証状態は[ONBOARD-01](tasks/ONBOARD-01.md)を参照。
+
 2026-10-21の公開版：確認メールをTokenHashと既存の `/auth/confirm` に接続した後、ユーザーがSafariで新規登録・メール確認・ログアウト・再ログイン成功を報告。招待への復帰用にメールの `redirect_to` から同一originの `/auth/callback` の `next` だけを取り出し、既存の許可パス検証へ渡す。招待tokenは従来の参加画面限定HttpOnly Cookieに保持し、メールへ追加しない。別ブラウザでは招待リンクを開き直す。PKCE callbackも継続する。外部メール設定と招待の実操作完了は別に扱う。[結果と未確認事項](tasks/DEPLOY-01.md)。
 
 **以下は当時の履歴**。2026-10-17のAUTH-03でログイン・パスワード更新後を`/app`へ接続し、
