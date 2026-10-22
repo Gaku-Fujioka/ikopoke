@@ -1,6 +1,6 @@
 # ONBOARD-01：初回ログインの使い方ガイド
 
-2026-10-22。状態：実装・ローカル検証済み、CI/統合待ち。本Agent単独。branch `feat/first-login-guide`、基準main `a44047e27023925ea85c5f1ebbf3bd4d978ccc99`。
+2026-10-22。状態：実装・ローカル検証済み。CI/統合・公開確認の最新状態は[PR #45](https://github.com/Gaku-Fujioka/ikopoke/pull/45)に記録する。本Agent単独。branch `feat/first-login-guide`、基準main `a44047e27023925ea85c5f1ebbf3bd4d978ccc99`。
 F-01/02/10/11、N-01/03/04/05/09、D-037。前提：DEPLOY-01、PROFILE-01。
 
 ## Goal・採用範囲
