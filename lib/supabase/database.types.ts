@@ -46,9 +46,9 @@ export type Database = {
         Insert: never; Update: never; Relationships: [];
       };
       profiles: {
-        Row: { user_id: string; display_name: string; updated_at: string; avatar_media_id: string | null };
+        Row: { user_id: string; display_name: string; updated_at: string; avatar_media_id: string | null; onboarding_version: number };
         Insert: { user_id: string; display_name: string };
-        Update: { display_name?: string; updated_at?: string };
+        Update: { display_name?: string; updated_at?: string; onboarding_version?: number };
         Relationships: [];
       };
       lists: {

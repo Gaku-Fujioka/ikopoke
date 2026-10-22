@@ -4,6 +4,7 @@ import { AppNav } from "@/components/layout/app-nav";
 import { AppAccountMenu } from "@/components/app-account-menu";
 import {PocketMark} from "@/components/brand/pocket-mark";
 import {PwaProvider,PwaStatus} from "@/components/pwa/pwa-provider";
+import { FirstLoginGuide } from "@/components/onboarding/first-login-guide";
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   return <PwaProvider><div className="kk-app kk-color-preview">
@@ -13,7 +14,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       <Suspense fallback={<span className="kk-muted">…</span>}><AppAccountMenu /></Suspense>
     </div></header>
     <PwaStatus/>
-    <main id="main-content" tabIndex={-1} className="kk-main">{children}</main>
+    <main id="main-content" tabIndex={-1} className="kk-main"><Suspense fallback={null}><FirstLoginGuide /></Suspense>{children}</main>
     <Suspense fallback={<div className="kk-nav kk-nav-loading" role="status">ナビを読み込んでいます…</div>}><AppNav /></Suspense>
   </div></PwaProvider>;
 }

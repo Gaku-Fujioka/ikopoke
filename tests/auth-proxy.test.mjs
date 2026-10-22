@@ -36,6 +36,7 @@ test('anonymous invitation landing is public but other group routes remain prote
 test('signup and callback remain public while password updates require a session',async()=>{
   for(const path of ['/auth/sign-up','/auth/callback'])assert.equal((await updateSession(request(path))).status,200);
   assert.equal((await updateSession(request('/auth/update-password'))).status,307);
+  assert.equal((await updateSession(request('/app/guide'))).status,307);
   provider.configure(true);assert.equal((await updateSession(request('/auth/update-password'))).status,200);
 });
 
