@@ -19,7 +19,7 @@ mise exec node@22.23.5 -- npm run dev
 
 他のNode管理ツールでは`.nvmrc`の版へ切り替え、`node --version`と`npm --version`を確認してから同じnpmコマンドを実行する。Nodeの未切替を回避するために`--force`やengine-strictの解除を使わない。
 
-React Compilerは未導入のため、新規のerror-boundaries/set-state-in-effect診断は警告として表示し、既存Hooks/Next/TypeScriptのエラー規則を維持する。警告対象と未解消の境界はSEC-ENV-01へ記録する。
+HEALTH-01でReactのerror-boundaries/set-state-in-effect診断179件を修正し、一時的な警告扱いを削除した。lintはmax-warnings=0で実行し、1件の警告でも失敗する。新しい回帰検証は実コンポーネントと制御したhook/provider境界で入力保持・画像切替/後着応答/再試行/URL解放・招待メモリ保持を確認するもので、実ブラウザ/スマホの代替ではない。
 
 CIは`.nvmrc`を読み、npm ci→lint→typecheck→全テスト→audit→buildを実行する。PGliteはlockされたdevDependencyを使用し、外部DB接続や一時モジュール指定なしでDB/RLSテストを行う。テストファイルは自動列挙し、同時実行数2でDBテストのメモリ消費を抑える。
 

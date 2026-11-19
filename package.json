@@ -8,7 +8,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint .",
+    "lint": "eslint . --max-warnings=0",
     "typecheck": "next typegen && tsc --noEmit && npm run typecheck:edge",
     "typecheck:edge": "tsc --noEmit --target ES2022 --module ESNext --moduleResolution Bundler --strict --skipLibCheck supabase/functions/delete-account/handler.ts",
     "test": "node --experimental-strip-types --test --test-concurrency=2 tests/*.test.mjs",

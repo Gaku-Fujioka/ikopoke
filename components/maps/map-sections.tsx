@@ -8,8 +8,11 @@ import { AttachPlaceForm } from "./place-save-form";
 
 type Client = SupabaseClient<Database>;
 export async function SavedMapSection({ client, groupId, groups }: { client: Client; groupId: string | null; groups: PlaceGroup[] }) {
-  try { return <SavedPlacesMap candidates={await mapCandidates(client, groupId)} groups={groups} config={mapsConfig()} showGroups={!groupId} />; }
-  catch (cause) { return <p role="alert" className="kk-map-note">{cause instanceof PlaceStoreError ? cause.message : "保存した場所を読み込めませんでした。候補は行きたいタブから確認できます。"}</p>; }
+  let candidates;
+  try {
+    candidates = await mapCandidates(client, groupId);
+  } catch (cause) { return <p role="alert" className="kk-map-note">{cause instanceof PlaceStoreError ? cause.message : "保存した場所を読み込めませんでした。候補は行きたいタブから確認できます。"}</p>; }
+  return <SavedPlacesMap candidates={candidates} groups={groups} config={mapsConfig()} showGroups={!groupId} />;
 }
 export async function ItemPlaceSection({ client, groupId, itemId, title }: { client: Client; groupId: string; itemId: string; title: string }) {
   let placeId;
@@ -22,10 +25,11 @@ export async function ItemPlaceSection({ client, groupId, itemId, title }: { cli
   </section>;
 }
 export async function OutingMapSection({ client, groupId, items, group }: { client: Client; groupId: string; items: SavedOutingItem[]; group: PlaceGroup }) {
+  let candidates: Awaited<ReturnType<typeof mapCandidates>>, ordered, missing;
   try {
-    const candidates = await mapCandidates(client, groupId, items.map(item => item.item_id));
-    const ordered = items.flatMap((item, index) => { const candidate = candidates.find(row => row.itemId === item.item_id); return candidate ? [{ ...candidate, stopNumber: index + 1 }] : []; });
-    const missing = items.length - ordered.length;
-    return <div className="space-y-3"><SavedPlacesMap candidates={ordered} groups={[group]} config={mapsConfig()} ordered showGroups={false} />{missing > 0 && <p className="kk-map-note">場所が未設定の行き先が{missing}件あります。下の行き先名から候補詳細を開き、「ここは、どこ？」で紐づけてください。</p>}</div>;
+    candidates = await mapCandidates(client, groupId, items.map(item => item.item_id));
+    ordered = items.flatMap((item, index) => { const candidate = candidates.find(row => row.itemId === item.item_id); return candidate ? [{ ...candidate, stopNumber: index + 1 }] : []; });
+    missing = items.length - ordered.length;
   } catch { return <p role="alert" className="kk-map-note">行き先の地図を読み込めませんでした。計画と訪問記録は引き続き使えます。</p>; }
+  return <div className="space-y-3"><SavedPlacesMap candidates={ordered} groups={[group]} config={mapsConfig()} ordered showGroups={false} />{missing > 0 && <p className="kk-map-note">場所が未設定の行き先が{missing}件あります。下の行き先名から候補詳細を開き、「ここは、どこ？」で紐づけてください。</p>}</div>;
 }

@@ -66,16 +66,18 @@ async function RecentActivity({ client, groupId, groups }: { client: HomeClient;
 }
 
 async function GroupCandidates({ client, groupId }: { client: HomeClient; groupId: string }) {
+  let saved;
   try {
-    const saved = await listItems(client, groupId, 1, "", { sort: "recommended" });
-    return saved.items.length ? <CandidateBoard key={groupId} groupId={groupId} items={saved.items.slice(0,4)} links={Object.fromEntries(saved.items.slice(0,4).map(item => [item.id, '/app/groups/'+groupId+'/items/'+item.id]))} /> : <div className="kk-empty"><h3>ポケットに、最初の「行きたい」を。</h3><p>気になる場所をためたら、みんなで選んで計画へ。</p><Link href={'/app/groups/'+groupId+'/items/new'} className="kk-primary-link">最初の候補を追加</Link></div>;
+    saved = await listItems(client, groupId, 1, "", { sort: "recommended" });
   } catch { return <HomeError message="候補を読み込めませんでした。行きたいタブからも確認できます。" />; }
+  return saved.items.length ? <CandidateBoard key={groupId} groupId={groupId} items={saved.items.slice(0,4)} links={Object.fromEntries(saved.items.slice(0,4).map(item => [item.id, '/app/groups/'+groupId+'/items/'+item.id]))} /> : <div className="kk-empty"><h3>ポケットに、最初の「行きたい」を。</h3><p>気になる場所をためたら、みんなで選んで計画へ。</p><Link href={'/app/groups/'+groupId+'/items/new'} className="kk-primary-link">最初の候補を追加</Link></div>;
 }
 async function GroupConversations({ client, groupId, groups }: { client: HomeClient; groupId: string; groups: SavedGroup[] }) {
+  let entries;
   try {
-    const entries = (await getActivity(client,groupId,30)).filter(entry=>['comment','want_to_go','not_now'].includes(entry.kind)).slice(0,6);
-    return entries.length ? <ActivityCards entries={entries} groups={groups} /> : <p className="kk-muted">候補への気持ちやコメントが、ここに集まります。気になる候補から声をかけてみよう。</p>;
+    entries = (await getActivity(client,groupId,30)).filter(entry=>['comment','want_to_go','not_now'].includes(entry.kind)).slice(0,6);
   } catch { return <HomeError message="最近の会話と反応を読み込めませんでした。" />; }
+  return entries.length ? <ActivityCards entries={entries} groups={groups} /> : <p className="kk-muted">候補への気持ちやコメントが、ここに集まります。気になる候補から声をかけてみよう。</p>;
 }
 
 export async function SharedHome({ groupId = null }: { groupId?: string | null }) {

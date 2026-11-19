@@ -15,11 +15,13 @@ async function ProfileContent() {
   const client = await createClient();
   const { data, error } = await client.auth.getClaims();
   if (error || !data?.claims?.sub) redirect("/auth/login?next=/app/profile");
+  let initialName;
   try {
-    return <><DisplayNameForm initialName={(await getMyProfile(client, data.claims.sub)) ?? ""} /><Suspense fallback={<p role="status">写真を読み込んでいます…</p>}><MyPhotoSection client={client}/></Suspense><Suspense fallback={<p role="status">アカウント削除の情報を読み込んでいます…</p>}><AccountDeletionSection client={client}/></Suspense></>;
+    initialName = (await getMyProfile(client, data.claims.sub)) ?? "";
   } catch (cause) {
     return <p role="alert" className="rounded-3xl border bg-white p-6">{cause instanceof ProfileStoreError ? cause.message : "表示名を読み込めませんでした。"}</p>;
   }
+  return <><DisplayNameForm initialName={initialName} /><Suspense fallback={<p role="status">写真を読み込んでいます…</p>}><MyPhotoSection client={client}/></Suspense><Suspense fallback={<p role="status">アカウント削除の情報を読み込んでいます…</p>}><AccountDeletionSection client={client}/></Suspense></>;
 }
 
 export default function ProfilePage() {

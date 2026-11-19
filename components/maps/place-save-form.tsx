@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { placeListsAction, savePlaceAction, attachPlaceAction, type PlaceSaveState } from "@/app/app/map-actions";
 import type { PlaceResult } from "@/lib/maps/explorer";
 import type { PlaceGroup } from "@/lib/maps/saved";
@@ -8,12 +8,16 @@ import type { PlaceGroup } from "@/lib/maps/saved";
 const initial: PlaceSaveState = { error: null };
 const field = "min-h-11 w-full rounded-xl border border-stone-300 bg-white px-3 py-2";
 function SaveForGroup({ groupId, place, query }: { groupId: string; place: PlaceResult; query: string }) {
-  const [state, action, pending] = useActionState(savePlaceAction, initial);
-  const [requestId, setRequestId] = useState("");
+  const requestId = useRef<string | null>(null);
+  const [state, action, pending] = useActionState(async (previous: PlaceSaveState, form: FormData) => {
+    // Allocate at submission, retaining the same UUID for retries in this group.
+    requestId.current ??= crypto.randomUUID();
+    form.set("requestId", requestId.current);
+    return savePlaceAction(previous, form);
+  }, initial);
   const [options, setOptions] = useState<{ lists: { id: string; name: string }[]; error?: string; more?: boolean } | null>(null);
   useEffect(() => {
     let active = true;
-    setRequestId(crypto.randomUUID());
     void placeListsAction(groupId).then(result => { if (active) setOptions(result); }).catch(() => { if (active) setOptions({ lists: [], error: "リストを取得できませんでした。保存後にも分類できます。" }); });
     return () => { active = false; };
   }, [groupId]);
@@ -22,12 +26,12 @@ function SaveForGroup({ groupId, place, query }: { groupId: string; place: Place
     return <div className="kk-place-saved" role="status"><strong>{state.reused ? "この場所は、すでに行きたいにあります" : "みんなの行きたいに追加しました！"}</strong><p>{state.archived ? "アーカイブ中の候補です。詳細から復元できます。" : "選んだリストにも分類しました。次は、みんなで計画へ。"}</p><div className="flex flex-wrap gap-3"><Link className="kk-secondary-link" href={href}>候補をひらく →</Link>{!state.archived && <Link className="kk-primary-link" href={`/app/groups/${state.groupId}/outings/new?item=${state.itemId}`}>この場所で計画する →</Link>}</div></div>;
   }
   return <form action={action} className="mt-4 space-y-4" aria-label={`${place.name}を行きたいに保存`}>
-    <input type="hidden" name="groupId" value={groupId} /><input type="hidden" name="placeId" value={place.id} /><input type="hidden" name="requestId" value={requestId} />
+    <input type="hidden" name="groupId" value={groupId} /><input type="hidden" name="placeId" value={place.id} />
     <fieldset disabled={pending} className="space-y-3">
       <label className="block space-y-2"><span className="text-sm font-semibold">自分たちの呼び名</span><input name="title" required maxLength={100} defaultValue={query || "気になる場所"} className={field} /><small className="block text-stone-600">検索した言葉を入れています。「週末のカフェ」など好きな呼び名に変えられます。</small></label>
       <details><summary className="kk-edit-button">リストにも追加（任意）</summary><div className="mt-2">{!options && <p role="status">リストを読み込んでいます…</p>}{options?.error && <p className="kk-muted">{options.error}</p>}{options?.lists.map(list => <label key={list.id} className="flex min-h-11 items-center gap-3"><input type="checkbox" name="listIds" value={list.id} />{list.name}</label>)}{options && !options.error && !options.lists.length && <p className="kk-muted">リストはまだありません。保存後にも分類できます。</p>}{options?.more && <p className="kk-muted">最近の20件を表示しています。ほかのリストは保存後の詳細から選べます。</p>}</div></details>
       {state.error && <p role="alert" className="text-sm text-red-700">{state.error}</p>}
-      <button type="submit" disabled={!requestId || pending} className="kk-primary-link">{pending ? "保存しています…" : "この場所を行きたいに追加 ＋"}</button>
+      <button type="submit" disabled={pending} className="kk-primary-link">{pending ? "保存しています…" : "この場所を行きたいに追加 ＋"}</button>
     </fieldset>
   </form>;
 }
