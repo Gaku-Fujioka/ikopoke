@@ -1,5 +1,30 @@
 # 検証・実行環境
 
+## SEC-ENV-01：現在の標準環境（2026-11-19）
+
+この節と「実行環境と前提」「現行コマンド」が現行の正本。下の機能別検証記録や初期調査は、その時点の履歴として読む。結果は[SEC-ENV-01](tasks/SEC-ENV-01.md)へ集約する。
+
+npm/package-lock.jsonを使用し、Nodeは`.nvmrc`の22.23.5、npmは同梱の10.9.9へ揃える。`.npmrc`のengine-strictでNode/npmの条件違いをinstall時に拒否し、save-exactで今後の直接依存追加を固定する。Next/Supabase/Reactと対応するESLint設定はpackage.jsonでも版を固定する。
+
+既存のmise環境なら、作業ディレクトリで次のように実行できる。システム全体のNode既定値を変える必要はない。
+
+```powershell
+mise install node@22.23.5
+mise exec node@22.23.5 -- npm ci
+mise exec node@22.23.5 -- npm run check
+mise exec node@22.23.5 -- npm run audit
+mise exec node@22.23.5 -- npm run build
+mise exec node@22.23.5 -- npm run dev
+```
+
+他のNode管理ツールでは`.nvmrc`の版へ切り替え、`node --version`と`npm --version`を確認してから同じnpmコマンドを実行する。Nodeの未切替を回避するために`--force`やengine-strictの解除を使わない。
+
+React Compilerは未導入のため、新規のerror-boundaries/set-state-in-effect診断は警告として表示し、既存Hooks/Next/TypeScriptのエラー規則を維持する。警告対象と未解消の境界はSEC-ENV-01へ記録する。
+
+CIは`.nvmrc`を読み、npm ci→lint→typecheck→全テスト→audit→buildを実行する。PGliteはlockされたdevDependencyを使用し、外部DB接続や一時モジュール指定なしでDB/RLSテストを行う。テストファイルは自動列挙し、同時実行数2でDBテストのメモリ消費を抑える。
+
+元の作業ツリーにある未追跡pnpmファイルは既存作業として保全する。新しいnpm lockと古いpnpm node_modulesを組み合わせず、既存変更を含めない別worktreeでnpm ciから検証する。環境変数ファイルや実データをテスト用へコピーしない。
+
 MEMORY-03（2026-10-19）：全369件（既存352+DB8/Action5/SSR・並び4）のNodeテスト、型検査・lint・本番build成功。自由写真を含む所属分離/本人編集/再送/改訂/削除/退出/一冊再利用を検証。開発DB適用version `20261019100243`と11関数本文・権限/RLSを照合済み。実ブラウザ・スマホ・別アカウントの操作は未実施。詳細とCI/統合は[MEMORY-03](tasks/MEMORY-03.md)。
 
 更新日：2026-10-05。コマンドの存在、実行、成功を別々に記録する。
@@ -111,43 +136,27 @@ Edgeのヘッドレス操作では360／390／1280px、4入口ナビの配置と
 
 ## 実行環境と前提
 
-- 作業環境はWindows／PowerShell。前回確認値：Node 22.19.0、npm 10.9.3。
-- [package.json](../package.json)に`packageManager`・`engines`指定なし。
-  `.nvmrc`・`.node-version`なし。Nodeのプロジェクト固定は未決定。
-- [package-lock.json](../package-lock.json)が存在（lockfileVersion 3）。現行手順はnpmで記載する。
-  原本のpnpm例を理由にパッケージ管理を移行しない。
-- lockfileのNext 16.3.4はNode 20.9以上、Supabase JS 2.115.0は22以上を要求。
-  これは依存の制約であり、新たに採用したNode固定ではない。
-
-| lockfile上の依存 | 記録された版 |
-|---|---|
-| Next / React / React DOM | 16.3.4 / 19.2.8 / 19.2.8 |
-| TypeScript / Tailwind CSS | 5.9.3 / 3.4.19 |
-| Supabase SSR / Supabase JS | 0.12.6 / 2.115.0 |
-| ESLint / eslint-config-next | 9.39.5 / 15.3.1 |
-
-Nextとeslint-config-nextの版が異なる。統合後のlintは成功したが、版の整合方針は未決定。
-NextとSupabaseのpackage指定は`latest`。固定・更新方針は別タスクで判断する。
+- Node 22.23.5（.nvmrc）/npm 10.9.9（packageManager）。package.jsonはNode 22.x/npm >=10.9.9 <11を要求する。
+- npmとpackage-lock.json（lockfileVersion 3）が正本。新規checkoutではnpm ciを実行する。npmはPGliteを含むdevDependenciesも導入する。
+- 依存更新時はlockfileと実体の両方を照合する。既存pnpm環境を理由にnpmから移行せず、既存のnode_modulesを変更する場合は先にその作業を止めて退避する。
+- 2026-11-19の更新対象はNext/eslint-config-next 16.4.6、Node型22.20.5と監査に該当した間接依存。Supabase SSR 0.12.6/JS 2.115.0、React/React DOM 19.2.8、PGlite 0.5.10は既存版を固定した。
 
 ## 現行コマンド
 
-以下の4件がpackage.jsonの実在スクリプト。実行結果は2026-10-05の確認分。
+| コマンド | 用途・条件 |
+|---|---|
+| `npm ci` | lockfileどおりに開発用依存を含めて導入。Node/npmを切替後に実行 |
+| `npm run dev` | Nextの開発サーバー。起動ログのポートを確認 |
+| `npm run lint` | Next 16とTypeScriptのflat configでESLintを実行 |
+| `npm run typecheck` | Nextのルート型を生成後、アプリと既存delete-account Functionを型検査 |
+| `npm run typecheck:edge` | delete-account Functionの型検査だけを実行 |
+| `npm test` | `tests/*.test.mjs`をNode標準runnerで全実行。同時実行数2 |
+| `npm run check` | lint→typecheck→全テスト。audit/buildは別コマンド |
+| `npm run audit` | 開発用依存を含む監査。moderate以上で失敗 |
+| `npm run build` | 本番build。Google Fontsへの接続が必要 |
+| `npm run start` | 成功したbuildを使う本番サーバー |
 
-| コマンド | 実体・用途 | 前提 | 存在 | 統合後の実行結果 |
-|---|---|---|---|---|
-| `npm run dev` | `next dev`：開発サーバー | 依存導入、利用可能なポート | 確認済み | 今回未実行 |
-| `npm run lint` | `eslint .`：lint | 依存・ESLint設定 | 確認済み | 成功 |
-| `npm run build` | `next build`：build | 依存、対象環境、Google Fontsへの接続 | 確認済み | 成功。接続不可の環境ではフォント取得失敗 |
-| `npm run start` | `next start`：productionサーバー | 成功したbuild | 確認済み | 起動・HTTP応答を確認 |
-
-新規checkoutで依存導入が必要なら、lockfileを確認して`npm ci`を使う手順とする。
-これはnpmの依存導入コマンドでpackage scriptではない。今回未実行。
-既存node_modulesを勝手に入れ直さず、依存変更を別タスクへ分ける。
-
-型検査は[tsconfig.json](../tsconfig.json)にstrict・noEmit設定があり、TypeScript依存もある。
-`typecheck`・`test`・`check`のnpmスクリプトはない。型検査は`npx tsc --noEmit`、
-回帰テストはNode組み込みrunnerで`tests/*.test.mjs`を実行する。
-架空のnpmスクリプトを実行例や成功条件として置かない。
+スクリプトの存在、ローカル成功、GitHub CIの成功は別々に記録する。過去の「typecheck/test/check未整備」はSEC-ENV-01より前の履歴。新しい全テストをCIから漏らさないよう、CIも個別ファイルの固定列挙ではなくnpm testを使用する。
 
 ## 起動と接続
 
@@ -173,7 +182,7 @@ Supabase未設定時はproxyの認証確認をスキップし、`/`から`/app`�
 | 変更 | 必要な確認 | 現状の不足 |
 |---|---|---|
 | 文書のみ | 相互リンク・パス・要件ID・コマンド根拠・提案と決定・自己レビュー・差分 | 文書用lintやリンク検査の標準スクリプトなし。手動／一時的な読み取り検査で結果を記録 |
-| UI・ルート | lint、型検査、関連検証、ブラウザ操作。buildは影響に応じて | npmの型検査・テストscriptはない。上記の直接コマンドを使う |
+| UI・ルート | lint、型検査、関連検証、ブラウザ操作。buildは影響に応じて | npm run typecheck・npm testを使用する |
 | 認証・保存 | 上記＋正常／失敗／セッション切れ／再取得・再ログイン | 開発接続先・試用アカウント・外部設定は未確認 |
 | DB・Storage | migration差分、所属別の直接取得・更新、画像取得、保全・再実行 | migration・RLS・Storage・検証環境が未整備／未確認 |
 | バグ | 修正前の再現、必要な回帰検証、修正後の同じ操作 | テストrunnerがなければ再現手順を残し、必要な基盤を別途決める |
