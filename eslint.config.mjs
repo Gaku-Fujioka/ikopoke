@@ -1,18 +1,18 @@
-import { dirname } from "path";
-import { fileURLToPath } from "url";
-import { FlatCompat } from "@eslint/eslintrc";
+import { defineConfig, globalIgnores } from "eslint/config";
+import nextVitals from "eslint-config-next/core-web-vitals";
+import nextTypescript from "eslint-config-next/typescript";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-});
-
-const eslintConfig = [
-  // work/ contains local design previews and temporary verification helpers.
-  { ignores: [".next/**", "node_modules/**", "out/**", "build/**", "work/**"] },
-  ...compat.extends("next/core-web-vitals", "next/typescript"),
-];
-
-export default eslintConfig;
+export default defineConfig([
+  ...nextVitals,
+  ...nextTypescript,
+  {
+    // Keep existing Hooks checks as errors. These newly added compiler diagnostics
+    // stay visible while UI refactors are reviewed separately; React Compiler is not enabled.
+    rules: {
+      "react-hooks/error-boundaries": "warn",
+      "react-hooks/set-state-in-effect": "warn",
+    },
+  },
+  // work/ contains local previews and temporary verification helpers.
+  globalIgnores([".next/**", "node_modules/**", "out/**", "build/**", "next-env.d.ts", "work/**"]),
+]);

@@ -54,7 +54,7 @@
 
 - 存在・用途を確認した主要スクリプト：`npm run dev`、`npm run lint`、`npm run build`。
 - コマンドの前提・変更別の検証は[verification](docs/verification.md)を読む。
-- `typecheck`・`test`・`check`スクリプトは未整備。存在しないコマンドを成功扱いにしない。
+- `npm run typecheck`・`npm test`・`npm run check`・`npm run audit`を整備済み。Node/npmは`.nvmrc`とpackage.json、依存はnpm/package-lock.jsonを正本とする。
 - 実装後は利用可能なlint・型検査・関連テスト・buildを変更に応じて行う。
 - 文書のみではリンク・根拠・差分を確認する。不要なbuildやテスト新設はしない。
 - バグは再現 → 必要な回帰検証 → 修正 → 再確認。繰返すミスは自動検出を検討する。
