@@ -1,11 +1,13 @@
 # ここいこ：小さいタスクの候補
 
-更新日：2026-10-21。参照：[要件](docs/kokoiko-requirements.md)、[開発手順](docs/development-flow.md)、
+更新日：2026-11-19。参照：[要件](docs/kokoiko-requirements.md)、[開発手順](docs/development-flow.md)、
 [検証](docs/verification.md)、[決定](docs/decisions.md)、[タスクテンプレート](docs/tasks/TEMPLATE.md)。
 P0〜P5は段階案。以下も将来作業の提案で、全件実装の指示・採用決定ではない。
 着手時に1件を選び、テンプレートで範囲と採用済みDoneを具体化する。
 
 ## 現在の作業と次の順序（2026-11-19）
+
+**HEALTH-01：共有動作確認とReact警告の解消（2026-11-19）**。実APIのAuth応答と匿名の共有データ取得拒否を確認。取得失敗の案内・編集中の入力・写真/招待の扱いを維持し、警告179件を解消しlint 0件・全421テスト・型/build・監査0件を確認。CI/統合はPRを参照。WindowsのComputer UseがURLを確定できず停止したため、既存アカウント/スマホでの一巡操作は未確認。[範囲と結果](docs/tasks/HEALTH-01.md)。
 
 **SEC-ENV-01：セキュリティ更新と検証環境の統一（2026-11-19）**。Next/ESLintを16.4.6、Node/npmを22.23.5/10.9.9へ統一。依存監査0件・全412テスト・型検査・build成功、lintはエラー0/新規診断179警告。CI/統合はPRを参照。外部DB・機能仕様・既存dirty変更は対象外。[範囲と結果](docs/tasks/SEC-ENV-01.md)。
 

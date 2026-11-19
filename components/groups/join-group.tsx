@@ -1,11 +1,11 @@
 "use client";
 
-import { startTransition, useActionState, useEffect, useRef, useState } from "react";
+import { startTransition, useActionState, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { acceptInviteAction, previewInviteAction } from "@/app/app/groups/invite-actions";
 import type { InviteState } from "@/lib/groups/invitations";
 import { INVITE_PATH } from "@/lib/groups/invite-cookie";
-import { captureInviteEntry } from "@/lib/groups/invite-entry";
+import { captureInviteEntry, createInviteEntrySnapshot } from "@/lib/groups/invite-entry";
 import { authEntryPath } from "@/lib/auth/safe-next-path";
 import {ProfileImage} from "@/components/profiles/profile-image";
 
@@ -38,19 +38,22 @@ function InviteBrowserHandoff({ link }: { link: string }) {
 export function JoinGroup() {
   const [state, previewAction, previewing] = useActionState(previewInviteAction, initial);
   const [joined, joinAction, joining] = useActionState(acceptInviteAction, initial);
-  const [handoffLink, setHandoffLink] = useState<string | null>(null);
+  const [entryStore] = useState(() => createInviteEntrySnapshot(() => window.location));
+  const entrySnapshot = useSyncExternalStore(entryStore.subscribe, entryStore.getSnapshot, entryStore.getServerSnapshot);
+  const handoffLink = entrySnapshot?.handoffLink ?? null;
   const started = useRef(false);
   useEffect(() => {
     if (started.current) return;
     started.current = true;
+    // Capture the browser snapshot before removing the fragment during hydration.
+    entryStore.getSnapshot();
     const form = new FormData();
     const entry = captureInviteEntry(window);
     if (entry) {
       form.set("token", entry.token);
-      setHandoffLink(entry.handoffLink);
     }
     startTransition(() => previewAction(form));
-  }, [previewAction]);
+  }, [entryStore, previewAction]);
 
   return <section aria-labelledby="join-heading" className="space-y-5 rounded-3xl border border-stone-200 bg-white p-6 sm:p-8">
     <h1 id="join-heading" className="text-3xl font-bold">グループへの招待</h1>

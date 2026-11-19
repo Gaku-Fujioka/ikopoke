@@ -15,20 +15,23 @@ import {GroupProfileSection} from "@/components/profiles/presentation-sections";
 import {ProfileImage} from "@/components/profiles/profile-image";
 
 async function Members({ client, groupId }: { client: Awaited<ReturnType<typeof createClient>>; groupId: string }) {
+  let members;
   try {
-    const members = await getGroupMembers(client, groupId);
-    return <section className="kk-surface"><h2 className="text-lg font-bold">一緒に楽しむメンバー · {members.length}人</h2><ul className="mt-4 space-y-2">{members.map(member => <li key={member.user_id} className="flex items-center gap-3 rounded-xl bg-stone-50 px-4 py-3 text-sm"><ProfileImage path={member.avatar_path} alt="" fallback={Array.from(member.display_name||"・")[0]} className="kk-member-avatar"/>{member.display_name || "表示名はまだ未設定"}</li>)}</ul></section>;
+    members = await getGroupMembers(client, groupId);
   } catch {
     return <p role="alert" className="kk-notice">メンバーを読み込めませんでした。再読み込みしてください。</p>;
   }
+  return <section className="kk-surface"><h2 className="text-lg font-bold">一緒に楽しむメンバー · {members.length}人</h2><ul className="mt-4 space-y-2">{members.map(member => <li key={member.user_id} className="flex items-center gap-3 rounded-xl bg-stone-50 px-4 py-3 text-sm"><ProfileImage path={member.avatar_path} alt="" fallback={Array.from(member.display_name||"・")[0]} className="kk-member-avatar"/>{member.display_name || "表示名はまだ未設定"}</li>)}</ul></section>;
 }
 
 async function GroupInvitations({ client, groupId }: { client: Awaited<ReturnType<typeof createClient>>; groupId: string }) {
+  let invites;
   try {
-    return <InviteManagement groupId={groupId} invites={await listInvites(client, groupId)} />;
+    invites = await listInvites(client, groupId);
   } catch (error) {
     return <p role="status" className="rounded-3xl border border-stone-200 bg-white p-6 text-sm leading-6 text-stone-600">{error instanceof InviteError ? error.message : "招待を読み込めませんでした。グループを開き直してください。"}</p>;
   }
+  return <InviteManagement groupId={groupId} invites={invites} />;
 }
 
 async function GroupContent({ params }: { params: Promise<{ groupId: string }> }) {

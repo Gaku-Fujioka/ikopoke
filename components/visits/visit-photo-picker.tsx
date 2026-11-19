@@ -1,14 +1,19 @@
 "use client";
 import Image from "next/image";
-import {useEffect,useState} from "react";
+import {useCallback,useState} from "react";
 import {Camera,X} from "lucide-react";
 import {PHOTO_TYPES} from "@/lib/visits/validation";
 import {selectVisitPhotos,type SelectedVisitPhoto} from "@/lib/visits/creation";
 
 function LocalPreview({file}:{file:File}){
   const [url,setUrl]=useState<string>();
-  useEffect(()=>{const src=URL.createObjectURL(file);setUrl(src);return()=>URL.revokeObjectURL(src);},[file]);
-  return url?<Image src={url} alt="選択した写真" width={240} height={240} unoptimized className="aspect-square w-full rounded-xl object-cover"/>:<div className="aspect-square rounded-xl bg-stone-100"/>;
+  const preview = useCallback((node: HTMLDivElement | null) => {
+    if (!node) return;
+    const src = URL.createObjectURL(file);
+    setUrl(src);
+    return () => URL.revokeObjectURL(src);
+  }, [file]);
+  return <div ref={preview} className="aspect-square rounded-xl bg-stone-100">{url && <Image src={url} alt="選択した写真" width={240} height={240} unoptimized className="aspect-square w-full rounded-xl object-cover"/>}</div>;
 }
 export function VisitPhotoPicker({photos,onChange,disabled}:{photos:SelectedVisitPhoto[];onChange:(photos:SelectedVisitPhoto[])=>void;disabled:boolean}){
   const [error,setError]=useState<string|null>(null);

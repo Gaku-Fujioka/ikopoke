@@ -12,16 +12,15 @@ export function EditItemForm({ groupId, itemId, title: initialTitle, memo: initi
   // Keep the version actually opened by this editor, even if a reaction causes
   // an RSC refresh while the member has unsaved input.
   const [baseline, setBaseline] = useState({ title: initialTitle, memo: initialMemo });
-  const observed = useRef({ title: initialTitle, memo: initialMemo });
-  useEffect(() => {
-    if (observed.current.title === initialTitle && observed.current.memo === initialMemo) return;
-    observed.current = { title: initialTitle, memo: initialMemo };
-    // A clean sibling editor follows a saved change. An unsaved editor keeps
-    // its original baseline so the database can reject stale overwrites.
+  const [observed, setObserved] = useState({ title: initialTitle, memo: initialMemo });
+  if (observed.title !== initialTitle || observed.memo !== initialMemo) {
+    const next = { title: initialTitle, memo: initialMemo };
+    setObserved(next);
+    // Follow a saved sibling only while clean; dirty input retains its conflict baseline.
     if (title === baseline.title && memo === baseline.memo) {
-      setTitle(initialTitle); setMemo(initialMemo); setBaseline(observed.current);
+      setTitle(initialTitle); setMemo(initialMemo); setBaseline(next);
     }
-  }, [initialTitle, initialMemo, title, memo, baseline]);
+  }
   const [state, action, pending] = useActionState(async (previous: ItemEditState, form: FormData) => {
     const result = await updateItemAction(previous, form);
     if (result.saved) {

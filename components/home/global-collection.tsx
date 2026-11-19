@@ -46,23 +46,32 @@ export async function GlobalCollection({ type, searchParams }: { type: Collectio
   const groupName = (id: string) => groups.find(group => group.id === id)?.name ?? "グループ";
   const groupColor = (id: string) => groups.find(group => group.id === id)?.presentation?.color;
   const heading = headings[type];
-  let body, total = 0;
+  const invalidSearch = type === "items" && !validItemSearch(text);
+  let items, outings, visits, memories, failed = false;
   try {
-    if (type === "items" && !validItemSearch(text)) body = <p role="alert" className="kk-notice">検索語は100文字以内で入力してください。</p>;
-    else if (type === "items") {
-      const result = await globalItems(client, page, text, kind, filters); total = result.total;
-      body = result.rows.length ? <ul className="kk-collection-grid">{result.rows.map(item => <li key={item.id}><CandidateCard item={item} groupName={groupName(item.group_id)} groupColor={groupColor(item.group_id)} href={`/app/groups/${item.group_id}/items/${item.id}?${new URLSearchParams({ ...Object.fromEntries(query), origin: "all", page: String(page) })}`} /></li>)}</ul> : null;
-    } else if (type === "outings") {
-      const result = await globalOutings(client, page, completed, cancelled); total = result.total;
-      body = result.rows.length ? <ul className="kk-collection-grid">{result.rows.map(outing => <li key={outing.id}><OutingCard outing={outing} groupName={groupName(outing.group_id)} groupColor={groupColor(outing.group_id)} /></li>)}</ul> : null;
-    } else if(showVisits){
-      const result=await listVisitSummaries(client,null,page);total=result.total;
-      body=result.visits.length?<VisitTimeline visits={result.visits} groups={groups} photosUnavailable={result.photosUnavailable}/>:null;
-    } else {
-      const result = await globalMemories(client, page); total = result.total;
-      body = result.rows.length ? <ul className="kk-collection-grid">{result.rows.map(memory => <li key={memory.id}><MemoryCard memory={memory} groupName={groupName(memory.group_id)} groupColor={groupColor(memory.group_id)} /></li>)}</ul> : null;
+    if (!invalidSearch) {
+      if (type === "items") items = await globalItems(client, page, text, kind, filters);
+      else if (type === "outings") outings = await globalOutings(client, page, completed, cancelled);
+      else if (showVisits) visits = await listVisitSummaries(client, null, page);
+      else memories = await globalMemories(client, page);
     }
-  } catch { body = <HomeError />; }
+  } catch { failed = true; }
+  let body, total = 0;
+  if (failed) body = <HomeError />;
+  else if (invalidSearch) body = <p role="alert" className="kk-notice">検索語は100文字以内で入力してください。</p>;
+  else if (items) {
+    total = items.total;
+    body = items.rows.length ? <ul className="kk-collection-grid">{items.rows.map(item => <li key={item.id}><CandidateCard item={item} groupName={groupName(item.group_id)} groupColor={groupColor(item.group_id)} href={`/app/groups/${item.group_id}/items/${item.id}?${new URLSearchParams({ ...Object.fromEntries(query), origin: "all", page: String(page) })}`} /></li>)}</ul> : null;
+  } else if (outings) {
+    total = outings.total;
+    body = outings.rows.length ? <ul className="kk-collection-grid">{outings.rows.map(outing => <li key={outing.id}><OutingCard outing={outing} groupName={groupName(outing.group_id)} groupColor={groupColor(outing.group_id)} /></li>)}</ul> : null;
+  } else if (visits) {
+    total = visits.total;
+    body = visits.visits.length ? <VisitTimeline visits={visits.visits} groups={groups} photosUnavailable={visits.photosUnavailable} /> : null;
+  } else if (memories) {
+    total = memories.total;
+    body = memories.rows.length ? <ul className="kk-collection-grid">{memories.rows.map(memory => <li key={memory.id}><MemoryCard memory={memory} groupName={groupName(memory.group_id)} groupColor={groupColor(memory.group_id)} /></li>)}</ul> : null;
+  }
   return <div className="kk-collection">
     <div className="kk-page-heading"><p className="kk-eyebrow">{showVisits?"日々の「行った！」を、思い出に":heading.eyebrow}</p><h1>{showVisits?"みんなの訪問記録":heading.title}</h1><p>{heading.description}</p></div>
     <nav aria-label="表示するグループ" className="kk-chips"><Link href={href()} className="kk-chip" aria-current="page">すべてのグループ</Link>{groups.map(group => <Link href={`/app/groups/${group.id}/${showVisits?"visits":type}${type === "items" && query.size ? `?${query}` : ""}`} key={group.id} style={groupColorStyle(group.presentation?.color) as CSSProperties} data-tone={groupTone(group.id)} className="kk-chip kk-personal-chip">{group.name}</Link>)}</nav>

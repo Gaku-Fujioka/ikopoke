@@ -9,9 +9,12 @@ import {FinancePrivacy,FinanceFailure,FinanceSummary,FinanceTabs,FinanceContextL
 
 async function Content({searchParams}:{searchParams:Promise<FinanceSearch>}){
  const search=await searchParams,client=await financeSession('/app/finance');
- try{
-  const query=financeQuery(search,japanCalendarToday(new Date())),[dashboard,options]=await Promise.all([financeDashboard(client,query),financeOptions(client,query.context)]);
-  const ctx=options.context;
+ let query, dashboard, options, ctx;
+  try {
+    query = financeQuery(search,japanCalendarToday(new Date()));
+    [dashboard,options] = await Promise.all([financeDashboard(client,query),financeOptions(client,query.context)]);
+    ctx = options.context;
+  } catch(error){return <FinanceFailure error={error}/>;}
   return <><Link href="/app/profile" className="kk-text-link self-start">← プロフィールへ</Link><header className="kk-page-heading"><p className="kk-eyebrow">楽しかった日の、お金の記録</p><h1>自分の会計</h1><FinancePrivacy/></header>
    {ctx&&<FinanceContextLabel context={ctx}/>}
    <form action="/app/finance" className="kk-finance-filters"><input type="hidden" name="kind" value={query.kind}/><label>おでかけ・訪問<select name="context" defaultValue={query.context??''} key={query.context??'all'}><option value="">すべての記録先</option>{options.contexts.map(c=><option key={c.id} value={c.id}>{c.title} · {c.occurred_on}（{c.kind==='outing'?'おでかけ':'訪問'}）</option>)}</select></label><label>費用が発生した月<input key={query.month??'all'} type="month" name="month" min="1900-01" max="2199-12" defaultValue={query.month??''}/></label><button className="kk-secondary-link">表示</button><Link href={financeHref({...query,month:null,page:1})} className="kk-text-link">全期間</Link></form>
@@ -24,6 +27,5 @@ async function Content({searchParams}:{searchParams:Promise<FinanceSearch>}){
    <Link href="/app/finance/categories" className="kk-text-link self-start"><Settings2 aria-hidden="true" size={17}/>分類を追加・名前変更</Link>
    <p className="kk-muted">退出・グループ削除後も、自分の会計はここで振り返れます。月別は受け渡し日ではなく費用の発生日で集計します。</p>
   </>;
- }catch(error){return <FinanceFailure error={error}/>;}
 }
 export default function FinancePage(props:{searchParams:Promise<FinanceSearch>}){return <Suspense fallback={<p role="status" className="kk-loading">自分の会計を読み込んでいます…</p>}><Content {...props}/></Suspense>;}

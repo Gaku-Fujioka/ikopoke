@@ -10,9 +10,16 @@ import {FinanceEntryForm,FinancePaymentForm,FinanceDeletePayment,FinanceDeleteEn
 type Props={params:Promise<{entryId:string}>;searchParams:Promise<{historyPage?:string}>};
 async function Content({params,searchParams}:Props){
  const {entryId}=await params,search=await searchParams,client=await financeSession('/app/finance');
- try{
-  const id=financeId(entryId),page=search.historyPage&&/^[1-9][0-9]{0,4}$/.test(search.historyPage)?Number(search.historyPage):1,detail=await financeDetail(client,id,page),{entry}=detail;
-  const [options,parent]=await Promise.all([financeOptions(client,entry.context_id),entry.expense_id?financeDetail(client,entry.expense_id):Promise.resolve(null)]),ctx=options.context!,today=japanCalendarToday(new Date());
+ let id, page, detail, entry, options, parent, ctx, today;
+  try {
+    id = financeId(entryId);
+    page = search.historyPage&&/^[1-9][0-9]{0,4}$/.test(search.historyPage)?Number(search.historyPage):1;
+    detail = await financeDetail(client,id,page);
+    ({entry} = detail);
+    [options,parent] = await Promise.all([financeOptions(client,entry.context_id),entry.expense_id?financeDetail(client,entry.expense_id):Promise.resolve(null)]);
+    ctx = options.context!;
+    today = japanCalendarToday(new Date());
+  } catch(error){return <FinanceFailure error={error}/>;}
   return <><Link href={financeHref({context:ctx.id,month:null,kind:entry.kind})} className="kk-text-link self-start">← {FINANCE_KINDS[entry.kind]}の一覧へ</Link><header className="kk-page-heading"><p className="kk-eyebrow">{FINANCE_KINDS[entry.kind]} · {options.categories.find(c=>c.id===entry.category_id)?.name}</p><h1>{entry.title}</h1><FinancePrivacy/></header>
    <section className="kk-surface space-y-4"><p className="kk-finance-detail-amount">{formatYen(entry.amount)}</p><p className="kk-muted">{entry.kind==='expense'?'支払った金額':'予定額'} · 費用が発生した日 {entry.occurred_on}</p>{entry.party_name&&<p className="font-semibold">{entry.party_name}{entry.kind==='receive'?'からもらう':'へわたす'}</p>}
     {entry.kind!=='expense'&&<><div className="kk-row"><p className="text-sm">{entry.kind==='receive'?'受取済み':'支払済み'} {formatYen(detail.settled)}</p><strong>残り {formatYen(detail.remaining)}</strong></div><div role="progressbar" aria-label={entry.kind==='receive'?'受け取りの進み具合':'支払いの進み具合'} aria-valuemin={0} aria-valuemax={entry.amount} aria-valuenow={detail.settled} className="kk-finance-progress"><span style={{width:(detail.settled/entry.amount*100)+'%'}}/></div>{detail.remaining===0&&<p className="text-sm font-semibold">精算済みです</p>}</>}
@@ -25,6 +32,5 @@ async function Content({params,searchParams}:Props){
     <section className="space-y-4"><h2 className="text-xl font-bold">受け渡しの履歴（{detail.payment_count}件）</h2>{detail.payments.length?<ul className="kk-finance-history">{detail.payments.map(p=><li key={p.id}><div className="kk-row"><strong>{formatYen(p.amount)}</strong><time className="text-sm" dateTime={p.paid_on}>{p.paid_on}</time></div>{p.memo&&<p className="mt-3 break-words text-sm">{p.memo}</p>}<details className="kk-inline-editor"><summary className="kk-edit-button cursor-pointer">この履歴を編集</summary><FinancePaymentForm entry={entry} payment={p} requestId={p.id} today={today}/></details><details className="kk-inline-editor"><summary className="kk-edit-button cursor-pointer">この履歴を取り消す</summary><FinanceDeletePayment entry={entry} payment={p}/></details></li>)}</ul>:<p className="kk-muted">受け渡しの履歴はまだありません。</p>}{(page>1||page*20<detail.payment_count)&&<nav className="kk-pager" aria-label="受け渡し履歴のページ">{page>1?<Link href={'/app/finance/entries/'+entry.id+'?historyPage='+(page-1)} className="kk-text-link">← 前の履歴</Link>:<span/>}<span>{page}ページ</span>{page*20<detail.payment_count&&<Link href={'/app/finance/entries/'+entry.id+'?historyPage='+(page+1)} className="kk-text-link">次の履歴 →</Link>}</nav>}</section></>}
    <details className="kk-surface"><summary className="kk-edit-button cursor-pointer">… この明細を削除</summary><FinanceDeleteEntry entry={entry} receivableCount={detail.receivables.length} paymentCount={detail.payment_count}/></details>
   </>;
- }catch(error){return <FinanceFailure error={error}/>;}
 }
 export default function FinanceEntryPage(props:Props){return <Suspense fallback={<p role="status" className="kk-loading">自分の明細を読み込んでいます…</p>}><Content {...props}/></Suspense>;}
